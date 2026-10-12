@@ -241,6 +241,17 @@
                     if (min !== null && max !== null) return base + " 今天" + Math.round(min) + "~" + Math.round(max) + "°，注意增减衣物🍃";
                     return base;
                 }
+                function greet() {
+                    var h = new Date().getHours(), g;
+                    if (h >= 5 && h < 9) g = "早上好";
+                    else if (h >= 9 && h < 12) g = "上午好";
+                    else if (h >= 12 && h < 14) g = "中午好";
+                    else if (h >= 14 && h < 18) g = "下午好";
+                    else if (h >= 18 && h < 22) g = "晚上好";
+                    else if (h >= 22 || h < 1) g = "夜深了";
+                    else g = "凌晨好";
+                    return g;
+                }
                 var widget = document.getElementById('weather-widget');
                 var msgEl = document.getElementById('weather-msg');
                 var hideTimer = null;
@@ -264,11 +275,11 @@
                         var icon = (WMO[code] || ["☁️"])[0];
                         var desc = (WMO[code] || ["", "天气"])[1];
                         var tip = tipFor(code, c.temperature_2m, daily.temperature_2m_min[0], daily.temperature_2m_max[0]);
-                        var html = '<div class="w-line1">👋 欢迎来自 <b>' + cityName + '</b> 的访客</div>' +
+                        var html = '<div class="w-line1">' + greet() + '，欢迎来自 <b>' + cityName + '</b> 的访客</div>' +
                             '<div class="w-line2">' + icon + ' ' + Math.round(c.temperature_2m) + '° ' + desc + '</div>' +
                             '<div class="w-line3">' + tip + '</div>';
                         showBar(html);
-                    }).catch(function () { showBar('👋 欢迎来到 AJX 的小站~'); });
+                    }).catch(function () { showBar(greet() + '，欢迎来到 AJX 的小站~'); });
                 }
                 function fallback() {
                 // ipwho.is 兜底：显示访客城市+天气
@@ -276,8 +287,8 @@
                     if (j && j.success && j.city) {
                         var city = cnCity(j.city);
                         fetchWeather(j.latitude, j.longitude, city);
-                    } else { showBar('👋 欢迎来到 AJX 的小站~'); }
-                }).catch(function () { showBar('👋 欢迎来到 AJX 的小站~'); });
+                    } else { showBar(greet() + '，欢迎来到 AJX 的小站~'); }
+                }).catch(function () { showBar(greet() + '，欢迎来到 AJX 的小站~'); });
             }
             // ===== MD5 实现（腾讯签名要求 MD5） =====
             function md5(s) {
