@@ -10112,8 +10112,9 @@ j {
     transform: translateX(-50%);
     z-index: 9999;
     max-width: 92%;
+    min-width: 400px;
     width: auto;
-    padding: 14px 22px;
+    padding: 16px 26px;
     border-radius: 18px;
     background: rgba(20, 22, 30, 0.88);
     -webkit-backdrop-filter: blur(12px);
@@ -10135,7 +10136,7 @@ j {
 #weather-widget .weather-msg {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 5px;
     line-height: 1.5;
 }
 #weather-widget .w-line1 {
@@ -10161,7 +10162,8 @@ j {
 @media (max-width: 768px) {
     #weather-widget.weather-widget {
         max-width: 88%;
-        padding: 12px 16px;
+        min-width: 300px;
+        padding: 13px 18px;
     }
     #weather-widget .w-line1 {
         font-size: 14px;
