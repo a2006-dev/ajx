@@ -10161,9 +10161,9 @@ j {
 }
 @media (max-width: 768px) {
     #weather-widget.weather-widget {
-        max-width: 88%;
-        min-width: 300px;
-        padding: 13px 18px;
+        max-width: 94%;
+        width: calc(100% - 28px);
+        padding: 14px 18px;
     }
     #weather-widget .w-line1 {
         font-size: 14px;
