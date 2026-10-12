@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><script>window.huggingface={variables:{"SPACE_CREATOR_USER_ID":"6723234cfb3a71fc3653ae15"}};</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✦ 站点统计 · AJX</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body { min-height: 100%; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            color: #f4e9f2;
+            overflow-x: hidden;
+            position: relative;
+            min-height: 100vh;
+            background: linear-gradient(160deg, #1c1033 0%, #2b1750 30%, #4c1e42 65%, #6b2d5c 100%);
+            background-attachment: fixed;
+        }
+        body::before {
+            content: ''; position: fixed; top: -20%; left: -10%; width: 60%; height: 60%;
+            background: radial-gradient(circle, rgba(255,183,197,0.18) 0%, transparent 70%);
+            pointer-events: none; z-index: 0;
+        }
+        body::after {
+            content: ''; position: fixed; bottom: -20%; right: -10%; width: 70%; height: 70%;
+            background: radial-gradient(circle, rgba(183,103,255,0.16) 0%, transparent 70%);
+            pointer-events: none; z-index: 0;
+        }
+        #sakura-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
+        .container { position: relative; z-index: 2; max-width: 1100px; margin: 0 auto; padding: 28px 20px 40px; }
+
+        .site-header { text-align: center; margin-bottom: 28px; }
+        .site-header .badge {
+            display: inline-flex; align-items: center; gap: 6px; font-size: 13px; letter-spacing: 2px;
+            color: #ffc4d1; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,183,197,0.3);
+            padding: 5px 14px; border-radius: 999px; margin-bottom: 14px;
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+        }
+        .site-header .badge .dot { width: 8px; height: 8px; border-radius: 50%; background: #ff7da5; animation: pulse 1.6s ease-in-out infinite; }
+        @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,125,165,0.6); } 50% { box-shadow: 0 0 0 8px rgba(255,125,165,0); } }
+        .site-header h1 {
+            font-size: clamp(30px, 6vw, 46px); font-weight: 700; letter-spacing: 2px;
+            background: linear-gradient(135deg, #ffd6e0, #ff9eb5, #e0b3ff);
+            -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(255,158,181,0.2);
+        }
+        .site-header .subtitle { margin-top: 8px; font-size: 14px; color: rgba(255,235,245,0.72); letter-spacing: 1px; }
+        .site-header .subtitle b { color: #ffb7c5; font-weight: 600; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+        .glass-card {
+            background: rgba(255,255,255,0.07);
+            -webkit-backdrop-filter: blur(16px) saturate(140%); backdrop-filter: blur(16px) saturate(140%);
+            border: 1px solid rgba(255,183,197,0.22); border-radius: 20px;
+            padding: 20px 22px; box-shadow: 0 8px 32px rgba(10,5,20,0.35);
+            transition: transform .3s ease, box-shadow .3s ease, border-color .3s ease;
+        }
+        .glass-card:hover {
+            transform: translateY(-4px); border-color: rgba(255,183,197,0.45);
+            box-shadow: 0 14px 40px rgba(10,5,20,0.45), 0 0 24px rgba(255,183,197,0.12);
+        }
+        .card-title {
+            display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600;
+            color: #ffd6e0; letter-spacing: 1px; margin-bottom: 14px; padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,183,197,0.16);
+        }
+        .card-title .icon { font-size: 18px; }
+        .card-title .tag {
+            margin-left: auto; font-size: 11px; font-weight: 400; color: rgba(255,235,245,0.6);
+            letter-spacing: 1px; background: rgba(255,183,197,0.12); padding: 2px 8px; border-radius: 999px;
+        }
+        .info-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 7px 0; font-size: 14px; border-bottom: 1px dashed rgba(255,183,197,0.1);
+        }
+        .info-row:last-child { border-bottom: none; }
+        .info-row .label { color: rgba(255,235,245,0.62); flex-shrink: 0; }
+        .info-row .value { color: #ffe9ef; text-align: right; word-break: break-all; margin-left: 12px; font-variant-numeric: tabular-nums; }
+        .info-row .value.hl { color: #ffb7c5; font-weight: 600; }
+
+        .metric-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+        .chip {
+            font-size: 12px; color: #ffd6e0; background: rgba(255,183,197,0.12);
+            border: 1px solid rgba(255,183,197,0.25); padding: 4px 10px; border-radius: 999px; letter-spacing: 0.5px;
+        }
+        .hitokoto-box { min-height: 92px; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+        .hitokoto-text { font-size: 14px; line-height: 1.7; color: #ffe9ef; letter-spacing: 0.5px; }
+        .hitokoto-from { font-size: 12px; color: rgba(255,235,245,0.55); text-align: right; }
+
+        .clock-time { font-size: 30px; font-weight: 700; color: #fff; letter-spacing: 1px; font-variant-numeric: tabular-nums; }
+        .clock-date { font-size: 13px; color: rgba(255,235,245,0.7); margin-top: 4px; letter-spacing: 1px; }
+        .uptime { margin-top: 14px; font-size: 13px; color: #ffb7c5; letter-spacing: 1px; }
+
+        .site-footer { text-align: center; margin-top: 30px; font-size: 13px; color: rgba(255,235,245,0.5); letter-spacing: 1px; }
+        .site-footer a { color: #ffb7c5; text-decoration: none; }
+        .site-footer a:hover { text-decoration: underline; }
+
+        #loading {
+            position: fixed; inset: 0; z-index: 999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+            background: linear-gradient(160deg, #1c1033, #2b1750, #4c1e42);
+            transition: opacity .6s ease;
+        }
+        #loading .sakura-load { font-size: 40px; animation: sway 1.8s ease-in-out infinite; }
+        #loading .load-text { font-size: 14px; color: #ffd6e0; letter-spacing: 3px; }
+        @keyframes sway { 0%,100% { transform: rotate(-12deg) translateY(0); } 50% { transform: rotate(12deg) translateY(-8px); } }
+        #loading.hide { opacity: 0; pointer-events: none; }
+
+        @media (max-width: 640px) {
+            .container { padding: 20px 14px 30px; }
+            .glass-card { padding: 16px; }
+            .clock-time { font-size: 26px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loading">
+        <div class="sakura-load">🌸</div>
+        <div class="load-text">正在加载站点数据…</div>
+    </div>
+
+    <canvas id="sakura-canvas"></canvas>
+
+    <div class="container">
+        <header class="site-header">
+            <div class="badge"><span class="dot"></span> LIVE · 站点统计</div>
+            <h1>✦ 站点统计 ✦</h1>
+            <p class="subtitle">你好呀，欢迎来到 <b>AJX</b> 的小站，这是为你生成的一份实时数据报告</p>
+        </header>
+
+        <div class="stats-grid">
+            <div class="glass-card">
+                <div class="card-title"><span class="icon">🧭</span> 访客定位 <span class="tag">IP 实时</span></div>
+                <div class="info-row"><span class="label">IP 地址</span><span class="value" id="visitor-ip">识别中…</span></div>
+                <div class="info-row"><span class="label">所在城市</span><span class="value hl" id="visitor-city">—</span></div>
+                <div class="info-row"><span class="label">国家 / 地区</span><span class="value" id="visitor-country">—</span></div>
+                <div class="info-row"><span class="label">详细区域</span><span class="value" id="visitor-region">—</span></div>
+                <div class="info-row"><span class="label">时区</span><span class="value" id="visitor-tz">—</span></div>
+                <div class="info-row"><span class="label">经纬度</span><span class="value" id="visitor-latlng">—</span></div>
+            </div>
+
+            <div class="glass-card">
+                <div class="card-title"><span class="icon">💻</span> 设备信息 <span class="tag">本机读取</span></div>
+                <div class="info-row"><span class="label">浏览器</span><span class="value" id="device-browser">—</span></div>
+                <div class="info-row"><span class="label">操作系统</span><span class="value" id="device-os">—</span></div>
+                <div class="info-row"><span class="label">设备类型</span><span class="value" id="device-type">—</span></div>
+                <div class="info-row"><span class="label">屏幕分辨率</span><span class="value" id="device-screen">—</span></div>
+                <div class="info-row"><span class="label">浏览器语言</span><span class="value" id="device-lang">—</span></div>
+                <div class="info-row"><span class="label">CPU 核心</span><span class="value" id="device-cpu">—</span></div>
+            </div>
+
+            <div class="glass-card">
+                <div class="card-title"><span class="icon">🕐</span> 实时时间 <span class="tag">本地</span></div>
+                <div class="clock-time" id="clock-time">--:--:--</div>
+                <div class="clock-date" id="clock-date">----年--月--日</div>
+                <div class="uptime">⏳ 你已在本站停留 <span id="uptime-sec">00:00</span></div>
+            </div>
+
+            <div class="glass-card">
+                <div class="card-title"><span class="icon">📊</span> 性能指标 <span class="tag">实测</span></div>
+                <div class="info-row"><span class="label">页面加载</span><span class="value hl" id="perf-load">—</span></div>
+                <div class="info-row"><span class="label">外部资源数</span><span class="value" id="perf-resources">—</span></div>
+                <div class="info-row"><span class="label">DOM 元素</span><span class="value" id="perf-dom">—</span></div>
+                <div class="info-row"><span class="label">页面图片</span><span class="value" id="perf-images">—</span></div>
+                <div class="metric-chips" id="perf-chips"><span class="chip">🧠 内存阅读中…</span></div>
+            </div>
+
+            <div class="glass-card">
+                <div class="card-title"><span class="icon">📁</span> 站点档案 <span class="tag">About</span></div>
+                <div class="info-row"><span class="label">建站日期</span><span class="value">2024-10-31</span></div>
+                <div class="info-row"><span class="label">页面数量</span><span class="value">9 个页面</span></div>
+                <div class="info-row"><span class="label">最后更新</span><span class="value">2026-10-04</span></div>
+                <div class="info-row"><span class="label">站点类型</span><span class="value">静态托管</span></div>
+                <div class="info-row"><span class="label">运行状态</span><span class="value hl">● RUNNING</span></div>
+                <div class="info-row"><span class="label">本站已运行</span><span class="value hl" id="site-uptime">—</span></div>
+            </div>
+
+            <div class="glass-card">
+                <div class="card-title"><span class="icon">💬</span> 今日一言 <span class="tag">Hitokoto</span></div>
+                <div class="hitokoto-box">
+                    <div class="hitokoto-text" id="hitokoto-text">正在为你取一句话…</div>
+                    <div class="hitokoto-from" id="hitokoto-from"></div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="site-footer">
+            <div>© <span id="current-year"></span> <a href="./">AJX</a> · 樱花下的站点统计</div>
+            <div style="margin-top:5px;font-size:12px;">Powered by 腾讯位置服务 · Open-Meteo · Hitokoto</div>
+        </footer>
+    </div>
+
+    <script>
+        function $(id) { return document.getElementById(id); }
+
+        window.addEventListener('load', function () {
+            setTimeout(function () { $('loading').classList.add('hide'); }, 800);
+        });
+
+        (function sakura() {
+            var canvas = $('sakura-canvas');
+            var ctx = canvas.getContext('2d');
+            var petals = [], W, H;
+            function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+            resize(); window.addEventListener('resize', resize);
+            var COLORS = ['#ffb7c5', '#ff9eb5', '#ffd6e0', '#ffc4d1', '#f79ec0'];
+            function makePetal(initial) {
+                var size = 6 + Math.random() * 10;
+                return {
+                    x: initial ? Math.random() * W : -20 - Math.random() * 40,
+                    y: initial ? Math.random() * H : -30 - Math.random() * 60,
+                    size: size, speedY: 0.6 + Math.random() * 1.1, speedX: -0.6 + Math.random() * 1.2,
+                    rot: Math.random() * Math.PI * 2, rotSpeed: -0.02 + Math.random() * 0.04,
+                    alpha: 0.55 + Math.random() * 0.4, sway: Math.random() * Math.PI * 2,
+                    swaySpeed: 0.01 + Math.random() * 0.02, color: COLORS[Math.floor(Math.random() * COLORS.length)]
+                };
+            }
+            var count = Math.min(55, Math.floor(W * H / 22000));
+            for (var i = 0; i < count; i++) petals.push(makePetal(true));
+            function drawPetal(p) {
+                ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color;
+                ctx.beginPath(); ctx.arc(0, 0, p.size * 0.28, 0, Math.PI * 2); ctx.fill();
+                for (var i = 0; i < 5; i++) {
+                    ctx.save(); ctx.rotate(i * Math.PI * 2 / 5);
+                    ctx.beginPath(); ctx.ellipse(p.size * 0.5, 0, p.size * 0.2, p.size * 0.42, 0, 0, Math.PI * 2); ctx.fill();
+                    ctx.restore();
+                }
+                ctx.restore();
+            }
+            (function loop() {
+                ctx.clearRect(0, 0, W, H);
+                for (var i = 0; i < petals.length; i++) {
+                    var p = petals[i];
+                    p.sway += p.swaySpeed; p.x += p.speedX + Math.sin(p.sway) * 0.35; p.y += p.speedY; p.rot += p.rotSpeed;
+                    if (p.y > H + 40 || p.x > W + 40 || p.x < -40) { petals[i] = makePetal(false); continue; }
+                    drawPetal(p);
+                }
+                requestAnimationFrame(loop);
+            })();
+        })();
+
+        var startTs = Date.now();
+        var WEEK = ['日','一','二','三','四','五','六'];
+        function pad(n) { return n < 10 ? '0' + n : '' + n; }
+        function tick() {
+            var d = new Date();
+            $('clock-time').textContent = pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+            $('clock-date').textContent = d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日 星期' + WEEK[d.getDay()];
+            var s = Math.floor((Date.now() - startTs) / 1000);
+            $('uptime-sec').textContent = pad(Math.floor(s / 60)) + ':' + pad(s % 60);
+        }
+        // 本站已运行时长（从 2024-10-31 建站起实时计算）
+        var SITE_BIRTH = new Date('2024-10-31T00:00:00');
+        function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+        function siteUptime() {
+            var diff = Math.floor((Date.now() - SITE_BIRTH.getTime()) / 1000);
+            var d = Math.floor(diff / 86400);
+            var h = Math.floor((diff % 86400) / 3600);
+            var m = Math.floor((diff % 3600) / 60);
+            var s = diff % 60;
+            $('site-uptime').textContent = d + ' 天 ' + pad2(h) + ':' + pad2(m) + ':' + pad2(s);
+        }
+        siteUptime();
+        setInterval(siteUptime, 1000);
+
+        tick(); setInterval(tick, 1000);
+
+        (function perf() {
+            var pt = performance.getEntriesByType('navigation')[0] || {};
+            if (pt && pt.responseEnd) $('perf-load').textContent = Math.round(pt.responseEnd) + ' ms';
+            else $('perf-load').textContent = Math.round(performance.now()) + ' ms';
+            $('perf-resources').textContent = performance.getEntriesByType('resource').length + ' 个';
+            $('perf-dom').textContent = document.querySelectorAll('*').length + ' 个';
+            $('perf-images').textContent = document.querySelectorAll('img').length + ' 张';
+            var chip = document.createElement('span'); chip.className = 'chip';
+            if (performance.memory) chip.textContent = '🫧 内存 ' + Math.round(performance.memory.usedJSHeapSize / 1024 / 1024) + ' MB';
+            else chip.textContent = '🌸 樱花引擎运行中';
+            $('perf-chips').appendChild(chip);
+        })();
+
+        (function device() {
+            var ua = navigator.userAgent;
+            var browser = '未知';
+            if (/Edg\//.test(ua)) browser = 'Edge ' + (ua.match(/Edg\/([\d.]+)/) || [])[1];
+            else if (/OPR\//.test(ua)) browser = 'Opera';
+            else if (/Chrome\//.test(ua)) browser = 'Chrome ' + (ua.match(/Chrome\/([\d.]+)/) || [])[1];
+            else if (/Firefox\//.test(ua)) browser = 'Firefox ' + (ua.match(/Firefox\/([\d.]+)/) || [])[1];
+            else if (/Safari\//.test(ua)) browser = 'Safari';
+            else if (/MicroMessenger/i.test(ua)) browser = '微信内置浏览器';
+            var os = '未知';
+            if (/Windows/.test(ua)) os = 'Windows';
+            else if (/iPhone|iPad|iPod/.test(ua)) os = 'iOS';
+            else if (/Android/.test(ua)) os = 'Android';
+            else if (/Mac OS X/.test(ua)) os = 'macOS';
+            else if (/Linux/.test(ua)) os = 'Linux';
+            var type = /Mobi|Android|iPhone|iPad/.test(ua) ? '移动设备' : 'PC';
+            $('device-browser').textContent = browser;
+            $('device-os').textContent = os;
+            $('device-type').textContent = type;
+            $('device-screen').textContent = window.screen.width + ' × ' + window.screen.height;
+            $('device-lang').textContent = (navigator.language || 'zh-CN').toLowerCase();
+            $('device-cpu').textContent = (navigator.hardwareConcurrency || '?') + ' 核';
+        })();
+
+        (function locate() {
+            // ===== 腾讯位置服务 IP 定位（优先，无感精确到市级） =====
+            var QQ_KEY = '2OOBZ-BSY6M-SS362-6AT56-32XZE-KHFXZ';
+            var QQ_SK  = 'ozFKOpSc3b078f0qQEdjlKZyPoObVca5';
+            var used = false;
+            function utf8Bytes(s) { return unescape(encodeURIComponent(s)).split('').map(function(c){return c.charCodeAt(0);}); }
+            function sha1Bytes(bytes) {
+                var h0=0x67452301,h1=0xEFCDAB89,h2=0x98BADCFE,h3=0x10325476,h4=0xC3D2E1F0;
+                var ml=bytes.length, len=((ml+8)>>6<<4)+16, msg=new Array(len), i;
+                for(i=0;i<ml;i++) msg[i]=bytes[i];
+                msg[ml]=0x80;
+                var bitLen=ml*8;
+                msg[len-4]=(bitLen>>>24)&255; msg[len-3]=(bitLen>>>16)&255; msg[len-2]=(bitLen>>>8)&255; msg[len-1]=bitLen&255;
+                var w=new Array(80), j;
+                for(var block=0;block<len;block+=16){
+                    for(j=0;j<16;j++) w[j]=((msg[block+j]<<24)|(msg[block+j+1]<<16)|(msg[block+j+2]<<8)|(msg[block+j+3]))>>>0;
+                    for(j=16;j<80;j++) w[j]=((w[j-3]^w[j-8]^w[j-14]^w[j-16])<<1 | (w[j-3]^w[j-8]^w[j-14]^w[j-16])>>>31)>>>0;
+                    var a=h0,b=h1,c=h2,d=h3,e=h4;
+                    for(j=0;j<80;j++){
+                        var f,k;
+                        if(j<20){f=(b&c)|((~b)&d);k=0x5A827999;}
+                        else if(j<40){f=b^c^d;k=0x6ED9EBA1;}
+                        else if(j<60){f=(b&c)|(b&d)|(c&d);k=0x8F1BBCDC;}
+                        else {f=b^c^d;k=0xCA62C1D6;}
+                        var temp=(((a<<5)|(a>>>27))+f+e+k+w[j])>>>0;
+                        e=d;d=c;c=((b<<30)|(b>>>2))>>>0;b=a;a=temp;
+                    }
+                    h0=(h0+a)>>>0;h1=(h1+b)>>>0;h2=(h2+c)>>>0;h3=(h3+d)>>>0;h4=(h4+e)>>>0;
+                }
+                var out=[];
+                [h0,h1,h2,h3,h4].forEach(function(n){ out.push((n>>>24)&255,(n>>>16)&255,(n>>>8)&255,n&255); });
+                return out;
+            }
+            function hmacSha1(keyStr,msgStr){
+                var key=utf8Bytes(keyStr);
+                if(key.length>64) key=sha1Bytes(key);
+                var ipad=new Array(64),opad=new Array(64),i;
+                for(i=0;i<64;i++){ipad[i]=(key[i]||0)^0x36;opad[i]=(key[i]||0)^0x5c;}
+                return sha1Bytes(opad.concat(sha1Bytes(ipad.concat(utf8Bytes(msgStr)))));
+            }
+            function b64(bytes){
+                var ch='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/',res='';
+                for(var i=0;i<bytes.length;i+=3){
+                    var b0=bytes[i],b1=bytes[i+1],b2=bytes[i+2];
+                    res+=ch[b0>>2];
+                    res+=ch[((b0&3)<<4)|(b1>>4)];
+                    if(b1===undefined){continue;}
+                    res+=ch[((b1&15)<<2)|(b2>>6)];
+                    if(b2===undefined){continue;}
+                    res+=ch[b2&63];
+                }
+                return res;
+            }
+            function qqSig(params,sk){
+                var keys=Object.keys(params).sort();
+                var qs=keys.map(function(k){return k+'='+encodeURIComponent(params[k]);}).join('&');
+                var mac=hmacSha1(sk,qs);
+                return {qs:qs, sig:b64(mac).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')};
+            }
+            function finish(ip,city,region,nation,lat,lng){
+                if(used) return; used=true;
+                $('visitor-ip').textContent=ip||'—';
+                $('visitor-city').textContent=city||'未知';
+                $('visitor-country').textContent=nation||'—';
+                $('visitor-region').textContent=region||'—';
+                try{ $('visitor-tz').textContent=Intl.DateTimeFormat().resolvedOptions().timeZone||'—'; }catch(e){ $('visitor-tz').textContent='—'; }
+                $('visitor-latlng').textContent=(lat&&lng)?lat.toFixed(2)+', '+lng.toFixed(2):'—';
+            }
+            function fallback(){
+                if(used) return;
+                fetch('https://ipwho.is/')
+                    .then(function(r){return r.json();})
+                    .then(function(j){
+                        if(!j||!j.success){$('visitor-ip').textContent='获取失败';return;}
+                        finish(j.ip, j.city||'未知', j.region||'—', (j.country||'—')+(j.flag&&j.flag.emoji?' '+j.flag.emoji:''), j.latitude, j.longitude);
+                    })
+                    .catch(function(){ $('visitor-ip').textContent='获取失败'; $('visitor-city').textContent='未知'; });
+            }
+            function cleanup(){ try{ delete window[cbName]; if(s&&s.parentNode) s.parentNode.removeChild(s); }catch(e){} }
+            var cbName='qqloc'+Date.now();
+            var s=null;
+            window[cbName]=function(res){
+                if(res&&res.status===0&&res.result){
+                    var r=res.result, ad=r.ad_info||{};
+                    var cityName=ad.city||ad.province||'未知';
+                    var region=(ad.province?ad.province+' ':'')+(ad.city?ad.city:'');
+                    finish(r.ip, cityName, region, ad.nation||'中国', r.location&&r.location.lat, r.location&&r.location.lng);
+                    cleanup();
+                }else{ cleanup(); fallback(); }
+            };
+            var params={key:QQ_KEY, output:'jsonp', callback:cbName};
+            var sig=qqSig(params,QQ_SK);
+            var url='https://apis.map.qq.com/ws/location/v1/ip?'+sig.qs+'&sig='+sig.sig;
+            try{
+                s=document.createElement('script');
+                s.src=url;
+                s.onerror=function(){cleanup();fallback();};
+                document.head.appendChild(s);
+            }catch(e){ fallback(); }
+            setTimeout(function(){ if(!used){cleanup();fallback();} },8000);
+        })();
+
+        (function hitokoto() {
+            fetch('https://v1.hitokoto.cn')
+                .then(function (r) { return r.json(); })
+                .then(function (j) {
+                    $('hitokoto-text').textContent = j.hitokoto || '愿你今天也有好心情～';
+                    $('hitokoto-from').textContent = '—— ' + (j.from || '佚名');
+                })
+                .catch(function () {
+                    $('hitokoto-text').textContent = '愿你今天也有好心情，欢迎常来玩呀～';
+                    $('hitokoto-from').textContent = '—— AJX';
+                });
+        })();
+
+        $('current-year').textContent = new Date().getFullYear();
+    </script>
+</body>
+</html>
