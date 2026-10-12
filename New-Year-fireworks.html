@@ -200,6 +200,45 @@
     display: block;
     margin: auto;
   }
+
+  /* 翻页导航条 - fixed 悬浮，匹配极简低透明度风格 */
+  .page-nav {
+    position: fixed;
+    bottom: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: rgba(0, 0, 0, 0.32);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    opacity: 0.32;
+    transition: opacity 0.3s;
+    z-index: 50;
+  }
+  .page-nav:hover { opacity: 0.75; }
+  .page-nav a {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: rgba(255,255,255,0.85);
+    text-decoration: none;
+    font-family: "Russo One", arial, sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    padding: 6px 12px;
+    border-radius: 8px;
+    transition: background 0.3s;
+  }
+  .page-nav a:hover { background: rgba(255,255,255,0.12); }
+  .page-nav a.home-btn { opacity: 0.7; }
+  .page-nav .nav-label { font-size: 10px; opacity: 0.6; }
+  @media (max-width: 640px) {
+    .page-nav { flex-direction: column; align-items: stretch; gap: 4px; padding: 10px 12px; }
+    .page-nav a { justify-content: center; }
+  }
   </style>
   </head>
   <body>
@@ -1650,5 +1689,10 @@
 
     init();
   </script>
+  <nav class="page-nav">
+    <a href="./ybp.html"><span class="nav-label">← 上一页</span><span>📊 站点统计</span></a>
+    <a href="./index.html" class="home-btn"><span>🏠</span><span class="nav-label">主页</span></a>
+    <a href="./heart.html"><span class="nav-label">下一页 →</span><span>❤️ 心迹 Heart</span></a>
+  </nav>
 </body>
 </html>
