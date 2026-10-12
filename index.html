@@ -56,17 +56,158 @@
             (function () {
                 // 常见中国城市英文->中文映射
                 var CN_CITY = {
-                    "Beijing": "北京", "Shanghai": "上海", "Guangzhou": "广州", "Shenzhen": "深圳",
-                    "Chengdu": "成都", "Hangzhou": "杭州", "Wuhan": "武汉", "Xi'an": "西安",
-                    "Chongqing": "重庆", "Nanjing": "南京", "Tianjin": "天津", "Suzhou": "苏州",
-                    "Zhengzhou": "郑州", "Changsha": "长沙", "Qingdao": "青岛", "Dalian": "大连",
-                    "Xiamen": "厦门", "Fuzhou": "福州", "Jinan": "济南", "Hefei": "合肥",
-                    "Kunming": "昆明", "Guilin": "桂林", "Harbin": "哈尔滨", "Shenyang": "沈阳",
-                    "Changchun": "长春", "Shijiazhuang": "石家庄", "Taiyuan": "太原", "Nanchang": "南昌",
-                    "Guiyang": "贵阳", "Nanning": "南宁", "Haikou": "海口", "Lanzhou": "兰州",
-                    "Xining": "西宁", "Yinchuan": "银川", "Urumqi": "乌鲁木齐", "Lhasa": "拉萨",
-                    "Hohhot": "呼和浩特", "Wuxi": "无锡", "Ningbo": "宁波", "Foshan": "佛山",
-                    "Dongguan": "东莞", "Zhuhai": "珠海", "Quanzhou": "泉州", "Wenzhou": "温州"
+                    // ── 直辖市 ──
+                    "Beijing": "北京", "Shanghai": "上海", "Tianjin": "天津", "Chongqing": "重庆",
+                    // ── 河北 ──
+                    "Shijiazhuang": "石家庄", "Tangshan": "唐山", "Qinhuangdao": "秦皇岛", "Handan": "邯郸",
+                    "Xingtai": "邢台", "Baoding": "保定", "Zhangjiakou": "张家口", "Chengde": "承德",
+                    "Cangzhou": "沧州", "Langfang": "廊坊", "Hengshui": "衡水",
+                    // ── 山西 ──
+                    "Taiyuan": "太原", "Datong": "大同", "Yangquan": "阳泉", "Changzhi": "长治",
+                    "Jincheng": "晋城", "Shuozhou": "朔州", "Jinzhong": "晋中", "Yuncheng": "运城",
+                    "Xinzhou": "忻州", "Linfen": "临汾", "Lvliang": "吕梁", "Luliang": "吕梁", "Lüliang": "吕梁",
+                    // ── 内蒙古 ──
+                    "Hohhot": "呼和浩特", "Huhehaote": "呼和浩特", "Baotou": "包头", "Wuhai": "乌海",
+                    "Chifeng": "赤峰", "Tongliao": "通辽", "Ordos": "鄂尔多斯", "Eerduosi": "鄂尔多斯",
+                    "Hulunbuir": "呼伦贝尔", "Hulunbeier": "呼伦贝尔", "Bayannur": "巴彦淖尔", "Bayan Nur": "巴彦淖尔",
+                    "Ulanqab": "乌兰察布", "Xilingol": "锡林郭勒", "Alxa": "阿拉善", "Alashan": "阿拉善",
+                    "Manzhouli": "满洲里", "Yakeshi": "牙克石", "Xilinhot": "锡林浩特", "Dongsheng": "东胜",
+                    // ── 辽宁 ──
+                    "Shenyang": "沈阳", "Dalian": "大连", "Anshan": "鞍山", "Fushun": "抚顺",
+                    "Benxi": "本溪", "Dandong": "丹东", "Jinzhou": "锦州", "Yingkou": "营口",
+                    "Fuxin": "阜新", "Liaoyang": "辽阳", "Panjin": "盘锦", "Tieling": "铁岭",
+                    "Chaoyang": "朝阳", "Huludao": "葫芦岛",
+                    // ── 吉林 ──
+                    "Changchun": "长春", "Jilin": "吉林", "Siping": "四平", "Liaoyuan": "辽源",
+                    "Tonghua": "通化", "Baishan": "白山", "Songyuan": "松原", "Baicheng": "白城",
+                    "Yanji": "延吉", "Yanbian": "延边", "Dunhua": "敦化",
+                    // ── 黑龙江 ──
+                    "Harbin": "哈尔滨", "Qiqihar": "齐齐哈尔", "Jixi": "鸡西", "Hegang": "鹤岗",
+                    "Shuangyashan": "双鸭山", "Daqing": "大庆", "Yichun": "伊春", "Jiamusi": "佳木斯",
+                    "Qitaihe": "七台河", "Mudanjiang": "牡丹江", "Heihe": "黑河", "Suihua": "绥化",
+                    "Daxinganling": "大兴安岭", "Anda": "安达",
+                    // ── 江苏 ──
+                    "Nanjing": "南京", "Wuxi": "无锡", "Xuzhou": "徐州", "Changzhou": "常州",
+                    "Suzhou": "苏州", "Nantong": "南通", "Lianyungang": "连云港",
+                    "Huai'an": "淮安", "Huaian": "淮安", "Huai an": "淮安",
+                    "Yancheng": "盐城", "Yangzhou": "扬州", "Zhenjiang": "镇江", "Taizhou": "台州",
+                    "Suqian": "宿迁", "Kunshan": "昆山", "Jiangyin": "江阴", "Zhangjiagang": "张家港",
+                    "Changshu": "常熟", "Yixing": "宜兴", "Pizhou": "邳州", "Rugao": "如皋",
+                    "Dongtai": "东台", "Haian": "海安",
+                    // ── 浙江 ──
+                    "Hangzhou": "杭州", "Ningbo": "宁波", "Wenzhou": "温州", "Jiaxing": "嘉兴",
+                    "Huzhou": "湖州", "Shaoxing": "绍兴", "Jinhua": "金华", "Quzhou": "衢州",
+                    "Zhoushan": "舟山", "Lishui": "丽水", "Yiwu": "义乌", "Cixi": "慈溪",
+                    "Yuyao": "余姚", "Wenling": "温岭", "Ruian": "瑞安", "Zhuji": "诸暨",
+                    // ── 安徽 ──
+                    "Hefei": "合肥", "Wuhu": "芜湖", "Bengbu": "蚌埠", "Huainan": "淮南",
+                    "Ma'anshan": "马鞍山", "Maanshan": "马鞍山", "Huaibei": "淮北", "Tongling": "铜陵",
+                    "Anqing": "安庆", "Huangshan": "黄山", "Chuzhou": "滁州", "Fuyang": "阜阳",
+                    "Lu'an": "六安", "Luan": "六安", "Bozhou": "亳州", "Chizhou": "池州",
+                    "Xuancheng": "宣城", "Tianchang": "天长", "Mingguang": "明光", "Tongcheng": "桐城",
+                    // ── 福建 ──
+                    "Fuzhou": "福州", "Xiamen": "厦门", "Putian": "莆田", "Sanming": "三明",
+                    "Quanzhou": "泉州", "Zhangzhou": "漳州", "Nanping": "南平", "Longyan": "龙岩",
+                    "Ningde": "宁德", "Jinjiang": "晋江", "Fuqing": "福清", "Longhai": "龙海",
+                    // ── 江西 ──
+                    "Nanchang": "南昌", "Jingdezhen": "景德镇", "Pingxiang": "萍乡", "Jiujiang": "九江",
+                    "Xinyu": "新余", "Yingtan": "鹰潭", "Ganzhou": "赣州", "Ji'an": "吉安", "Jian": "吉安",
+                    "Yichun": "宜春", "Shangrao": "上饶", "Fengcheng": "丰城", "Gaoan": "高安",
+                    // ── 山东 ──
+                    "Jinan": "济南", "Qingdao": "青岛", "Zibo": "淄博", "Zaozhuang": "枣庄",
+                    "Dongying": "东营", "Yantai": "烟台", "Weifang": "潍坊", "Jining": "济宁",
+                    "Tai'an": "泰安", "Taian": "泰安", "Weihai": "威海", "Rizhao": "日照",
+                    "Linyi": "临沂", "Dezhou": "德州", "Liaocheng": "聊城", "Binzhou": "滨州",
+                    "Heze": "菏泽", "Laiwu": "莱芜", "Tengzhou": "滕州", "Zhaoyuan": "招远",
+                    "Penglai": "蓬莱", "Qufu": "曲阜", "Zoucheng": "邹城", "Feicheng": "肥城",
+                    "Xintai": "新泰", "Rongcheng": "荣成", "Rushan": "乳山", "Gaomi": "高密",
+                    "Zhucheng": "诸城", "Shouguang": "寿光", "Qingzhou": "青州", "Changle": "昌乐",
+                    // ── 河南 ──
+                    "Zhengzhou": "郑州", "Kaifeng": "开封", "Luoyang": "洛阳", "Pingdingshan": "平顶山",
+                    "Anyang": "安阳", "Hebi": "鹤壁", "Xinxiang": "新乡", "Jiaozuo": "焦作",
+                    "Puyang": "濮阳", "Xuchang": "许昌", "Luohe": "漯河", "Sanmenxia": "三门峡",
+                    "Nanyang": "南阳", "Shangqiu": "商丘", "Xinyang": "信阳", "Zhoukou": "周口",
+                    "Zhumadian": "驻马店", "Dengzhou": "邓州", "Gongyi": "巩义", "Xinzheng": "新郑",
+                    "Changge": "长葛",
+                    // ── 湖北 ──
+                    "Wuhan": "武汉", "Huangshi": "黄石", "Shiyan": "十堰", "Yichang": "宜昌",
+                    "Xiangyang": "襄阳", "Xiangfan": "襄阳", "Ezhou": "鄂州", "Jingmen": "荆门",
+                    "Xiaogan": "孝感", "Jingzhou": "荆州", "Huanggang": "黄冈", "Xianning": "咸宁",
+                    "Suizhou": "随州", "Enshi": "恩施", "Xiantao": "仙桃", "Qianjiang": "潜江",
+                    "Tianmen": "天门", "Danjiangkou": "丹江口", "Wuxue": "武穴", "Macheng": "麻城",
+                    "Lichuan": "利川",
+                    // ── 湖南 ──
+                    "Changsha": "长沙", "Zhuzhou": "株洲", "Xiangtan": "湘潭", "Hengyang": "衡阳",
+                    "Shaoyang": "邵阳", "Yueyang": "岳阳", "Changde": "常德", "Zhangjiajie": "张家界",
+                    "Yiyang": "益阳", "Chenzhou": "郴州", "Yongzhou": "永州", "Huaihua": "怀化",
+                    "Loudi": "娄底", "Xiangxi": "湘西", "Jishou": "吉首", "Liling": "醴陵", "Xiangxiang": "湘乡",
+                    // ── 广东 ──
+                    "Guangzhou": "广州", "Shaoguan": "韶关", "Shenzhen": "深圳", "Zhuhai": "珠海",
+                    "Shantou": "汕头", "Foshan": "佛山", "Jiangmen": "江门", "Zhanjiang": "湛江",
+                    "Maoming": "茂名", "Zhaoqing": "肇庆", "Huizhou": "惠州", "Meizhou": "梅州",
+                    "Shanwei": "汕尾", "Heyuan": "河源", "Yangjiang": "阳江", "Qingyuan": "清远",
+                    "Dongguan": "东莞", "Zhongshan": "中山", "Chaozhou": "潮州", "Jieyang": "揭阳",
+                    "Yunfu": "云浮", "Shunde": "顺德", "Panyu": "番禺", "Huicheng": "惠城",
+                    // ── 广西 ──
+                    "Nanning": "南宁", "Liuzhou": "柳州", "Guilin": "桂林", "Wuzhou": "梧州",
+                    "Beihai": "北海", "Fangchenggang": "防城港", "Qinzhou": "钦州", "Guigang": "贵港",
+                    "Yulin": "玉林", "Baise": "百色", "Hezhou": "贺州", "Hechi": "河池",
+                    "Laibin": "来宾", "Chongzuo": "崇左", "Guiping": "桂平",
+                    // ── 海南 ──
+                    "Haikou": "海口", "Sanya": "三亚", "Sansha": "三沙", "Danzhou": "儋州",
+                    "Wuzhishan": "五指山", "Qionghai": "琼海", "Wenchang": "文昌", "Wanning": "万宁",
+                    "Dongfang": "东方", "Chengmai": "澄迈",
+                    // ── 四川 ──
+                    "Chengdu": "成都", "Zigong": "自贡", "Panzhihua": "攀枝花", "Luzhou": "泸州",
+                    "Deyang": "德阳", "Mianyang": "绵阳", "Guangyuan": "广元", "Suining": "遂宁",
+                    "Neijiang": "内江", "Leshan": "乐山", "Nanchong": "南充", "Meishan": "眉山",
+                    "Yibin": "宜宾", "Guang'an": "广安", "Guangan": "广安", "Dazhou": "达州",
+                    "Ya'an": "雅安", "Yaan": "雅安", "Bazhong": "巴中", "Ziyang": "资阳",
+                    "Liangshan": "凉山", "Aba": "阿坝", "Garze": "甘孜", "Ganzi": "甘孜", "Xichang": "西昌",
+                    "Dujiangyan": "都江堰", "Mianzhu": "绵竹", "Langzhong": "阆中", "Jiangyou": "江油",
+                    // ── 贵州 ──
+                    "Guiyang": "贵阳", "Liupanshui": "六盘水", "Zunyi": "遵义", "Anshun": "安顺",
+                    "Bijie": "毕节", "Tongren": "铜仁", "Kaili": "凯里", "Duyun": "都匀", "Xingyi": "兴义",
+                    // ── 云南 ──
+                    "Kunming": "昆明", "Qujing": "曲靖", "Yuxi": "玉溪", "Baoshan": "保山",
+                    "Zhaotong": "昭通", "Lijiang": "丽江", "Pu'er": "普洱", "Puer": "普洱",
+                    "Lincang": "临沧", "Dali": "大理", "Chuxiong": "楚雄", "Honghe": "红河",
+                    "Wenshan": "文山", "Xishuangbanna": "西双版纳", "Jinghong": "景洪", "Shangri-La": "香格里拉",
+                    "Gejiu": "个旧", "Kaiyuan": "开远", "Mangshi": "芒市", "Anning": "安宁",
+                    // ── 西藏 ──
+                    "Lhasa": "拉萨", "Shigatse": "日喀则", "Xigaze": "日喀则", "Chamdo": "昌都",
+                    "Qamdo": "昌都", "Nyingchi": "林芝", "Nagqu": "那曲", "Naqu": "那曲",
+                    "Shannan": "山南", "Ali": "阿里", "Ngari": "阿里",
+                    // ── 陕西 ──
+                    "Xi'an": "西安", "Xian": "西安", "Tongchuan": "铜川", "Baoji": "宝鸡",
+                    "Xianyang": "咸阳", "Weinan": "渭南", "Yan'an": "延安", "Yanan": "延安",
+                    "Hanzhong": "汉中", "Ankang": "安康", "Shangluo": "商洛", "Shenmu": "神木", "Hancheng": "韩城",
+                    // ── 甘肃 ──
+                    "Lanzhou": "兰州", "Jiayuguan": "嘉峪关", "Jinchang": "金昌", "Baiyin": "白银",
+                    "Tianshui": "天水", "Wuwei": "武威", "Zhangye": "张掖", "Pingliang": "平凉",
+                    "Jiuquan": "酒泉", "Qingyang": "庆阳", "Dingxi": "定西", "Longnan": "陇南",
+                    "Linxia": "临夏", "Gannan": "甘南", "Dunhuang": "敦煌",
+                    // ── 青海 ──
+                    "Xining": "西宁", "Haidong": "海东", "Haixi": "海西", "Yushu": "玉树",
+                    "Golog": "果洛", "Golok": "果洛", "Hainan": "海南", "Haibei": "海北",
+                    "Huangnan": "黄南", "Golmud": "格尔木", "Delingha": "德令哈",
+                    // ── 宁夏 ──
+                    "Yinchuan": "银川", "Shizuishan": "石嘴山", "Wuzhong": "吴忠", "Guyuan": "固原",
+                    "Zhongwei": "中卫",
+                    // ── 新疆 ──
+                    "Urumqi": "乌鲁木齐", "Wulumuqi": "乌鲁木齐", "Karamay": "克拉玛依", "Turpan": "吐鲁番",
+                    "Hami": "哈密", "Kashgar": "喀什", "Kashi": "喀什", "Hotan": "和田",
+                    "Aksu": "阿克苏", "Korla": "库尔勒", "Shihezi": "石河子", "Ili": "伊犁",
+                    "Yining": "伊宁", "Changji": "昌吉", "Altay": "阿勒泰", "Tacheng": "塔城",
+                    "Bole": "博乐", "Aral": "阿拉尔", "Tumxuk": "图木舒克", "Wujiaqu": "五家渠",
+                    // ── 香港 澳门 台湾 ──
+                    "Hong Kong": "香港", "Hongkong": "香港", "Kowloon": "九龙", "New Territories": "新界",
+                    "Macau": "澳门", "Macao": "澳门",
+                    "Taipei": "台北", "New Taipei": "新北", "Taoyuan": "桃园", "Kaohsiung": "高雄",
+                    "Taichung": "台中", "Tainan": "台南", "Hsinchu": "新竹", "Keelung": "基隆",
+                    "Chiayi": "嘉义", "Pingtung": "屏东", "Yilan": "宜兰", "Hualien": "花莲",
+                    "Taitung": "台东", "Yunlin": "云林", "Changhua": "彰化", "Nantou": "南投",
+                    "Miaoli": "苗栗", "Kinmen": "金门", "Penghu": "澎湖", "Lienchiang": "连江"
                 };
                 var WMO = {
                     0: ["☀️", "晴", "今天阳光正好，出门走走晒晒太阳吧~"],
@@ -91,7 +232,7 @@
                     96: ["⛈️", "雷阵雨", "雷阵雨伴有冰雹，注意安全~"],
                     99: ["⛈️", "强雷暴", "强雷暴天气，待在室内更安全~"]
                 };
-                function cnCity(n) { return CN_CITY[n] || n; }
+                function cnCity(n) { if (!n) return n; var k = String(n).replace(/ City$/i, '').trim(); k = k.charAt(0).toUpperCase() + k.slice(1).toLowerCase(); return CN_CITY[k] || CN_CITY[String(n)] || n; }
                 function tipFor(code, temp, min, max) {
                     var base = WMO[code] ? WMO[code][2] : "今天也要元气满满哦~";
                     var t = Math.round(temp);
@@ -198,7 +339,7 @@
                     if (done) return; done = true;
                     if (res && res.status === 0 && res.result) {
                         var r = res.result, ad = r.ad_info || {};
-                        var cityName = ad.city || ad.province || '未知';
+                        var cityName = cnCity(ad.city || ad.province) || '未知';
                         if (r.location && r.location.lat) fetchWeather(r.location.lat, r.location.lng, cityName);
                         else fallback();
                     } else { fallback(); }
