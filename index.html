@@ -278,18 +278,17 @@
                 function fetchWeather(lat, lon, cityName) {
                     var url = "https://api.open-meteo.com/v1/forecast?latitude=" + lat +
                         "&longitude=" + lon +
-                        "&current=temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m" +
-                        "&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto";
+                        "&current=temperature_2m,weather_code" +
+                        "&daily=temperature_2m_max,temperature_2m_min&timezone=auto";
                     fetch(url).then(function (r) { return r.json(); }).then(function (d) {
-                        var c = d.current;
                         var daily = d.daily;
-                        var code = c.weather_code;
+                        var code = d.current.weather_code;
                         var icon = (WMO[code] || ["☁️"])[0];
                         var desc = (WMO[code] || ["", "天气"])[1];
-                        var tip = tipFor(code, c.temperature_2m, daily.temperature_2m_min[0], daily.temperature_2m_max[0]);
+                        var tmin = Math.round(daily.temperature_2m_min[0]);
+                        var tmax = Math.round(daily.temperature_2m_max[0]);
                         var html = '<div class="w-line1">' + greet(cityName) + '</div>' +
-                            '<div class="w-line2">' + icon + ' ' + Math.round(c.temperature_2m) + '° ' + desc + '</div>' +
-                            '<div class="w-line3">' + tip + '</div>';
+                            '<div class="w-line2">' + cityName + ' ' + icon + ' ' + tmin + '°~' + tmax + '° ' + desc + '</div>';
                         showBar(html);
                     }).catch(function () { showBar(greet()); });
                 }
