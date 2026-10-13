@@ -166,10 +166,14 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: opacity .5s ease;
+            transition: opacity .8s ease, filter .8s ease, backdrop-filter .8s ease, visibility .8s;
         }
         #page-loader.hidden {
             opacity: 0;
+            filter: blur(14px);
+            -webkit-filter: blur(14px);
+            backdrop-filter: blur(0px);
+            -webkit-backdrop-filter: blur(0px);
             pointer-events: none;
             visibility: hidden;
         }
@@ -809,7 +813,7 @@
                 loader.classList.add('hidden');
                 setTimeout(function () {
                     if (loader.parentNode) loader.parentNode.removeChild(loader);
-                }, 600);
+                }, 800);
             }
             // 主路径：等所有资源加载完（最稳）
             window.addEventListener('load', function () { hideLoader(); });
