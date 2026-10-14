@@ -169,8 +169,62 @@
             #weather-card-container .minValue,
             #weather-card-container .maxValue { font-size: 13px; }
         }
+    /* ===== Uiverse 社交卡片 (from Uiverse.io by vinodjangid07) ===== */
+        .uiverse-social.card {
+            width: fit-content;
+            height: fit-content;
+            background-color: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px 16px;
+            gap: 14px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+            border-radius: 16px;
+        }
+        .uiverse-social .socialContainer {
+            width: 46px;
+            height: 46px;
+            background-color: rgba(44, 44, 44, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition-duration: 0.3s;
+            border-radius: 12px;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .uiverse-social .containerOne:hover { background-color: #c71d23; transition-duration: 0.3s; }
+        .uiverse-social .containerTwo:hover { background-color: #24292e; transition-duration: 0.3s; }
+        .uiverse-social .containerThree:hover { background-color: #12b7f5; transition-duration: 0.3s; }
+        .uiverse-social .socialContainer:active {
+            transform: scale(0.9);
+            transition-duration: 0.3s;
+        }
+        .uiverse-social .socialSvg {
+            width: 17px;
+            font-size: 21px;
+            color: #fff;
+            line-height: 1;
+        }
+        .uiverse-social .socialSvg path { fill: rgb(255, 255, 255); }
+        .uiverse-social .socialContainer:hover .socialSvg {
+            animation: slide-in-top 0.3s both;
+        }
+        @keyframes slide-in-top {
+            0% { transform: translateY(-50px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        @media (max-width: 768px) {
+            .uiverse-social.card { padding: 10px 12px; gap: 10px; border-radius: 12px; }
+            .uiverse-social .socialContainer { width: 40px; height: 40px; border-radius: 10px; }
+            .uiverse-social .socialSvg { font-size: 19px; }
+        }
     </style>
-
 </head>
 
 <body oncontextmenu=self.event.returnValue=false onselectstart="return false">
@@ -646,27 +700,17 @@
                         </div>
                         <div class="iUp">
                             <nav class="cover-navigation navigation--social">
-                                <ul class="navigation">
-                                    <li class="navigation__item">
-                                        <a href="https://gitee.com/hsxfk" title="Gitee" target="_blank">
-                                            <j class="fab fa-git"></j>
-                                            <span class="label">Gitee</span>
-                                        </a>
-                                    </li>
-                                    <li class="navigation__item">
-                                        <a href="https://github.com/Xs-plugin" title="Github" target="_blank">
-                                            <j class="iconfont icon-github"></j>
-                                            <span class="label">Github</span>
-                                        </a>
-                                    </li>
-                                    <li class="navigation__item">
-                                        <a href="http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=6QssHRCBfp_xBS0AEPCrWjdobx5s3CAO&authKey=VnRMQWukD6ac2TOP5D%2BkY1jU6arTAtPM3J3C%2FcgVZkCAGEvuNBY%2Bvqkxu38i%2BZuq&noverify=0&group_code=751976647"
-                                            title="QQ" target="_blank">
-                                            <j class="fab fa-qq"></j>
-                                            <span class="label">QQ</span>
-                                        </a>
-                                    </li>
-                                </ul>
+                                <div class="uiverse-social card">
+                                    <a href="https://gitee.com/hsxfk" title="Gitee" target="_blank" class="socialContainer containerOne">
+                                        <j class="socialSvg fab fa-git"></j>
+                                    </a>
+                                    <a href="https://github.com/Xs-plugin" title="Github" target="_blank" class="socialContainer containerTwo">
+                                        <j class="socialSvg iconfont icon-github"></j>
+                                    </a>
+                                    <a href="http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=6QssHRCBfp_xBS0AEPCrWjdobx5s3CAO&authKey=VnRMQWukD6ac2TOP5D%2BkY1jU6arTAtPM3J3C%2FcgVZkCAGEvuNBY%2Bvqkxu38i%2BZuq&noverify=0&group_code=751976647" title="QQ" target="_blank" class="socialContainer containerThree">
+                                        <j class="socialSvg fab fa-qq"></j>
+                                    </a>
+                                </div>
                             </nav>
                         </div>
                     </div>
