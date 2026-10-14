@@ -3,264 +3,123 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>心迹 HEART · 心率监测工具 · AJX</title>
+<title>心迹 HEART · 开源蓝牙心率监测工具</title>
 <style>
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
-  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   :root {
-    --bg-1: #0e1726;
-    --bg-2: #1f2d4c;
-    --card: rgba(255, 255, 255, 0.06);
+    --bg-1: #0e1726; --bg-2: #1f2d4c;
+    --card: rgba(255, 255, 255, 0.055);
     --card-border: rgba(255, 255, 255, 0.10);
-    --accent: #ff5f7a;
-    --accent-2: #ff8a6a;
-    --warm: #fff3f0;
-    --muted: #93a3bd;
-    --good: #38c8a5;
-    --warn: #ffb04d;
-    --danger: #ff5f7a;
+    --accent: #ff5f7a; --accent-2: #ff8a6a;
+    --warm: #fff3f0; --muted: #93a3bd; --good: #38c8a5;
   }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", "Segoe UI", Arial, sans-serif;
-    color: var(--warm);
-    min-height: 100vh;
+    color: var(--warm); min-height: 100vh;
     background:
       radial-gradient(1100px 700px at 80% -10%, rgba(255, 95, 122, 0.16), transparent 60%),
       radial-gradient(900px 600px at 0% 110%, rgba(56, 200, 165, 0.10), transparent 55%),
       linear-gradient(150deg, var(--bg-1) 0%, var(--bg-2) 100%);
-    position: relative;
-    overflow-x: hidden;
+    position: relative; overflow-x: hidden;
   }
-  .grain {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    opacity: 0.035;
-    background-image:
-      repeating-linear-gradient(90deg, rgba(255,255,255,0.9) 0 1px, transparent 1px 80px),
-      repeating-linear-gradient(0deg, rgba(255,255,255,0.9) 0 1px, transparent 1px 80px);
-    z-index: 0;
-  }
-  .wrap {
-    position: relative;
-    z-index: 1;
-    max-width: 860px;
-    margin: 0 auto;
-    padding: 40px 24px 80px;
-  }
-  /* 顶部导航 */
-  .topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 36px;
-  }
-  .nav-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 18px;
-    border-radius: 999px;
-    background: var(--card);
-    border: 1px solid var(--card-border);
-    color: var(--warm);
-    text-decoration: none;
-    font-size: 14px;
-    backdrop-filter: blur(10px);
-    transition: all .25s ease;
-  }
+  .grain { position: fixed; inset: 0; pointer-events: none; opacity: 0.035;
+    background-image: repeating-linear-gradient(90deg, rgba(255,255,255,0.9) 0 1px, transparent 1px 80px),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.9) 0 1px, transparent 1px 80px); z-index: 0; }
+  .wrap { position: relative; z-index: 1; max-width: 880px; margin: 0 auto; padding: 40px 24px 80px; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 36px; }
+  .nav-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 999px;
+    background: var(--card); border: 1px solid var(--card-border); color: var(--warm); text-decoration: none;
+    font-size: 14px; backdrop-filter: blur(10px); transition: all .25s ease; }
   .nav-btn:hover { background: rgba(255,255,255,0.12); transform: translateY(-1px); }
-  .badge-heart {
-    font-size: 12px;
-    letter-spacing: 2px;
-    padding: 6px 14px;
-    border-radius: 999px;
-    background: linear-gradient(120deg, var(--accent), var(--accent-2));
-    color: #fff;
-    font-weight: 600;
-    box-shadow: 0 6px 20px rgba(255, 95, 122, 0.35);
-  }
-  /* 标题 */
+  .badge-heart { font-size: 12px; letter-spacing: 2px; padding: 6px 14px; border-radius: 999px;
+    background: linear-gradient(120deg, var(--accent), var(--accent-2)); color: #fff; font-weight: 600;
+    box-shadow: 0 6px 20px rgba(255, 95, 122, 0.35); }
   .hero { text-align: center; margin-bottom: 40px; }
-  .hero h1 {
-    font-size: clamp(30px, 6vw, 46px);
-    font-weight: 700;
-    letter-spacing: 1px;
-    background: linear-gradient(120deg, #fff 30%, #ffc3cf 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-  .hero .sub {
-    margin-top: 12px;
-    color: var(--muted);
-    font-size: 15px;
-    letter-spacing: 1px;
-  }
-  /* 主心率卡 */
-  .grid {
-    display: grid;
-    grid-template-columns: 1.4fr 1fr;
-    gap: 20px;
-  }
+  .hero h1 { font-size: clamp(30px, 6vw, 46px); font-weight: 700; letter-spacing: 1px;
+    background: linear-gradient(120deg, #fff 30%, #ffc3cf 100%); -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; }
+  .hero .sub { margin-top: 12px; color: var(--muted); font-size: 15px; letter-spacing: 1px; line-height: 1.8; }
+  .badges { margin-top: 24px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .badge { font-size: 13px; padding: 7px 16px; border-radius: 999px;
+    background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); color: var(--warm); letter-spacing: 1px; }
+  .grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px; }
   @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
-  .card {
-    background: var(--card);
-    border: 1px solid var(--card-border);
-    border-radius: 24px;
-    padding: 28px;
-    backdrop-filter: blur(14px);
-    box-shadow: 0 20px 50px rgba(0,0,0,0.25);
-  }
-  .card-label {
-    font-size: 12px;
-    letter-spacing: 2px;
-    color: var(--muted);
-    text-transform: uppercase;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .live-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 0 0 rgba(255,95,122,0.5);
-    animation: pulse 1.6s infinite;
-  }
-  @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(255,95,122,0.5); }
-    70% { box-shadow: 0 0 0 12px rgba(255,95,122,0); }
-    100% { box-shadow: 0 0 0 0 rgba(255,95,122,0); }
-  }
-  /* 大数字 */
-  .bpm-row { display: flex; align-items: baseline; gap: 12px; }
-  .bpm {
-    font-size: clamp(64px, 14vw, 96px);
-    font-weight: 300;
-    line-height: 1;
-    color: var(--warm);
-    letter-spacing: -2px;
-    font-variant-numeric: tabular-nums;
-  }
+  .card { background: var(--card); border: 1px solid var(--card-border); border-radius: 24px; padding: 28px;
+    backdrop-filter: blur(14px); box-shadow: 0 20px 50px rgba(0,0,0,0.25); }
+  .card-label { font-size: 12px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase;
+    margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .card-label i { width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
+    box-shadow: 0 0 0 0 rgba(255,95,122,0.5); animation: pulse 1.6s infinite; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255,95,122,0.5); } 70% { box-shadow: 0 0 0 12px rgba(255,95,122,0); } 100% { box-shadow: 0 0 0 0 rgba(255,95,122,0); } }
+  .bpm { font-size: clamp(56px, 12vw, 84px); font-weight: 300; line-height: 1; color: var(--warm); letter-spacing: -2px; font-variant-numeric: tabular-nums; }
   .bpm-unit { font-size: 18px; color: var(--muted); letter-spacing: 1px; }
-  .state {
-    margin-top: 16px;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    border-radius: 999px;
-    font-size: 13px;
-    font-weight: 600;
-    background: rgba(56, 200, 165, 0.14);
-    color: var(--good);
-  }
+  .state { margin-top: 16px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px;
+    border-radius: 999px; font-size: 13px; font-weight: 600; background: rgba(56, 200, 165, 0.14); color: var(--good); }
   .state i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-  /* ECG 面板 */
-  .ecg-card { margin-top: 20px; }
-  .ecg-wrap {
-    border-radius: 18px;
-    background: linear-gradient(180deg, rgba(255,95,122,0.06), rgba(14,23,38,0.3));
-    border: 1px solid rgba(255,255,255,0.08);
-    padding: 8px 0;
-    overflow: hidden;
-  }
-  .ecg-grid {
-    background-image:
-      linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
-    background-size: 26px 26px;
-  }
+  .ecg-wrap { border-radius: 18px; background: linear-gradient(180deg, rgba(255,95,122,0.06), rgba(14,23,38,0.3));
+    border: 1px solid rgba(255,255,255,0.08); padding: 8px 0; overflow: hidden; margin-top: 20px; }
+  .ecg-grid { background-image: linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px); background-size: 26px 26px; }
   svg.ecg { width: 100%; height: 96px; display: block; }
-  .ecg path {
-    fill: none;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-  /* 统计 */
-  .stats { display: flex; flex-direction: column; gap: 16px; }
-  .stat {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 18px;
-    border-radius: 16px;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid var(--card-border);
-  }
-  .stat .k { font-size: 13px; color: var(--muted); }
-  .stat .v { font-size: 20px; font-weight: 600; color: var(--warm); font-variant-numeric: tabular-nums; }
-  /* 说明区 */
-  .about {
-    margin-top: 20px;
-    font-size: 14px;
-    color: var(--muted);
-    line-height: 1.9;
-  }
-  .about b { color: var(--warm); }
-  .about .item { display: flex; gap: 10px; margin-top: 6px; }
-  .about .item::before { content: "·"; color: var(--accent); font-weight: 700; }
-  /* 阶梯时间线 */
-  .timeline {
-    margin-top: 28px;
-    padding: 22px;
-    border-radius: 18px;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid var(--card-border);
-  }
-  .timeline .tl-label { font-size: 12px; letter-spacing: 2px; color: var(--muted); margin-bottom: 14px; }
-  .seg { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-top: 1px dashed rgba(255,255,255,0.08); }
-  .seg:first-of-type { border-top: none; }
-  .seg .time { font-size: 13px; color: var(--muted); width: 46px; }
-  .seg .bar { flex: 1; height: 8px; border-radius: 999px; background: rgba(255,255,255,0.06); overflow: hidden; }
-  .seg .bar > i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent-2), var(--accent)); }
-  .seg .val { font-size: 13px; color: var(--warm); width: 40px; text-align: right; font-variant-numeric: tabular-nums; }
-  /* 底部导航 */
-  .footer-nav {
-    margin-top: 44px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 14px;
-  }
-  .footer-nav .nav-btn { font-size: 14px; }
+  svg.ecg path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .feature-list { display: flex; flex-direction: column; gap: 14px; }
+  .feature { display: flex; gap: 14px; padding: 14px 16px; border-radius: 16px;
+    background: rgba(255,255,255,0.04); border: 1px solid var(--card-border); }
+  .feature .icon { flex: none; width: 38px; height: 38px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+    background: linear-gradient(120deg, rgba(255,95,122,0.2), rgba(255,138,106,0.2)); }
+  .feature .tx .t { font-size: 14px; font-weight: 600; color: var(--warm); }
+  .feature .tx .d { font-size: 13px; color: var(--muted); margin-top: 3px; line-height: 1.6; }
+  .section { margin-top: 28px; padding: 26px; border-radius: 24px; background: var(--card);
+    border: 1px solid var(--card-border); backdrop-filter: blur(14px); box-shadow: 0 20px 50px rgba(0,0,0,0.25); }
+  .section-title { font-size: 12px; letter-spacing: 2px; color: var(--muted); margin-bottom: 20px; text-transform: uppercase; }
+  .platform-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 640px) { .platform-grid { grid-template-columns: 1fr; } }
+  .platform { padding: 18px; border-radius: 16px; background: rgba(255,255,255,0.04); border: 1px solid var(--card-border); }
+  .platform .p-name { font-size: 15px; font-weight: 600; color: var(--warm); }
+  .platform .p-tag { font-size: 11px; margin-top: 6px; display: inline-block; padding: 3px 10px;
+    border-radius: 999px; background: rgba(255,138,106,0.14); color: var(--accent-2); }
+  .platform .p-d { font-size: 13px; color: var(--muted); margin-top: 10px; line-height: 1.6; }
+  .usage { margin-top: 28px; }
+  .step { display: flex; gap: 16px; padding: 16px 0; border-top: 1px dashed rgba(255,255,255,0.08); align-items: flex-start; }
+  .step:first-child { border-top: none; }
+  .step .num { flex: none; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; font-size: 14px; font-weight: 700; background: linear-gradient(120deg, var(--accent), var(--accent-2)); color: #fff; }
+  .step .tx .t { font-size: 14px; font-weight: 600; color: var(--warm); }
+  .step .tx .d { font-size: 13px; color: var(--muted); margin-top: 3px; line-height: 1.6; }
+  .footer-nav { margin-top: 44px; display: flex; justify-content: space-between; align-items: center; gap: 14px; }
   .footer-nav .spacer { flex: 1; }
-  .credit {
-    text-align: center;
-    margin-top: 40px;
-    color: var(--muted);
-    font-size: 12px;
-    letter-spacing: 1px;
-    opacity: .7;
-  }
+  .credit { text-align: center; margin-top: 40px; color: var(--muted); font-size: 12px; letter-spacing: 1px; opacity: .7; }
+  .codetext { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; color: var(--warm);
+    background: rgba(0,0,0,0.3); padding: 14px 18px; border-radius: 12px; margin-top: 12px; line-height: 1.7; overflow-x: auto; white-space: pre; }
+  .repo-link { display: inline-flex; align-items: center; gap: 8px; margin-top: 18px; padding: 12px 20px;
+    border-radius: 999px; text-decoration: none; font-size: 14px; font-weight: 600;
+    background: linear-gradient(120deg, var(--accent), var(--accent-2)); color: #fff;
+    box-shadow: 0 8px 24px rgba(255,95,122,0.35); transition: transform .2s ease; }
+  .repo-link:hover { transform: translateY(-2px); }
 </style>
 </head>
 <body>
 <div class="grain"></div>
 <div class="wrap">
-
   <div class="topbar">
     <a class="nav-btn" href="index.html">← 返回主页</a>
     <span class="badge-heart">♥ 心迹 HEART</span>
   </div>
-
   <div class="hero">
     <h1>心迹 · Heart</h1>
-    <div class="sub">心率监测工具 · 实时脉搏视窗</div>
+    <div class="sub">开源蓝牙心率监测工具<br>蓝牙 BLE 连接 · 跨平台广播 · OBS 直播叠加 · MQTT 远程推送</div>
+    <div class="badges">
+      <span class="badge">Java · Android</span>
+      <span class="badge">Go · PC 客户端</span>
+      <span class="badge">Python · 桌面版</span>
+      <span class="badge">MQTT · 远程推送</span>
+    </div>
   </div>
-
   <div class="grid">
     <div class="card">
-      <div class="card-label"><span class="live-dot"></span> LIVE 实时心率</div>
-      <div class="bpm-row">
-        <span class="bpm" id="bpm">72</span>
-        <span class="bpm-unit">BPM</span>
-      </div>
+      <div class="card-label"><i></i> LIVE 实时心率</div>
+      <div><span class="bpm" id="bpm">72</span><span class="bpm-unit"> BPM</span></div>
       <span class="state"><i></i><span id="stateText">稳定 · 正常范围</span></span>
       <div class="ecg-wrap ecg-grid">
         <svg class="ecg" viewBox="0 0 600 96" preserveAspectRatio="none">
@@ -268,53 +127,41 @@
         </svg>
       </div>
     </div>
-
     <div class="card">
-      <div class="card-label">今日概览</div>
-      <div class="stats">
-        <div class="stat"><span class="k">最高</span><span class="v" id="max">98</span></div>
-        <div class="stat"><span class="k">最低</span><span class="v" id="min">58</span></div>
-        <div class="stat"><span class="k">平均</span><span class="v" id="avg">76</span></div>
-        <div class="stat"><span class="k">波动</span><span class="v">± 6 bpm</span></div>
+      <div class="card-label">核心特性</div>
+      <div class="feature-list">
+        <div class="feature"><div class="icon">📡</div><div class="tx"><div class="t">蓝牙 BLE 连接</div><div class="d">标准心率服务 0x180D，兼容 Polar、小米手环等</div></div></div>
+        <div class="feature"><div class="icon">🪟</div><div class="tx"><div class="t">悬浮窗</div><div class="d">5 种样式，自定义颜色/字号/透明度</div></div></div>
+        <div class="feature"><div class="icon">📊</div><div class="tx"><div class="t">HRV 实时监测</div><div class="d">SDNN 实时计算，判断心脏负荷</div></div></div>
+        <div class="feature"><div class="icon">🎮</div><div class="tx"><div class="t">游戏模式</div><div class="d">自动切换超小悬浮窗，退出后恢复</div></div></div>
       </div>
     </div>
   </div>
-
-  <div class="card ecg-card">
-    <div class="card-label">心电图 · ECG LEAD II</div>
-    <div class="ecg-wrap ecg-grid">
-      <svg class="ecg" viewBox="0 0 600 96" preserveAspectRatio="none">
-        <path d="M0,48 L50,48 L64,48 L74,26 L86,72 L98,48 L150,48 L164,48 L174,26 L186,72 L198,48 L250,48 L264,48 L274,26 L286,72 L298,48 L350,48 L364,48 L374,26 L386,72 L398,48 L450,48 L464,48 L474,26 L486,72 L498,48 L550,48 L564,48 L574,26 L586,72 L600,48" stroke="#ff8a6a" stroke-width="2.2" style="filter: drop-shadow(0 0 5px rgba(255,138,106,0.5));"/>
-      </svg>
+  <div class="section">
+    <div class="section-title">跨平台 · 生态</div>
+    <div class="platform-grid">
+      <div class="platform"><div class="p-name">手机端</div><span class="p-tag">Android</span><div class="p-d">蓝牙连接 + 实时图表 + 悬浮窗 + 心率广播 + MQTT 推送</div></div>
+      <div class="platform"><div class="p-name">PC 客户端</div><span class="p-tag">Go · ~5.6MB</span><div class="p-d">单文件无依赖，OBS 直播叠加，MQTT 远程接收</div></div>
+      <div class="platform"><div class="p-name">桌面版</div><span class="p-tag">Python · tkinter</span><div class="p-d">悬浮窗 + HRV 折线图 + 局域网/USB 直连</div></div>
     </div>
-    <div class="about" style="margin-top:18px;">
-      <div class="item"><span><b>心迹 HEART</b> 为心率监测演示工具，数据用于直观展示项目气质。</span></div>
-      <div class="item"><span>波形由 SVG 绘制，跟随实时读数动态刷新。</span></div>
-      <div class="item"><span>设计语言：现代医疗科技 · 珊瑚红心跳主题。</span></div>
-    </div>
+    <a class="repo-link" href="https://github.com/a2006-dev/heart" target="_blank">→ 查看 GitHub 仓库</a>
   </div>
-
-  <div class="timeline">
-    <div class="tl-label">今日心率 · 分时分布</div>
-    <div class="seg"><span class="time">06:00</span><div class="bar"><i style="width:52%"></i></div><span class="val">61</span></div>
-    <div class="seg"><span class="time">09:00</span><div class="bar"><i style="width:78%"></i></div><span class="val">84</span></div>
-    <div class="seg"><span class="time">12:00</span><div class="bar"><i style="width:92%"></i></div><span class="val">98</span></div>
-    <div class="seg"><span class="time">15:00</span><div class="bar"><i style="width:66%"></i></div><span class="val">70</span></div>
-    <div class="seg"><span class="time">18:00</span><div class="bar"><i style="width:74%"></i></div><span class="val">79</span></div>
-    <div class="seg"><span class="time">21:00</span><div class="bar"><i style="width:58%"></i></div><span class="val">64</span></div>
+  <div class="section usage">
+    <div class="section-title">快速开始</div>
+    <div class="step"><div class="num">1</div><div class="tx"><div class="t">手机开启心率广播</div><div class="d">心迹 → 设置 → 「心率广播」</div></div></div>
+    <div class="step"><div class="num">2</div><div class="tx"><div class="t">PC 连接</div><div class="d">heart_client.exe 192.168.1.5:9090，或浏览器查看 localhost:9091</div></div></div>
+    <div class="step"><div class="num">3</div><div class="tx"><div class="t">OBS 直播叠加</div><div class="d">浏览器来源 URL: localhost:9091?transparent=1</div></div></div>
+    <div class="codetext"># MQTT 远程连接（连接码格式）
+HEARTBEAT#V1#GUEMSNDM#broker-cn.emqx.io:1883#heart/rate</div>
   </div>
-
   <div class="footer-nav">
     <a class="nav-btn" href="index.html">← 主页</a>
     <span class="spacer"></span>
     <a class="nav-btn" href="logcatcher.html">下一页 · LogCatcher →</a>
   </div>
-
   <div class="credit">heart · 心迹 · AJX 个人站</div>
 </div>
-
 <script>
-  // 实时心率模拟
   const bpmEl = document.getElementById('bpm');
   const stateEl = document.getElementById('stateText');
   let base = 72;
@@ -322,14 +169,9 @@
   setInterval(() => {
     base = Math.max(58, Math.min(98, base + rand(-3, 3)));
     bpmEl.textContent = base;
-    // 状态判断
     if (base < 60) stateEl.textContent = '偏低 · 放松状态';
     else if (base > 90) stateEl.textContent = '偏高 · 活动区间';
     else stateEl.textContent = '稳定 · 正常范围';
-    // 更新统计
-    document.getElementById('max').textContent = 98;
-    document.getElementById('min').textContent = 58;
-    document.getElementById('avg').textContent = Math.round((98 + 58 + 2*base) / 4);
   }, 2400);
 </script>
 </body>
