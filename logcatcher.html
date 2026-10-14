@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LogCatcher · Android Logcat Terminal</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { min-height: 100%; }
+body {
+    background: #0b0f14;
+    color: #c8d3dc;
+    font-family: "JetBrains Mono", "Fira Code", "SF Mono", "Consolas", "Menlo", monospace;
+    overflow-x: hidden;
+    position: relative;
+    font-size: 14px;
+    line-height: 1.7;
+}
+/* CRT 扫描线 */
+body::before {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 99;
+    background: repeating-linear-gradient(0deg, rgba(255,255,255,0.015) 0 1px, transparent 1px 3px);
+}
+body::after {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 98;
+    background: radial-gradient(ellipse at 50% 40%, transparent 55%, rgba(0,0,0,0.32) 100%);
+}
+::selection { background: rgba(61,220,132,0.3); }
+
+.wrap { max-width: 1020px; margin: 0 auto; padding: 24px 18px 48px; position: relative; z-index: 10; }
+
+/* ── 终端窗口 ── */
+.term {
+    background: #0e141b;
+    border: 1px solid #22303f;
+    border-radius: 12px;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.6), 0 20px 60px rgba(0,0,0,0.55);
+    overflow: hidden;
+}
+.term-bar {
+    display: flex; align-items: center; gap: 8px;
+    background: #131a23;
+    border-bottom: 1px solid #1e2a38;
+    padding: 10px 14px;
+    user-select: none;
+}
+.term-bar .dots { display: flex; gap: 7px; }
+.term-bar .dots i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+.term-bar .dots i:nth-child(1) { background: #ff5f57; }
+.term-bar .dots i:nth-child(2) { background: #ffbd2e; }
+.term-bar .dots i:nth-child(3) { background: #28c840; }
+.term-bar .title { margin-left: 10px; font-size: 12px; color: #7f8c98; letter-spacing: 0.5px; flex: 1; text-align: center; }
+.term-bar .tag { font-size: 10.5px; color: #3ddc84; border: 1px solid rgba(61,220,132,0.4); padding: 1px 8px; border-radius: 3px; letter-spacing: 1px; }
+.term-body { padding: 20px 22px; }
+
+/* ── 顶部导航行（终端命令式返回） ── */
+.top-cmd {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+    font-size: 13px; color: #7f8c98; padding: 4px 2px 14px;
+}
+.top-cmd .prompt { color: #3ddc84; }
+.top-cmd a {
+    color: #66d9ef; text-decoration: none; border-bottom: 1px dashed rgba(102,217,239,0.4);
+    transition: color .2s;
+}
+.top-cmd a:hover { color: #8beafd; }
+.top-cmd .arrow { color: #ffb000; }
+
+/* ── HERO ── */
+.hero { padding: 10px 0 26px; }
+.hero .ascii {
+    font-size: clamp(22px, 4.5vw, 40px); font-weight: 800; letter-spacing: 2px;
+    color: #e8f5ee;
+    text-shadow: 0 0 18px rgba(61,220,132,0.5);
+    white-space: pre; line-height: 1.25;
+}
+.hero .ascii .g { color: #3ddc84; }
+.hero .sub {
+    margin-top: 14px; font-size: clamp(13px, 2vw, 15px); color: #9fb0bd; letter-spacing: 0.5px;
+}
+.hero .sub b { color: #3ddc84; font-weight: 600; }
+.hero .meta-line { margin-top: 16px; font-size: 12.5px; color: #7f8c98; }
+.hero .meta-line .k { color: #66d9ef; }
+.hero .meta-line .v { color: #c8d3dc; }
+.hr { border: none; border-top: 1px dashed #22303f; margin: 0 0 24px; }
+
+/* ── 区块标题 ── */
+.sec-title {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 15px; font-weight: 700; color: #3ddc84; letter-spacing: 1px;
+    margin: 30px 0 14px;
+}
+.sec-title::before { content: '▸'; color: #ffb000; }
+.sec-title .cnt { font-size: 11px; color: #56626e; font-weight: 400; letter-spacing: 0; }
+
+/* ── 功能卡片 ── */
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.card {
+    background: #0e141b; border: 1px solid #1e2a38; border-radius: 10px;
+    padding: 16px 16px 14px; transition: border-color .25s, transform .25s, box-shadow .25s;
+}
+.card:hover { border-color: rgba(61,220,132,0.55); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(61,220,132,0.08); }
+.card .c-head { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 700; color: #e8f5ee; margin-bottom: 8px; }
+.card .c-head .ic { width: 8px; height: 8px; border-radius: 2px; background: #3ddc84; box-shadow: 0 0 8px rgba(61,220,132,0.7); flex: none; }
+.card .c-head .ic.amber { background: #ffb000; box-shadow: 0 0 8px rgba(255,176,0,0.7); }
+.card .c-head .ic.cyan { background: #66d9ef; box-shadow: 0 0 8px rgba(102,217,239,0.7); }
+.card .c-head .ic.red { background: #ff5555; box-shadow: 0 0 8px rgba(255,85,85,0.7); }
+.card .c-desc { font-size: 12.5px; line-height: 1.75; color: #9fb0bd; }
+.card .c-desc code { background: #182230; color: #8beafd; padding: 1px 5px; border-radius: 3px; font-size: 11.5px; font-family: inherit; }
+
+/* ── 信息面板（k/v 行） ── */
+.panel { background: #0e141b; border: 1px solid #1e2a38; border-radius: 10px; padding: 16px 18px; overflow-x: auto; }
+.kv { width: 100%; border-collapse: collapse; font-size: 13px; }
+.kv td { padding: 7px 0; vertical-align: top; }
+.kv .k { color: #66d9ef; width: 190px; white-space: nowrap; padding-right: 16px; }
+.kv .k::before { content: '::'; color: #56626e; margin-right: 8px; }
+.kv .v { color: #c8d3dc; }
+.kv .v .req { color: #ffb000; }
+.kv .warn { color: #ff5555; }
+
+/* ── 使用流程（命令步骤） ── */
+.steps { display: flex; flex-direction: column; gap: 0; }
+.step { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px dashed #1a2531; }
+.step:last-child { border-bottom: none; }
+.step .no { flex: none; width: 34px; height: 34px; border-radius: 8px; background: #131c26; border: 1px solid #22303f; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #ffb000; }
+.step .body { min-width: 0; }
+.step .t { font-size: 13.5px; font-weight: 700; color: #e8f5ee; margin-bottom: 3px; }
+.step .d { font-size: 12.5px; color: #9fb0bd; line-height: 1.7; }
+.step .d code { background: #182230; color: #8beafd; padding: 1px 5px; border-radius: 3px; font-size: 11.5px; font-family: inherit; }
+
+/* ── 代码块（tree / 终端输出） ── */
+.term-code {
+    background: #090d12; border: 1px solid #1a2531; border-radius: 10px; padding: 14px 16px;
+    font-size: 12.5px; line-height: 1.8; color: #a8b6c2; overflow-x: auto; white-space: pre;
+}
+.term-code .c { color: #56626e; }
+.term-code .g { color: #3ddc84; }
+.term-code .y { color: #ffb000; }
+.term-code .cy { color: #66d9ef; }
+.term-code .r { color: #ff5555; }
+
+/* ── 实时 logcat 窗口 ── */
+.logwin { background: #070b10; border: 1px solid #1a2531; border-radius: 10px; padding: 12px 14px; min-height: 150px; max-height: 220px; overflow-y: auto; font-size: 12px; line-height: 1.8; font-family: inherit; scrollbar-width: thin; }
+.logwin::-webkit-scrollbar { width: 6px; }
+.logwin::-webkit-scrollbar-thumb { background: #22303f; border-radius: 3px; }
+.logwin .ln { white-space: nowrap; }
+.logwin .ln .ts { color: #56626e; }
+.logwin .ln .tag { color: #66d9ef; }
+.logwin .ln .lvl-D { color: #7f8c98; }
+.logwin .ln .lvl-I { color: #3ddc84; }
+.logwin .ln .lvl-E { color: #ff5555; font-weight: 700; }
+.logwin .ln .lvl-W { color: #ffb000; }
+.logwin .cursor { display: inline-block; width: 8px; height: 14px; background: #3ddc84; vertical-align: -2px; animation: blink 1s steps(2) infinite; }
+@keyframes blink { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
+
+/* ── 下载 / 仓库 ── */
+.cta { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+.cta-a {
+    display: block; text-decoration: none; background: #0e141b; border: 1px solid #22303f; border-radius: 10px;
+    padding: 16px 18px; transition: all .25s; position: relative; overflow: hidden;
+}
+.cta-a:hover { border-color: #3ddc84; transform: translateY(-2px); box-shadow: 0 10px 30px rgba(61,220,132,0.12); }
+.cta-a .cmd { font-size: 11.5px; color: #56626e; letter-spacing: 0.5px; }
+.cta-a .cmd .ok { color: #3ddc84; }
+.cta-a .name { font-size: 15px; font-weight: 700; color: #e8f5ee; margin: 6px 0 4px; }
+.cta-a .name .arrow { color: #ffb000; }
+.cta-a .desc { font-size: 12px; color: #9fb0bd; line-height: 1.6; }
+.cta-a .badge { position: absolute; top: 14px; right: 14px; font-size: 10px; color: #ffb000; border: 1px solid rgba(255,176,0,0.4); padding: 1px 7px; border-radius: 3px; letter-spacing: 1px; }
+
+/* ── 已知问题 ── */
+.issue { display: flex; gap: 12px; background: rgba(255,85,85,0.05); border: 1px solid rgba(255,85,85,0.25); border-radius: 10px; padding: 13px 16px; margin-bottom: 10px; font-size: 12.5px; line-height: 1.7; color: #d8a9a9; }
+.issue .x { color: #ff5555; font-weight: 700; flex: none; }
+.issue b { color: #ff7d7d; }
+
+/* ── 翻页导航 ── */
+.page-nav {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    background: #0e141b; border: 1px solid #22303f; border-radius: 12px;
+    padding: 12px 16px; margin-top: 34px; flex-wrap: wrap;
+}
+.page-nav a {
+    display: flex; align-items: center; gap: 6px; text-decoration: none;
+    font-size: 13px; letter-spacing: 0.5px; color: #9fb0bd; transition: color .2s; padding: 6px 10px; border-radius: 8px;
+}
+.page-nav a:hover { color: #3ddc84; background: rgba(61,220,132,0.06); }
+.page-nav a.home-btn { color: #66d9ef; border: 1px solid rgba(102,217,239,0.35); }
+.page-nav a.home-btn:hover { color: #8beafd; border-color: #66d9ef; }
+.page-nav .nav-label { font-size: 10.5px; color: #56626e; letter-spacing: 1px; }
+
+.footer { text-align: center; margin-top: 34px; font-size: 12px; color: #56626e; letter-spacing: 1px; line-height: 1.8; }
+.footer .g { color: #3ddc84; }
+.footer a { color: #7f8c98; text-decoration: none; }
+.footer a:hover { color: #3ddc84; }
+
+@media (max-width: 640px) {
+    .wrap { padding: 16px 10px 28px; }
+    .term-body { padding: 14px 12px; }
+    .kv .k { width: 140px; }
+    .page-nav { flex-direction: column; align-items: stretch; }
+    .page-nav a { justify-content: center; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+    <div class="top-cmd">
+        <span class="prompt">$</span>
+        <span>cd ~/ajx &amp;&amp; ./index.html</span>
+        <span class="arrow">→</span>
+        <a href="./index.html">返回主页</a>
+        <span class="arrow">·</span>
+        <span>device: <a href="https://github.com/a2006-dev/LogCatcher" target="_blank">github.com/a2006-dev/LogCatcher</a></span>
+    </div>
+
+    <!-- 主终端窗口 -->
+    <div class="term">
+        <div class="term-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <div class="title">logcatcher — Android logcat capture · console mode</div>
+            <div class="tag">SHIZUKU</div>
+        </div>
+        <div class="term-body">
+
+            <!-- HERO -->
+            <div class="hero">
+                <div class="ascii"><span class="g">▚▚</span> LOG CATCHER <span class="g">▞▞</span></div>
+                <p class="sub">Android 日志捕获应用 · <b>Console 极简控制台风格</b> · 基于 Shizuku 实时抓取指定应用日志</p>
+                <div class="meta-line">
+                    <span class="k">API</span> : <span class="v">28+</span> &nbsp;·&nbsp;
+                    <span class="k">Kotlin</span> : <span class="v">1.9.20</span> &nbsp;·&nbsp;
+                    <span class="k">License</span> : <span class="v">MIT</span> &nbsp;·&nbsp;
+                    <span class="k">Shizuku</span> : <span class="v">13.1.5</span>
+                </div>
+            </div>
+
+            <hr class="hr">
+
+            <!-- 功能 -->
+            <div class="sec-title">CORE FEATURES <span class="cnt">// 核心功能</span></div>
+            <div class="grid">
+                <div class="card">
+                    <div class="c-head"><span class="ic"></span>应用选择器</div>
+                    <div class="c-desc">列出所有已安装应用，支持<code>搜索</code>与<code>系统应用切换</code>，快速定位目标进程。</div>
+                </div>
+                <div class="card">
+                    <div class="c-head"><span class="ic cyan"></span>实时日志捕获</div>
+                    <div class="c-desc">通过 Shizuku 执行 <code>logcat</code>，按 <code>PID</code> 过滤指定应用的全部日志输出，终端式实时刷新。</div>
+                </div>
+                <div class="card">
+                    <div class="c-head"><span class="ic red"></span>崩溃检测</div>
+                    <div class="c-desc">自动检测进程退出时的 <code>FATAL EXCEPTION</code>，<b>双通道</b>捕获崩溃堆栈，不放过任何异常。</div>
+                </div>
+                <div class="card">
+                    <div class="c-head"><span class="ic amber"></span>日志保存 / 分享</div>
+                    <div class="c-desc">一键保存为 <code>.txt</code> 至 <code>Download/LogCatcher/</code>，通过 FileProvider 直接分享。</div>
+                </div>
+                <div class="card">
+                    <div class="c-head"><span class="ic"></span>两种捕获模式</div>
+                    <div class="c-desc"><code>普通模式</code>输出全部日志；<code>错误模式</code>仅保留 E/W/F 级别 + 异常关键词，脏数据零干扰。</div>
+                </div>
+                <div class="card">
+                    <div class="c-head"><span class="ic cyan"></span>双层主题</div>
+                    <div class="c-desc">Material 3 <b>亮 / 暗双主题</b>，27 个语义化色彩 token，终端式简洁界面。</div>
+                </div>
+            </div>
+
+            <!-- 前置条件 -->
+            <div class="sec-title">REQUIREMENTS <span class="cnt">// 前置条件</span></div>
+            <div class="panel">
+                <table class="kv">
+                    <tr><td class="k">Android 版本</td><td class="v">Android 9.0 <span class="req">(API 28)</span> 或更高</td></tr>
+                    <tr><td class="k">Shizuku</td><td class="v">必须安装并授权 <span class="req">Shizuku v13+</span> — <a href="https://shizuku.rikka.app" target="_blank" style="color:#66d9ef;">shizuku.rikka.app</a></td></tr>
+                    <tr><td class="k">存储权限</td><td class="v">Android 9 以下需手动授权存储权限（targetSdk 已声明 maxSdk=28）</td></tr>
+                </table>
+            </div>
+
+            <!-- 使用流程 -->
+            <div class="sec-title">USAGE <span class="cnt">// 捕获流程 · 4 步</span></div>
+            <div class="panel">
+                <div class="steps">
+                    <div class="step">
+                        <div class="no">01</div>
+                        <div class="body">
+                            <div class="t">授权 Shizuku</div>
+                            <div class="d">首次启动点击「去授权」，通过 Shizuku 授权后获得特权进程能力。</div>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="no">02</div>
+                        <div class="body">
+                            <div class="t">选择应用</div>
+                            <div class="d">顶部「选择应用」，从列表中选择目标应用（可搜索、可切系统应用）。</div>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="no">03</div>
+                        <div class="body">
+                            <div class="t">启动捕获</div>
+                            <div class="d">点击 <code>▶</code> 自动拉起目标 App，按 PID 持续过滤 <code>logcat</code> 输出。</div>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="no">04</div>
+                        <div class="body">
+                            <div class="t">保存 / 分享</div>
+                            <div class="d">底部操作栏保存 <code>.txt</code> 或直接分享；进程退出自动做崩溃检查。</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 实时输出演示 -->
+            <div class="sec-title">LIVE OUTPUT <span class="cnt">// 实时输出演示</span></div>
+            <div class="logwin" id="logwin">
+                <div class="ln"><span class="ts">[10-14 18:23:41.302]</span> <span class="lvl-I">I/LogCatcher</span>: <span class="g">● 已连接 Shizuku (pid=xxxx)</span></div>
+                <div class="ln"><span class="ts">[10-14 18:23:41.418]</span> <span class="lvl-I">I/LogCatcher</span>: 正在捕获 → com.forgetax.game</div>
+                <div class="ln"><span class="ts">[10-14 18:23:42.011]</span> <span class="lvl-D">D/Mono</span>: GC_TLAB: 0 bytes freed</div>
+                <div class="ln"><span class="ts">[10-14 18:23:42.137]</span> <span class="lvl-D">D/Unity</span>: Loaded scene: MainScene</div>
+                <div class="ln"><span class="ts">[10-14 18:23:43.876]</span> <span class="lvl-W">W/BatteryStats</span>: battery level dropped 1%</div>
+                <div class="ln"><span class="ts">[10-14 18:23:45.902]</span> <span class="lvl-E">E/AndroidRuntime</span>: FATAL EXCEPTION: main</div>
+                <div class="ln"><span class="ts">[10-14 18:23:45.903]</span> <span class="lvl-E">E/AndroidRuntime</span>: Process: com.forgetax.game, PID: 12345</div>
+                <div class="ln"><span class="ts">[10-14 18:23:46.120]</span> <span class="lvl-I">I/LogCatcher</span>: <span class="g">⚠ 检测到异常退出，已保存崩溃堆栈 → Download/LogCatcher/crash_20261014.log</span></div>
+                <div class="ln"><span class="ts">[10-14 18:23:46.201]</span> <span class="lvl-I">I/LogCatcher</span>: <span class="g">● 捕获完成 · 共 1284 行 · 耗时 4.9s</span><span class="cursor"></span></div>
+            </div>
+
+            <!-- 技术架构 -->
+            <div class="sec-title">ARCHITECTURE <span class="cnt">// 技术架构</span></div>
+            <div class="term-code"><span class="c"># tree app/src — 代码结构</span>
+<span class="g">app/</span>
+├── src/main/
+│   ├── java/com/logcatcher/
+│   │   ├── <span class="cy">MainActivity.kt</span>      <span class="c"># 主界面 + 核心捕获 (~671 行)</span>
+│   │   └── <span class="cy">ShizukuManager.kt</span>   <span class="c"># Shizuku 封装 + 进程管理 (~212 行)</span>
+│   ├── res/
+│   │   ├── layout/   <span class="c"># 3 布局: 控制台 + 对话框 + 应用列表项</span>
+│   │   ├── drawable/ <span class="c"># 13 矢量图标 + 形状资源</span>
+│   │   └── values/   <span class="c"># 27 语义化色彩 / M3 双主题</span>
+│   └── <span class="cy">AndroidManifest.xml</span>
+├── libs/
+│   ├── <span class="y">shizuku-api-13.1.5.aar</span>
+│   ├── <span class="y">shizuku-aidl-13.1.5.aar</span>
+│   └── <span class="y">shizuku-provider-13.1.5.aar</span>
+└── build.gradle   <span class="c"># AGP 8.2.0 + Kotlin 1.9.20</span></div>
+
+            <!-- 技术栈 -->
+            <div class="sec-title">STACK <span class="cnt">// 关键依赖</span></div>
+            <div class="term-code"><span class="cy">AndroidX AppCompat</span> 1.6.1      <span class="c"># 兼容性框架</span>
+<span class="cy">Material</span> 1.11.0              <span class="c"># Material 3 组件库</span>
+<span class="cy">ConstraintLayout</span> 2.1.4      <span class="c"># 布局引擎</span>
+<span class="cy">RecyclerView</span> 1.3.2          <span class="c"># 应用列表</span>
+<span class="cy">Shizuku</span> 13.1.5              <span class="c"># 特权进程 API</span>
+<span class="g">▸ 进程创建三层降级策略:</span> newProcess <span class="c">→</span> newProcess(系统类加载器) <span class="c">→</span> ProcessBuilder 回退</div>
+
+            <!-- 已知问题 -->
+            <div class="sec-title">KNOWN ISSUES <span class="cnt">// 已知问题</span></div>
+            <div class="issue"><span class="x">✖</span><div><b>setStatusText</b> 使用 setBackgroundColor 覆盖圆形 Drawable — API 21+ 应改用 background.setTint 保持圆角</div></div>
+            <div class="issue"><span class="x">✖</span><div><b>showOverflowMenu</b> 构建了 Shizuku 状态 / 日志行数数组但未渲染显示</div></div>
+            <div class="issue"><span class="x">✖</span><div>部分图标硬编码 <b>#FF000000</b> 填充（ic_stop / ic_more_vert / ic_chevron_down），暗色主题下可见性差</div></div>
+            <div class="issue"><span class="x">✖</span><div><b>LogDetailActivity</b> 在 Manifest 冗余声明，但无对应类文件</div></div>
+
+            <!-- 下载 -->
+            <div class="sec-title">GET IT <span class="cnt">// 获取</span></div>
+            <div class="cta">
+                <a class="cta-a" href="https://github.com/a2006-dev/LogCatcher" target="_blank">
+                    <span class="badge">SOURCE</span>
+                    <div class="cmd">$ git <span class="ok">clone</span> a2006-dev/LogCatcher</div>
+                    <div class="name">GitHub 仓库 <span class="arrow">→</span></div>
+                    <div class="desc">源码阅读 / 二次开发 / Star 支持</div>
+                </a>
+                <a class="cta-a" href="https://github.com/a2006-dev/LogCatcher/releases" target="_blank">
+                    <span class="badge">APK</span>
+                    <div class="cmd">$ <span class="ok">./gradlew assembleDebug</span></div>
+                    <div class="name">Releases <span class="arrow">→</span></div>
+                    <div class="desc">官方构建产物，或自行构建安装</div>
+                </a>
+            </div>
+
+            <!-- 翻页导航 -->
+            <nav class="page-nav">
+                <a href="./heart.html"><span class="nav-label">← PREV</span> 心迹 Heart</a>
+                <a class="home-btn" href="./index.html">🏠 主页</a>
+                <a href="./New-Year-fireworks.html"><span class="nav-label">NEXT →</span> 新年烟花</a>
+            </nav>
+
+            <div class="footer">
+                <span class="g">$</span> ./logcatcher --version<br>
+                LogCatcher v1.0 · <a href="./index.html">AJX</a> · MIT License · <span id="year"></span><br>
+                <span class="c" style="color:#56626e;">~ console mode · made with ❤ by a2006-dev</span>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+    // 实时 logcat 滚动演示
+    (function () {
+        var win = document.getElementById('logwin');
+        var lines = [
+            { lvl: 'D', tag: 'Mono', msg: 'GC_TLAB: 0 bytes freed, 0 bytes free' },
+            { lvl: 'I', tag: 'Unity', msg: 'Loaded scene: BattleScene' },
+            { lvl: 'D', tag: 'Unity', msg: 'Setting up 3 worker threads' },
+            { lvl: 'W', tag: 'AudioTrack', msg: 'buffer underrun, frames=1024' },
+            { lvl: 'D', tag: 'OpenGLRenderer', msg: 'HWUI draw: 2.3ms' },
+            { lvl: 'I', tag: 'LogCatcher', msg: '● 捕获中 · 已过滤 42 条 · PID alive' },
+            { lvl: 'D', tag: 'System.out', msg: 'onCreate called, savedState=null' },
+            { lvl: 'W', tag: 'ViewRootImpl', msg: 'requestLayout() improperly called' },
+            { lvl: 'I', tag: 'Unity', msg: 'Frame rate: 60.0 fps' },
+            { lvl: 'I', tag: 'LogCatcher', msg: '● 捕获中 · 已过滤 87 条 · PID alive' },
+            { lvl: 'D', tag: 'Choreographer', msg: 'Skipped 1 frames! The application may be doing too much work' },
+            { lvl: 'I', tag: 'LogCatcher', msg: '● 捕获中 · 已过滤 133 条 · PID alive' }
+        ];
+        var i = 0;
+        var cursor = document.querySelector('.cursor');
+        setInterval(function () {
+            var ln = lines[i % lines.length];
+            i++;
+            var now = new Date();
+            function p(n) { return (n < 10 ? '0' : '') + n; }
+            var ts = '[' + (now.getMonth() + 1) + '-' + p(now.getDate()) + ' ' + p(now.getHours()) + ':' + p(now.getMinutes()) + ':' + p(now.getSeconds()) + '.' + String(now.getMilliseconds()).padStart(3, '0') + ']';
+            var div = document.createElement('div');
+            div.className = 'ln';
+            div.innerHTML = '<span class="ts">' + ts + '</span> <span class="lvl-' + ln.lvl + '">' + ln.lvl + '/' + ln.tag + '</span>: ' + ln.msg;
+            win.insertBefore(div, cursor.closest('.ln') || null);
+            if (cursor && cursor.parentNode !== win) { win.appendChild(cursor.parentNode); }
+            // 自动滚动到底部
+            win.scrollTop = win.scrollHeight;
+            // 限制行数
+            while (win.children.length > 40) { win.removeChild(win.firstChild); }
+        }, 1600);
+    })();
+</script>
+</body>
+</html>
