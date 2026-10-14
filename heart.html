@@ -1,431 +1,336 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>❤ 心迹 Heart · HR MONITOR · AJX</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        html, body { min-height: 100%; }
-        body {
-            font-family: "SF Mono", "Consolas", "Courier New", ui-monospace, monospace;
-            background: #040806;
-            color: #9fb3a9;
-            overflow-x: hidden;
-            position: relative;
-        }
-        /* 监护仪方格网格背景 */
-        body::before {
-            content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
-            background-image:
-                linear-gradient(rgba(0,255,157,0.045) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0,255,157,0.045) 1px, transparent 1px);
-            background-size: 42px 42px;
-        }
-        body::after {
-            content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
-            background: radial-gradient(ellipse at 50% 0%, rgba(0,255,157,0.05), transparent 60%);
-        }
-
-        /* 顶部固定状态条 */
-        .status-bar {
-            position: fixed; top: 0; left: 0; right: 0; z-index: 20;
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 9px 18px; font-size: 11px; letter-spacing: 3px;
-            background: rgba(4,8,6,0.92); border-bottom: 1px solid #16332a;
-            backdrop-filter: blur(8px);
-        }
-        .status-bar .s-left { color: #57a287; display: flex; align-items: center; gap: 10px; }
-        .status-bar .rec { width: 8px; height: 8px; border-radius: 50%; background: #ff3355; box-shadow: 0 0 8px #ff3355; animation: blink 1.2s infinite; }
-        .status-bar .s-right { color: #3d5d4d; }
-
-        @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
-        @keyframes heartbeat {
-            0%,100% { transform: scale(1); }
-            14% { transform: scale(1.22); }
-            28% { transform: scale(1); }
-            42% { transform: scale(1.16); }
-            56% { transform: scale(1); }
-        }
-        .heart-pulse { display: inline-block; animation: heartbeat 1.6s ease-in-out infinite; color: #ff3355; }
-
-        .container { position: relative; z-index: 2; max-width: 980px; margin: 0 auto; padding: 56px 20px 44px; }
-
-        /* 返回主页 */
-        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
-        .back-home {
-            display: inline-flex; align-items: center; gap: 8px; text-decoration: none;
-            font-size: 12.5px; color: #57a287; letter-spacing: 1.5px;
-            background: rgba(0,255,157,0.05); border: 1px solid #1a3a2c;
-            padding: 8px 16px; border-radius: 6px; transition: all .3s ease;
-        }
-        .back-home:hover { border-color: #00ff9d; color: #00ff9d; transform: translateX(-3px); }
-        .top-bar .cmd { font-size: 11px; color: #3d5d4d; letter-spacing: 1px; }
-        .top-bar .cmd code { color: #57a287; }
-
-        /* 主监护面板 */
-        .monitor {
-            border: 1px solid #1a3a2c; border-radius: 10px; overflow: hidden;
-            background: rgba(7,14,10,0.92); box-shadow: 0 0 34px rgba(0,255,157,0.07);
-            margin-bottom: 26px;
-        }
-        .monitor-head {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 9px 16px; font-size: 11px; letter-spacing: 2.5px;
-            background: rgba(0,255,157,0.05); border-bottom: 1px solid #1a3a2c; color: #57a287;
-        }
-        .monitor-head .live { color: #00ff9d; }
-        .monitor-head .live::before { content: '● '; animation: blink 1.2s infinite; }
-        .monitor-body { display: grid; grid-template-columns: 280px 1fr; min-height: 240px; }
-        .bpm-panel {
-            padding: 22px 18px; display: flex; flex-direction: column; justify-content: space-between;
-            border-right: 1px solid #1a3a2c; background: rgba(0,0,0,0.3);
-        }
-        .bpm-panel .bpm-label { font-size: 10.5px; color: #3d7a5e; letter-spacing: 3px; }
-        .bpm-value {
-            font-size: 88px; font-weight: 700; color: #00ff9d; line-height: 1;
-            font-variant-numeric: tabular-nums; text-shadow: 0 0 24px rgba(0,255,157,0.35);
-            letter-spacing: -2px;
-        }
-        .bpm-unit { font-size: 12px; color: #57a287; letter-spacing: 4px; margin-top: 4px; }
-        .vitals { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 16px; }
-        .vital {
-            border: 1px solid #16332a; border-radius: 6px; padding: 8px 6px; text-align: center;
-            font-size: 9.5px; color: #3d7a5e; letter-spacing: 1px; background: rgba(0,255,157,0.03);
-        }
-        .vital b { display: block; font-size: 15px; color: #7fe8bb; margin-top: 3px; font-weight: 600; }
-        .ecg-panel { position: relative; overflow: hidden; background: rgba(0,0,0,0.25); }
-        .ecg-panel svg { width: 100%; height: 100%; display: block; }
-        .ecg-trace { animation: ecg-scroll 3.4s linear infinite; }
-        @keyframes ecg-scroll { from { transform: translateX(0); } to { transform: translateX(-720px); } }
-        .ecg-caption {
-            position: absolute; left: 12px; bottom: 8px; font-size: 9.5px; color: rgba(87,162,135,0.55);
-            letter-spacing: 2px;
-        }
-
-        /* 区块标题 */
-        .section-title {
-            display: flex; align-items: center; gap: 12px; margin: 30px 0 16px;
-            font-size: 13px; font-weight: 700; color: #00ff9d; letter-spacing: 3px;
-        }
-        .section-title::before { content: '▸'; color: #ff3355; }
-        .section-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, #1a3a2c, transparent); }
-
-        /* 功能网格 */
-        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
-        .feature-card {
-            background: rgba(7,14,10,0.85); border: 1px solid #16332a; border-radius: 8px;
-            padding: 16px 18px; position: relative; transition: all .3s ease;
-        }
-        .feature-card::before {
-            content: ''; position: absolute; top: -1px; left: 14px; right: 14px; height: 1px;
-            background: linear-gradient(90deg, transparent, #00ff9d, transparent);
-            opacity: 0; transition: opacity .3s;
-        }
-        .feature-card:hover { transform: translateY(-3px); border-color: #00ff9d; box-shadow: 0 0 20px rgba(0,255,157,0.1); }
-        .feature-card:hover::before { opacity: 1; }
-        .feature-card .f-idx { font-size: 10px; color: #3d7a5e; letter-spacing: 1px; margin-bottom: 7px; }
-        .feature-card .f-title { font-size: 14.5px; font-weight: 600; color: #b8f0d6; margin-bottom: 6px; letter-spacing: 0.5px; }
-        .feature-card .f-title .f-ico { margin-right: 6px; }
-        .feature-card .f-desc { font-size: 12px; line-height: 1.7; color: #718a7d; }
-
-        /* 表格 */
-        .table-wrap { overflow-x: auto; border: 1px solid #16332a; border-radius: 8px; background: rgba(7,14,10,0.85); }
-        table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-        th, td { padding: 11px 14px; text-align: left; border-bottom: 1px solid #13291f; }
-        th { color: #00d983; font-weight: 600; letter-spacing: 1.5px; background: rgba(0,255,157,0.05); font-size: 11px; }
-        td { color: #88a296; }
-        td:first-child { color: #b8f0d6; font-weight: 600; white-space: nowrap; font-family: inherit; }
-        tr:last-child td { border-bottom: none; }
-        code, .mono { font-family: inherit; color: #7effc4; background: rgba(0,255,157,0.07); padding: 1px 5px; border-radius: 4px; font-size: 0.95em; }
-
-        /* 代码块 */
-        .code-block {
-            background: #050c08; border: 1px solid #16332a; border-left: 3px solid #00ff9d;
-            border-radius: 6px; padding: 14px 16px; font-size: 12px; line-height: 1.9;
-            color: #9fb3a9; overflow-x: auto; margin: 10px 0; white-space: pre;
-        }
-        .c-hl { color: #b8f0d6; }
-        .c-tag { color: #ffb000; }
-        .c-dim { color: #3d7a5e; }
-
-        /* 连接码表 */
-        .conn-table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 10px 0; }
-        .conn-table th, .conn-table td { padding: 10px 14px; text-align: left; border-bottom: 1px solid #13291f; }
-        .conn-table th { color: #00d983; font-weight: 600; background: rgba(0,255,157,0.05); letter-spacing: 1px; }
-        .conn-table td { color: #88a296; word-break: break-all; }
-        .conn-table .mono { color: #ffb000; }
-
-        /* 时间线 */
-        .timeline { margin: 10px 0 4px; padding-left: 22px; border-left: 2px solid #16332a; }
-        .tl-item { position: relative; margin-bottom: 20px; }
-        .tl-item::before {
-            content: ''; position: absolute; left: -28px; top: 5px; width: 10px; height: 10px;
-            border-radius: 50%; background: #00ff9d; box-shadow: 0 0 12px rgba(0,255,157,0.8);
-        }
-        .tl-item .tl-ver { font-size: 15px; font-weight: 700; color: #b8f0d6; letter-spacing: 1px; }
-        .tl-item .tl-date { font-size: 10.5px; color: #3d7a5e; margin-left: 10px; letter-spacing: 1px; }
-        .tl-item .tl-desc { font-size: 12.5px; line-height: 1.8; color: #88a296; margin-top: 7px; }
-        .tl-item .tl-desc li { margin-left: 18px; }
-
-        /* 下载卡片 */
-        .download-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
-        .download-card {
-            background: rgba(7,14,10,0.85); border: 1px solid #16332a; border-radius: 8px;
-            padding: 18px; text-align: center; transition: all .3s ease;
-        }
-        .download-card:hover { transform: translateY(-3px); border-color: #00ff9d; box-shadow: 0 0 20px rgba(0,255,157,0.1); }
-        .download-card .d-idx { font-size: 10px; color: #3d7a5e; letter-spacing: 2px; margin-bottom: 8px; }
-        .download-card .d-name { font-size: 14px; font-weight: 700; color: #b8f0d6; margin-bottom: 6px; letter-spacing: 1px; }
-        .download-card .d-desc { font-size: 11.5px; line-height: 1.7; color: #718a7d; margin-bottom: 12px; }
-        .download-card .d-btn {
-            display: inline-block; text-decoration: none; font-size: 11.5px; color: #00d983; letter-spacing: 2px;
-            background: rgba(0,255,157,0.08); border: 1px solid #1a4a35;
-            padding: 8px 20px; border-radius: 5px; transition: all .3s ease;
-        }
-        .download-card .d-btn:hover { background: rgba(0,255,157,0.18); border-color: #00ff9d; }
-
-        /* 免责声明 */
-        .disclaimer {
-            margin-top: 22px; padding: 15px 18px; border: 1px solid #4a1a22; border-left: 3px solid #ff3355;
-            border-radius: 6px; background: rgba(255,51,85,0.05); font-size: 12px; line-height: 1.9; color: #c98a92;
-        }
-        .disclaimer b { color: #ff6b81; letter-spacing: 1px; }
-        .disclaimer .warn { color: #ff3355; animation: blink 2s infinite; }
-
-        /* 翻页导航 */
-        .page-nav {
-            display: flex; align-items: center; justify-content: space-between; gap: 10px;
-            border: 1px solid #16332a; border-radius: 8px; background: rgba(7,14,10,0.9);
-            padding: 14px 18px; margin-top: 26px;
-        }
-        .page-nav a {
-            display: flex; align-items: center; gap: 8px; text-decoration: none;
-            font-size: 12.5px; letter-spacing: 1px; color: #57a287; transition: all .3s ease;
-            padding: 8px 14px; border-radius: 6px; border: 1px solid transparent;
-        }
-        .page-nav a.home-btn { background: rgba(0,255,157,0.08); border: 1px solid #1a4a35; color: #00d983; }
-        .page-nav a:hover { border-color: #00ff9d; color: #00ff9d; }
-        .page-nav .nav-label { font-size: 10px; color: #3d7a5e; letter-spacing: 2px; }
-
-        .site-footer { text-align: center; margin-top: 30px; font-size: 11.5px; color: #3d5d4d; letter-spacing: 2px; }
-        .site-footer a { color: #57a287; text-decoration: none; }
-        .site-footer a:hover { color: #00ff9d; }
-
-        @media (max-width: 720px) {
-            .monitor-body { grid-template-columns: 1fr; }
-            .bpm-panel { border-right: none; border-bottom: 1px solid #1a3a2c; min-height: 190px; }
-            .bpm-value { font-size: 70px; }
-            .ecg-panel { min-height: 150px; }
-            .container { padding: 52px 14px 32px; }
-            .page-nav { flex-direction: column; align-items: stretch; }
-            .page-nav a { justify-content: center; }
-            .top-bar .cmd { display: none; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>心迹 HEART · 心率监测工具 · AJX</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+  :root {
+    --bg-1: #0e1726;
+    --bg-2: #1f2d4c;
+    --card: rgba(255, 255, 255, 0.06);
+    --card-border: rgba(255, 255, 255, 0.10);
+    --accent: #ff5f7a;
+    --accent-2: #ff8a6a;
+    --warm: #fff3f0;
+    --muted: #93a3bd;
+    --good: #38c8a5;
+    --warn: #ffb04d;
+    --danger: #ff5f7a;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", "Segoe UI", Arial, sans-serif;
+    color: var(--warm);
+    min-height: 100vh;
+    background:
+      radial-gradient(1100px 700px at 80% -10%, rgba(255, 95, 122, 0.16), transparent 60%),
+      radial-gradient(900px 600px at 0% 110%, rgba(56, 200, 165, 0.10), transparent 55%),
+      linear-gradient(150deg, var(--bg-1) 0%, var(--bg-2) 100%);
+    position: relative;
+    overflow-x: hidden;
+  }
+  .grain {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.035;
+    background-image:
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.9) 0 1px, transparent 1px 80px),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.9) 0 1px, transparent 1px 80px);
+    z-index: 0;
+  }
+  .wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+  /* 顶部导航 */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 36px;
+  }
+  .nav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 999px;
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    color: var(--warm);
+    text-decoration: none;
+    font-size: 14px;
+    backdrop-filter: blur(10px);
+    transition: all .25s ease;
+  }
+  .nav-btn:hover { background: rgba(255,255,255,0.12); transform: translateY(-1px); }
+  .badge-heart {
+    font-size: 12px;
+    letter-spacing: 2px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: linear-gradient(120deg, var(--accent), var(--accent-2));
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 6px 20px rgba(255, 95, 122, 0.35);
+  }
+  /* 标题 */
+  .hero { text-align: center; margin-bottom: 40px; }
+  .hero h1 {
+    font-size: clamp(30px, 6vw, 46px);
+    font-weight: 700;
+    letter-spacing: 1px;
+    background: linear-gradient(120deg, #fff 30%, #ffc3cf 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero .sub {
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: 15px;
+    letter-spacing: 1px;
+  }
+  /* 主心率卡 */
+  .grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 24px;
+    padding: 28px;
+    backdrop-filter: blur(14px);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+  }
+  .card-label {
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .live-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 0 rgba(255,95,122,0.5);
+    animation: pulse 1.6s infinite;
+  }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(255,95,122,0.5); }
+    70% { box-shadow: 0 0 0 12px rgba(255,95,122,0); }
+    100% { box-shadow: 0 0 0 0 rgba(255,95,122,0); }
+  }
+  /* 大数字 */
+  .bpm-row { display: flex; align-items: baseline; gap: 12px; }
+  .bpm {
+    font-size: clamp(64px, 14vw, 96px);
+    font-weight: 300;
+    line-height: 1;
+    color: var(--warm);
+    letter-spacing: -2px;
+    font-variant-numeric: tabular-nums;
+  }
+  .bpm-unit { font-size: 18px; color: var(--muted); letter-spacing: 1px; }
+  .state {
+    margin-top: 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    background: rgba(56, 200, 165, 0.14);
+    color: var(--good);
+  }
+  .state i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  /* ECG 面板 */
+  .ecg-card { margin-top: 20px; }
+  .ecg-wrap {
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(255,95,122,0.06), rgba(14,23,38,0.3));
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 8px 0;
+    overflow: hidden;
+  }
+  .ecg-grid {
+    background-image:
+      linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 26px 26px;
+  }
+  svg.ecg { width: 100%; height: 96px; display: block; }
+  .ecg path {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  /* 统计 */
+  .stats { display: flex; flex-direction: column; gap: 16px; }
+  .stat {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--card-border);
+  }
+  .stat .k { font-size: 13px; color: var(--muted); }
+  .stat .v { font-size: 20px; font-weight: 600; color: var(--warm); font-variant-numeric: tabular-nums; }
+  /* 说明区 */
+  .about {
+    margin-top: 20px;
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.9;
+  }
+  .about b { color: var(--warm); }
+  .about .item { display: flex; gap: 10px; margin-top: 6px; }
+  .about .item::before { content: "·"; color: var(--accent); font-weight: 700; }
+  /* 阶梯时间线 */
+  .timeline {
+    margin-top: 28px;
+    padding: 22px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--card-border);
+  }
+  .timeline .tl-label { font-size: 12px; letter-spacing: 2px; color: var(--muted); margin-bottom: 14px; }
+  .seg { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-top: 1px dashed rgba(255,255,255,0.08); }
+  .seg:first-of-type { border-top: none; }
+  .seg .time { font-size: 13px; color: var(--muted); width: 46px; }
+  .seg .bar { flex: 1; height: 8px; border-radius: 999px; background: rgba(255,255,255,0.06); overflow: hidden; }
+  .seg .bar > i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent-2), var(--accent)); }
+  .seg .val { font-size: 13px; color: var(--warm); width: 40px; text-align: right; font-variant-numeric: tabular-nums; }
+  /* 底部导航 */
+  .footer-nav {
+    margin-top: 44px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+  }
+  .footer-nav .nav-btn { font-size: 14px; }
+  .footer-nav .spacer { flex: 1; }
+  .credit {
+    text-align: center;
+    margin-top: 40px;
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 1px;
+    opacity: .7;
+  }
+</style>
 </head>
 <body>
+<div class="grain"></div>
+<div class="wrap">
 
-<div class="status-bar">
-    <div class="s-left"><span class="rec"></span> HR MONITOR · <span class="heart-pulse">❤</span> 心迹 HEART v3.1</div>
-    <div class="s-right">AJX / BLE:0x180D</div>
-</div>
+  <div class="topbar">
+    <a class="nav-btn" href="index.html">← 返回主页</a>
+    <span class="badge-heart">♥ 心迹 HEART</span>
+  </div>
 
-<div class="container">
-    <div class="top-bar">
-        <a class="back-home" href="./index.html">← BACK · 返回主页</a>
-        <span class="cmd">~$ <code>cd ajx && cat heart</code></span>
+  <div class="hero">
+    <h1>心迹 · Heart</h1>
+    <div class="sub">心率监测工具 · 实时脉搏视窗</div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-label"><span class="live-dot"></span> LIVE 实时心率</div>
+      <div class="bpm-row">
+        <span class="bpm" id="bpm">72</span>
+        <span class="bpm-unit">BPM</span>
+      </div>
+      <span class="state"><i></i><span id="stateText">稳定 · 正常范围</span></span>
+      <div class="ecg-wrap ecg-grid">
+        <svg class="ecg" viewBox="0 0 600 96" preserveAspectRatio="none">
+          <path id="ecgPath" d="M0,48 L40,48 L52,48 L60,28 L70,68 L80,48 L120,48 L132,48 L140,28 L150,68 L160,48 L200,48 L212,48 L220,28 L230,68 L240,48 L280,48 L292,48 L300,28 L310,68 L320,48 L360,48 L372,48 L380,28 L390,68 L400,48 L440,48 L452,48 L460,28 L470,68 L480,48 L520,48 L532,48 L540,28 L550,68 L560,48 L600,48" stroke="#ff5f7a" stroke-width="2.4" style="filter: drop-shadow(0 0 6px rgba(255,95,122,0.6));"/>
+        </svg>
+      </div>
     </div>
 
-    <!-- 主监护面板 -->
-    <section class="monitor">
-        <div class="monitor-head">
-            <span>HEART RATE MONITOR</span>
-            <span class="live">LIVE</span>
-        </div>
-        <div class="monitor-body">
-            <div class="bpm-panel">
-                <div class="bpm-label">CURRENT HR</div>
-                <div>
-                    <div class="bpm-value" id="bpm">76</div>
-                    <div class="bpm-unit">BEATS / MIN</div>
-                </div>
-                <div class="vitals">
-                    <div class="vital">SDNN<b id="sdnn">--</b></div>
-                    <div class="vital">RR<b id="rr">--</b></div>
-                    <div class="vital">AVG·30S<b id="avg">--</b></div>
-                </div>
-            </div>
-            <div class="ecg-panel">
-                <svg viewBox="0 0 720 260" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <g id="ecgSeg">
-                            <polyline fill="none" stroke="#00ff9d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
-                                points="0,130 40,130 48,130 54,72 62,188 70,130 120,130 128,130 134,84 142,172 150,130 200,130" />
-                            <polyline fill="none" stroke="#00ff9d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
-                                points="260,130 300,130 308,130 314,72 322,188 330,130 380,130 388,130 394,84 402,172 410,130 460,130" />
-                            <polyline fill="none" stroke="#00ff9d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
-                                points="520,130 560,130 568,130 574,72 582,188 590,130 640,130 648,130 654,84 662,172 670,130 720,130" />
-                        </g>
-                    </defs>
-                    <g class="ecg-trace">
-                        <use href="#ecgSeg" />
-                        <use href="#ecgSeg" x="-720" />
-                        <use href="#ecgSeg" x="720" />
-                    </g>
-                </svg>
-                <div class="ecg-caption">LEAD II · 25mm/s · BLE 0x180D</div>
-            </div>
-        </div>
-    </section>
-
-    <!-- 核心功能 -->
-    <div class="section-title">CORE FUNCTIONS</div>
-    <div class="features-grid">
-        <div class="feature-card"><div class="f-idx">CH-01</div><div class="f-title"><span class="f-ico">📶</span>蓝牙 BLE 连接</div><div class="f-desc">支持标准心率服务 0x180D，兼容 Polar、小米手环等。断开自动重连，只连已知设备。</div></div>
-        <div class="feature-card"><div class="f-idx">CH-02</div><div class="f-title"><span class="f-ico">📈</span>ECG 仿真波形</div><div class="f-desc">P-QRS-T 生理模型仿真，每跳形态各异，基于 RR 间期动态调整，未连接时显示待机基线。</div></div>
-        <div class="feature-card"><div class="f-idx">CH-03</div><div class="f-title"><span class="f-ico">📊</span>HRV 实时监测</div><div class="f-desc">SDNN 实时计算：有 RR 数据时为真实值，无 RR 时基于心率估算。30 秒滑动平均稳定显示。</div></div>
-        <div class="feature-card"><div class="f-idx">CH-04</div><div class="f-title"><span class="f-ico">🪟</span>悬浮窗</div><div class="f-desc">5 种样式，自定义颜色/字号/透明度，位置自动记忆；游戏模式自动切换超小悬浮窗。</div></div>
-        <div class="feature-card"><div class="f-idx">CH-05</div><div class="f-title"><span class="f-ico">📡</span>MQTT 远程推送</div><div class="f-desc">跨互联网推送心率，支持公共 Broker / Docker 自建 / 阿里云 / 华为云，连接码一键配对。</div></div>
-        <div class="feature-card"><div class="f-idx">CH-06</div><div class="f-title"><span class="f-ico">🔗</span>连接码机制</div><div class="f-desc"><span class="mono">HEARTBEAT#V1#</span> 格式连接码，电脑端粘贴即连，10 秒超时过期检测。</div></div>
+    <div class="card">
+      <div class="card-label">今日概览</div>
+      <div class="stats">
+        <div class="stat"><span class="k">最高</span><span class="v" id="max">98</span></div>
+        <div class="stat"><span class="k">最低</span><span class="v" id="min">58</span></div>
+        <div class="stat"><span class="k">平均</span><span class="v" id="avg">76</span></div>
+        <div class="stat"><span class="k">波动</span><span class="v">± 6 bpm</span></div>
+      </div>
     </div>
+  </div>
 
-    <!-- PC 三端 -->
-    <div class="section-title">PC CLIENTS</div>
-    <p style="font-size:12.5px;line-height:1.8;color:#88a296;margin-bottom:12px;">同一个心迹项目，电脑端三种接收方式，覆盖不同使用场景。</p>
-    <div class="table-wrap">
-        <table>
-            <tr><th>BIN</th><th>特征</th><th>场景</th></tr>
-            <tr><td>Go 版</td><td>单文件 ~5.6MB 免运行时 · OBS 叠加 <code>?transparent=1</code> · <code>-usb</code> 直连</td><td>Windows 快速部署 / 直播叠加</td></tr>
-            <tr><td>Python 版</td><td>tkinter GUI · 7 种悬浮窗 · HRV 实时折线图 · 局域网自动发现</td><td>全量功能 / 二次开发</td></tr>
-            <tr><td>网页版</td><td>纯浏览器 MQTT 接收，零依赖，可部署 GitHub Pages</td><td>零安装 / 临时查看</td></tr>
-        </table>
+  <div class="card ecg-card">
+    <div class="card-label">心电图 · ECG LEAD II</div>
+    <div class="ecg-wrap ecg-grid">
+      <svg class="ecg" viewBox="0 0 600 96" preserveAspectRatio="none">
+        <path d="M0,48 L50,48 L64,48 L74,26 L86,72 L98,48 L150,48 L164,48 L174,26 L186,72 L198,48 L250,48 L264,48 L274,26 L286,72 L298,48 L350,48 L364,48 L374,26 L386,72 L398,48 L450,48 L464,48 L474,26 L486,72 L498,48 L550,48 L564,48 L574,26 L586,72 L600,48" stroke="#ff8a6a" stroke-width="2.2" style="filter: drop-shadow(0 0 5px rgba(255,138,106,0.5));"/>
+      </svg>
     </div>
-    <div class="code-block"><span class="c-dim"># OBS overlay</span>
-<span class="c-hl">OBS 来源 → 浏览器</span>  URL: <span class="c-tag">http://localhost:9091?transparent=1</span></div>
-
-    <!-- 连接方式 -->
-    <div class="section-title">CONNECT</div>
-    <p style="font-size:12.5px;line-height:1.8;color:#88a296;margin-bottom:10px;">三种推荐连接方式，按需选择：</p>
-    <div class="code-block"><span class="c-dim"># WiFi 局域网</span>
-手机开启心率广播 → PC: <span class="c-tag">heart_client.exe 192.168.1.5:9090</span> → 浏览器 <span class="c-tag">localhost:9091</span>
-<span class="c-dim"># USB 直连</span>
-手机插线开 USB 调试 → PC: <span class="c-tag">heart_client.exe -usb</span> <span class="c-dim">(需 adb.exe 同目录)</span>
-<span class="c-dim"># MQTT 远程</span>
-手机: 设置 → MQTT 远程 → 复制连接码 → PC 粘贴即连</div>
-
-    <p style="font-size:12.5px;line-height:1.8;color:#88a296;margin-bottom:10px;"><b style="color:#b8f0d6;">MQTT 连接码格式</b>（实际话题自动追加设备标识 <span class="mono">heart/rate/GUEMSNDM</span>）：</p>
-    <div class="code-block"><span class="c-tag">HEARTBEAT#V1#GUEMSNDM#broker-cn.emqx.io:1883#heart/rate</span></div>
-    <div class="table-wrap" style="margin-bottom:10px;">
-        <table class="conn-table">
-            <tr><th>段</th><th>说明</th></tr>
-            <tr><td class="mono">HEARTBEAT#V1#</td><td>固定头 + 协议版本</td></tr>
-            <tr><td class="mono">GUEMSNDM</td><td>8 位随机设备标识，区分用户</td></tr>
-            <tr><td class="mono">broker-cn.emqx.io:1883</td><td>MQTT 服务器地址 + 端口</td></tr>
-            <tr><td class="mono">heart/rate</td><td>话题前缀，实际订阅自动追加设备标识</td></tr>
-        </table>
+    <div class="about" style="margin-top:18px;">
+      <div class="item"><span><b>心迹 HEART</b> 为心率监测演示工具，数据用于直观展示项目气质。</span></div>
+      <div class="item"><span>波形由 SVG 绘制，跟随实时读数动态刷新。</span></div>
+      <div class="item"><span>设计语言：现代医疗科技 · 珊瑚红心跳主题。</span></div>
     </div>
+  </div>
 
-    <!-- 版本演进 -->
-    <div class="section-title">CHANGELOG</div>
-    <div class="timeline">
-        <div class="tl-item">
-            <span class="tl-ver">v3.1</span><span class="tl-date">CURRENT · ECG + HRV 面板</span>
-            <div class="tl-desc">
-                <ul>
-                    <li>新增 ECG 生理波形（P-QRS-T）与 HRV 实时面板</li>
-                    <li>新增 RR-Interval 解析（BLE 0x2A37）与 30 秒滑动平均</li>
-                    <li>EegWaveformBridge 解耦数据桥接，波形连续实时生成</li>
-                    <li>未连接不再生成假波形，显示待机基线</li>
-                </ul>
-            </div>
-        </div>
-        <div class="tl-item">
-            <span class="tl-ver">v3.0</span><span class="tl-date">MQTT 远程推送</span>
-            <div class="tl-desc">
-                <ul>
-                    <li>新增 MQTT 跨互联网推送与 <span class="mono">HEARTBEAT#V1#</span> 连接码机制</li>
-                    <li>新增三端 MQTT 接收（Go exe / Python / 网页 mqtt.html）</li>
-                    <li>修复 MQTT 精准订阅失效、10 秒超时检测</li>
-                </ul>
-            </div>
-        </div>
-        <div class="tl-item">
-            <span class="tl-ver">v2.x</span><span class="tl-date">USB 直连 · 游戏模式 · Python 客户端</span>
-            <div class="tl-desc">
-                <ul>
-                    <li>v2.3 USB 数据线直连（-usb）+ Go 客户端</li>
-                    <li>v2.2 游戏模式、设备特征码自动匹配</li>
-                    <li>v2.1 Python 客户端、HRV 记录、局域网自动发现</li>
-                </ul>
-            </div>
-        </div>
-    </div>
+  <div class="timeline">
+    <div class="tl-label">今日心率 · 分时分布</div>
+    <div class="seg"><span class="time">06:00</span><div class="bar"><i style="width:52%"></i></div><span class="val">61</span></div>
+    <div class="seg"><span class="time">09:00</span><div class="bar"><i style="width:78%"></i></div><span class="val">84</span></div>
+    <div class="seg"><span class="time">12:00</span><div class="bar"><i style="width:92%"></i></div><span class="val">98</span></div>
+    <div class="seg"><span class="time">15:00</span><div class="bar"><i style="width:66%"></i></div><span class="val">70</span></div>
+    <div class="seg"><span class="time">18:00</span><div class="bar"><i style="width:74%"></i></div><span class="val">79</span></div>
+    <div class="seg"><span class="time">21:00</span><div class="bar"><i style="width:58%"></i></div><span class="val">64</span></div>
+  </div>
 
-    <!-- 下载 -->
-    <div class="section-title">DOWNLOAD</div>
-    <div class="download-grid">
-        <div class="download-card">
-            <div class="d-idx">ANDROID</div>
-            <div class="d-name">🤖 手机端 APK</div>
-            <div class="d-desc">蓝牙心率监测 · 悬浮窗 · ECG 波形 · MQTT 推送</div>
-            <a class="d-btn" href="https://github.com/a2006-dev/heart/releases" target="_blank">GET APK →</a>
-        </div>
-        <div class="download-card">
-            <div class="d-idx">WINDOWS / PY</div>
-            <div class="d-name">💻 PC 客户端</div>
-            <div class="d-desc">heart_client.exe 单文件 + Python 全功能版</div>
-            <a class="d-btn" href="https://github.com/a2006-dev/heart/releases" target="_blank">GET PC →</a>
-        </div>
-        <div class="download-card">
-            <div class="d-idx">WEB</div>
-            <div class="d-name">🌐 网页版 mqtt.html</div>
-            <div class="d-desc">纯浏览器 MQTT 接收，零依赖，可部署 Pages</div>
-            <a class="d-btn" href="https://github.com/a2006-dev/heart" target="_blank">REPO →</a>
-        </div>
-    </div>
+  <div class="footer-nav">
+    <a class="nav-btn" href="index.html">← 主页</a>
+    <span class="spacer"></span>
+    <a class="nav-btn" href="logcatcher.html">下一页 · LogCatcher →</a>
+  </div>
 
-    <!-- 项目信息 -->
-    <div class="section-title">INFO</div>
-    <div class="code-block"><span class="c-dim">LICENSE   </span><span class="c-tag">MIT License</span>
-<span class="c-dim">GITHUB    </span><span class="c-hl">https://github.com/a2006-dev/heart</span>
-<span class="c-dim">STACK     </span>Java + AndroidX + MPAndroidChart / Go + Win32 / Python tkinter + paho-mqtt + bleak
-<span class="c-dim">BROKER    </span>EMQX 公共 / Docker 自建 / 阿里云 / 华为云</div>
-
-    <div class="disclaimer">
-        <b><span class="warn">⚠</span> 免责声明 DISCLAIMER：</b>本应用仅作娱乐和参考用途，<b>不可作为医疗诊断依据</b>。所有心率数据来源于蓝牙穿戴设备，仅供参考；ECG 波形基于心率数据与数学模型仿真生成，并非真实心电图信号；HRV 在无 RR 数据时为估算值；如有身体不适，请及时就医。
-    </div>
-
-    <!-- 翻页导航 -->
-    <nav class="page-nav">
-        <a href="./ybp.html"><span class="nav-label">← PREV</span> 站点统计</a>
-        <a class="home-btn" href="./index.html">🏠 主页</a>
-        <a href="./logcatcher.html"><span class="nav-label">NEXT →</span> LogCatcher</a>
-    </nav>
-
-    <footer class="site-footer">
-        © <span id="year"></span> <a href="./index.html">AJX</a> · <span class="heart-pulse">❤</span> 心迹 Heart · HR MONITOR
-    </footer>
+  <div class="credit">heart · 心迹 · AJX 个人站</div>
 </div>
 
 <script>
-document.getElementById('year').textContent = new Date().getFullYear();
-// 模拟实时心率：BPM 68~92 区间波动，每 2.4s 一跳
-const bpmEl = document.getElementById('bpm');
-const sdnnEl = document.getElementById('sdnn');
-const rrEl = document.getElementById('rr');
-const avgEl = document.getElementById('avg');
-let hr = 76, avgSum = 0, avgCount = 0;
-function tick() {
-    hr = Math.max(68, Math.min(92, hr + (Math.random() * 8 - 4 | 0)));
-    const rr = Math.round(60000 / hr + (Math.random() * 30 - 15 | 0));
-    avgSum += hr; avgCount++;
-    bpmEl.textContent = hr;
-    rrEl.textContent = rr + 'ms';
-    sdnnEl.textContent = (20 + Math.random() * 30 | 0) + 'ms';
-    avgEl.textContent = Math.round(avgSum / avgCount);
-}
-setInterval(tick, 2400);
+  // 实时心率模拟
+  const bpmEl = document.getElementById('bpm');
+  const stateEl = document.getElementById('stateText');
+  let base = 72;
+  function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+  setInterval(() => {
+    base = Math.max(58, Math.min(98, base + rand(-3, 3)));
+    bpmEl.textContent = base;
+    // 状态判断
+    if (base < 60) stateEl.textContent = '偏低 · 放松状态';
+    else if (base > 90) stateEl.textContent = '偏高 · 活动区间';
+    else stateEl.textContent = '稳定 · 正常范围';
+    // 更新统计
+    document.getElementById('max').textContent = 98;
+    document.getElementById('min').textContent = 58;
+    document.getElementById('avg').textContent = Math.round((98 + 58 + 2*base) / 4);
+  }, 2400);
 </script>
 </body>
 </html>
