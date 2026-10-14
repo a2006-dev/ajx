@@ -231,6 +231,72 @@
             .uiverse-social .socialContainer { width: 40px; height: 40px; border-radius: 10px; }
             .uiverse-social .socialSvg { font-size: 19px; }
         }
+        /* ===== kirzin 流光总入口按钮 ===== */
+        .hero-entry {
+            position: relative;
+            display: inline-block;
+            padding: 0;
+            margin: 0;
+            border: none;
+            border-radius: 30px;
+            overflow: hidden;
+            text-decoration: none;
+            cursor: pointer;
+            color: #fff;
+            background: linear-gradient(90deg, #03a9f4, #f441a5, #ffeb3b, #03a9f4);
+            background-size: 300%;
+            transition: all 0.3s ease;
+            z-index: 1;
+        }
+        .hero-entry span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 15em;
+            height: 3.2em;
+            line-height: 1;
+            font-size: 1rem;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            border-radius: 30px;
+            background: rgba(13, 17, 23, 0.55);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            color: #fff;
+            position: relative;
+            z-index: 2;
+            transition: all 0.3s ease;
+        }
+        .hero-entry::before {
+            content: "";
+            position: absolute;
+            inset: -5px;
+            border-radius: 35px;
+            background: linear-gradient(90deg, #03a9f4, #f441a5, #ffeb3b, #03a9f4);
+            background-size: 300%;
+            filter: blur(20px);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 0;
+        }
+        .hero-entry:hover {
+            animation: heroAni 8s linear infinite;
+        }
+        .hero-entry:hover::before {
+            opacity: 1;
+            animation: heroAni 8s linear infinite;
+        }
+        .hero-entry:hover span {
+            color: #fff;
+        }
+        @keyframes heroAni {
+            0% { background-position: 0%; }
+            100% { background-position: 300%; }
+        }
+        @media (max-width: 560px) {
+            .hero-entry span { width: 12em; height: 2.8em; font-size: 0.9rem; }
+        }
     </style>
 </head>
 
@@ -712,24 +778,9 @@ function fallback() {
                         <div>
                             <nav class="cover-navigation cover-navigation--primary">
                                 <ul class="navigation">
-    
-                                    <li class="navigation__item">
-                                        <a href="./New-Year-fireworks.html"
-                                            style="--clr:#00ff00"><span>新年烟花</span><i></i></a>
+                                    <li class="navigation__item" style="list-style:none; margin:0;">
+                                        <a class="hero-entry" href="./3d.html"><span>✦ 探索入口 ✦</span></a>
                                     </li>
-                                  
-                                  <li class="navigation__item">
-                                        <a href="./ybp.html"
-                                            style="--clr:#00ff00"><span>站点统计</span><i></i></a>
-                                  </li>
-                                  <li class="navigation__item">
-                                        <a href="./heart.html"
-                                            style="--clr:#ff7da5"><span>心迹 Heart</span><i></i></a>
-                                  </li>
-                                  <li class="navigation__item">
-                                        <a href="./logcatcher.html"
-                                            style="--clr:#3ddc84"><span>LogCatcher</span><i></i></a>
-                                  </li>
                                 </ul>
                             </nav>
 
