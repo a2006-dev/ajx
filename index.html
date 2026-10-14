@@ -148,8 +148,19 @@
         #weather-card-container {
             top: 14px;
             right: 14px;
-            transform: scale(0.72);
+            transform: translateY(-8px) scale(0.72);
             transform-origin: top right;
+        }
+        #weather-card-container.show {
+            transform: translateY(0) scale(0.72);
+        }
+    }
+    @media (max-width: 400px) {
+        #weather-card-container {
+            transform: translateY(-8px) scale(0.6);
+        }
+        #weather-card-container.show {
+            transform: translateY(0) scale(0.6);
         }
     }
     /* ===== Uiverse 社交卡片 (from Uiverse.io by vinodjangid07) ===== */
@@ -223,6 +234,9 @@
             background-size: 300%;
             transition: all 0.3s ease;
             z-index: 1;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            user-select: none;
         }
         .hero-entry span {
             display: inline-flex;
@@ -785,7 +799,7 @@ function fallback() {
                             <nav class="cover-navigation cover-navigation--primary">
                                 <ul class="navigation">
                                     <li class="navigation__item" style="list-style:none; margin:0;">
-                                        <a class="hero-entry" href="./3d.html"><span>✦ 探索入口 ✦</span></a>
+                                        <a class="hero-entry" href="./3d.html"><span>✦ 我的小站 ✦</span></a>
                                     </li>
                                 </ul>
                             </nav>
