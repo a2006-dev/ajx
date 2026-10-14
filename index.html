@@ -118,6 +118,16 @@
             letter-spacing: 1px;
             position: relative;
             z-index: 1;
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            gap: 4px;
+        }
+        #weather-card-container .realtime-label {
+            font-size: 12px;
+            font-weight: 400;
+            opacity: .75;
+            letter-spacing: 0;
         }
         #weather-card-container .minmaxContainer {
             display: flex;
@@ -179,7 +189,7 @@
                 <span class="w-emoji">⛅</span>
                 <span class="w-desc">--</span>
             </div>
-            <div class="temp">--°</div>
+            <div class="temp"><span class="realtime-label">实时</span><span class="realtime-temp">--°</span></div>
             <div class="minmaxContainer">
                 <div class="min">
                     <div class="minHeading">最低</div>
@@ -422,13 +432,13 @@
                 var msgEl = document.getElementById('weather-msg');
                 var hideTimer = null;
                 // ===== 常驻天气卡片渲染 =====
-                function renderCard(cityName, icon, desc, tmin, tmax) {
+                function renderCard(cityName, icon, desc, tmin, tmax, currentTemp) {
                     var box = document.getElementById('weather-card-container');
                     if (!box) return;
                     box.querySelector('.city').textContent = cityName || '--';
                     box.querySelector('.w-emoji').textContent = icon || '⛅';
                     box.querySelector('.w-desc').textContent = desc || '';
-                    box.querySelector('.temp').textContent = (tmin !== null && tmax !== null) ? (tmin + '°~' + tmax + '°') : (icon + '');
+                    box.querySelector('.realtime-temp').textContent = (currentTemp !== null && currentTemp !== undefined) ? (Math.round(currentTemp) + '°') : (tmin !== null && tmax !== null ? (tmin + '°~' + tmax + '°') : '--°');
                     box.querySelector('.minValue').textContent = (tmin !== null ? tmin + '°' : '--°');
                     box.querySelector('.maxValue').textContent = (tmax !== null ? tmax + '°' : '--°');
                     box.classList.add('show');
@@ -441,6 +451,43 @@
                         widget.classList.remove('show');
                     }, 7000);
                 }
+                function fetchTencentWeather(lat, lon, cityName, tmin, tmax, icon, fallbackDesc) {
+                    var QQ_KEY = '2OOBZ-BSY6M-SS362-6AT56-32XZE-KHFXZ', QQ_SK = 'ozFKOpSc3b078f0qQEdjlKZyPoObVca5';
+                    var done = false, cb = 'qw' + Date.now();
+                    function cleanup() { try { delete window[cb]; if (scr && scr.parentNode) scr.parentNode.removeChild(scr); } catch (e) {} }
+                    window[cb] = function (res) {
+                        cleanup();
+                        if (done) return; done = true;
+                        if (res && res.status === 0 && res.result && res.result.realtime && res.result.realtime[0]) {
+                            var r = res.result.realtime[0];
+                            var wea = r.infos.weather || fallbackDesc || '';
+                            var temp = (typeof r.infos.temperature !== 'undefined') ? r.infos.temperature : null;
+                            var tIcon = (r.infos.weather && r.infos.weather.indexOf('雨') > -1) ? '🌧️' :
+                                (r.infos.weather && r.infos.weather.indexOf('雪') > -1) ? '❄️' :
+                                (r.infos.weather && r.infos.weather.indexOf('阴') > -1) ? '☁️' :
+                                (r.infos.weather && r.infos.weather.indexOf('晴') > -1) ? '☀️' : (icon || '⛅');
+                            var html = '<div class="w-line1">' + greet(cityName) + '</div>' +
+                                '<div class="w-line2">' + cityName + ' ' + tIcon + ' ' + (temp !== null ? Math.round(temp) + '°' : '') + ' ' + wea + ' ' + (tmin !== null && tmax !== null ? (tmin + '°~' + tmax + '°') : '') + '</div>';
+                            showBar(html);
+                            renderCard(cityName, tIcon, wea, tmin, tmax, temp);
+                        } else {
+                            renderCard(cityName, icon || '⛅', fallbackDesc || '', tmin, tmax, null);
+                        }
+                    };
+                    var path = '/ws/weather/v1/';
+                    var rawParams = { key: QQ_KEY, output: 'jsonp', callback: cb, location: lat + ',' + lon };
+                    var keys = Object.keys(rawParams).sort();
+                    var qs = keys.map(function (k) { return k + '=' + rawParams[k]; }).join('&');
+                    var sig = md5(path + '?' + qs + QQ_SK);
+                    var scr = null;
+                    try {
+                        scr = document.createElement('script');
+                        scr.src = 'https://apis.map.qq.com' + path + '?' + qs + '&sig=' + sig;
+                        scr.onerror = function () { cleanup(); if (!done) { done = true; renderCard(cityName, icon || '⛅', fallbackDesc || '', tmin, tmax, null); } };
+                        document.head.appendChild(scr);
+                    } catch (e) { renderCard(cityName, icon || '⛅', fallbackDesc || '', tmin, tmax, null); }
+                    setTimeout(function () { if (!done) { done = true; cleanup(); } }, 8000);
+                }
                 function fetchWeather(lat, lon, cityName) {
                     var url = "https://api.open-meteo.com/v1/forecast?latitude=" + lat +
                         "&longitude=" + lon +
@@ -451,12 +498,9 @@
                         var code = d.current.weather_code;
                         var icon = (WMO[code] || ["☁️"])[0];
                         var desc = (WMO[code] || ["", "天气"])[1];
-                        var tmin = Math.round(daily.temperature_2m_min[0]);
-                        var tmax = Math.round(daily.temperature_2m_max[0]);
-                        var html = '<div class="w-line1">' + greet(cityName) + '</div>' +
-                            '<div class="w-line2">' + cityName + ' ' + icon + ' ' + tmin + '°~' + tmax + '° ' + desc + '</div>';
-                        showBar(html);
-                        renderCard(cityName, icon, desc, tmin, tmax);
+                        var tmin = (daily && daily.temperature_2m_min) ? Math.round(daily.temperature_2m_min[0]) : null;
+                        var tmax = (daily && daily.temperature_2m_max) ? Math.round(daily.temperature_2m_max[0]) : null;
+                        fetchTencentWeather(lat, lon, cityName, tmin, tmax, icon, desc);
                     }).catch(function () { showBar(greet()); });
                 }
                 function fallback() {
