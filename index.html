@@ -492,6 +492,14 @@
                 var widget = document.getElementById('weather-widget');
                 var msgEl = document.getElementById('weather-msg');
                 var hideTimer = null;
+                function showBar(html) {
+                    msgEl.innerHTML = html;
+                    widget.classList.add('show');
+                    clearTimeout(hideTimer);
+                    hideTimer = setTimeout(function () {
+                        widget.classList.remove('show');
+                    }, 7000);
+                }
                 // ===== 常驻天气卡片渲染 =====
                 function airLevel(aqi) {
     if (aqi === null || aqi === undefined || isNaN(aqi)) return '--';
