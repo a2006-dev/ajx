@@ -102,8 +102,8 @@ body {
 .player {
   margin-top:40px;
   display:flex; flex-direction:column; align-items:stretch; gap:0;
-  width:min(360px, 90vw);
-  padding:14px 16px 12px;
+  width:min(320px, 88vw);
+  padding:14px 15px 12px;
   border-radius:20px;
   background:rgba(255,255,255,.05);
   border:1px solid rgba(122,162,255,.18);
@@ -251,11 +251,30 @@ body {
   .controls { margin-top:14px; gap:8px; }
   .ctl { padding:8px 14px; font-size:12px; }
   .foot { margin-top:12px; }
-  .player { margin-top:16px; padding:10px 12px; gap:10px; }
-  .discWrap { width:56px; height:56px; }
+  .player { margin-top:16px; padding:10px 12px; gap:10px; max-width:min(300px, 92vw); }
+  .discWrap { width:52px; height:52px; }
   .p-name { font-size:12px; }
   .p-prog { margin-top:6px; }
   .p-ctl { margin-top:6px; }
+}
+/* 移动端竖屏：布局整体上移、播放器贴底，歌词区可读性优先 */
+@media (max-width:520px) and (orientation:portrait) {
+  body { align-items:flex-start; }
+  .lounge { max-width:100vw; padding:16px; }
+  .time { margin-top:16px; font-size:clamp(46px, 16vw, 72px); }
+  .date { margin-top:8px; }
+  .stay { margin-top:18px; padding:9px 20px; }
+  .controls { margin-top:18px; gap:9px; }
+  .ctl { padding:10px 17px; font-size:12px; }
+  .foot { margin-top:20px; }
+  .player { margin-top:16px; padding:14px 14px 12px; }
+  .p-lyric { height:96px; }
+}
+/* PC 大屏：播放器加宽至舒适尺寸并垂直居中 */
+@media (min-width:768px) {
+  body { align-items:center; }
+  .player { width:min(340px, 460px); }
+  .p-lyric { height:112px; }
 }
 
 </style>
@@ -414,6 +433,160 @@ body {
 
 /* ========== 4. 音乐播放器（黑胶唱片 + 专辑封面） ========== */
 (function () {
+
+  var lyricSavoir = [
+    { t: 0.2, l: 'Will you hold my hand?' },
+    { t: 2.41, l: 'Will you understand?' },
+    { t: 4.62, l: 'Can we still pretend' },
+    { t: 6.93, l: 'When the summer ends?' },
+    { t: 10.19, l: 'Do you think the tides know' },
+    { t: 14.38, l: 'Where they might go' },
+    { t: 17.97, l: 'Before they move?' },
+    { t: 22.55, l: 'Are they scared too?' },
+    { t: 25.2, l: '(Are they scared?)' },
+    { t: 27.93, l: 'Do you think the moon would fall into the sea' },
+    { t: 35.74, l: 'If it pulled on the world' },
+    { t: 39.36, l: "As hard as your love's pulled on me?" },
+    { t: 44.79, l: 'Will you hold my hand?' },
+    { t: 46.98, l: 'Will you understand?' },
+    { t: 49.0, l: 'Can we still pretend' },
+    { t: 51.39, l: 'When the summer ends?' },
+    { t: 53.56, l: 'Nothing needs to hurry' },
+    { t: 56.04, l: "I'll wait, I'll learn" },
+    { t: 58.09, l: 'How to love you when' },
+    { t: 60.59, l: 'The summer ends' },
+    { t: 62.43, l: 'Will you love me when' },
+    { t: 64.9, l: 'The summer ends?' },
+    { t: 68.06, l: 'What happens next is a moment' },
+    { t: 73.0, l: 'Time is a picture of you' },
+    { t: 77.48, l: "Looking at me, it's a poem" },
+    { t: 80.5, l: "Where everything's moot" },
+    { t: 83.04, l: "(Where everything's moot)" },
+    { t: 85.7, l: "Do you think there's relief in the feeling of an endless day?" },
+    { t: 92.91, l: "Do we get stronger the longer the sun's awake?" },
+    { t: 102.49, l: 'Will you hold my hand?' },
+    { t: 104.71, l: 'Will you understand?' },
+    { t: 106.82, l: 'Can we still pretend' },
+    { t: 109.0, l: 'When the summer ends?' },
+    { t: 111.33, l: 'Nothing needs to hurry' },
+    { t: 113.85, l: "I'll wait, I'll learn" },
+    { t: 115.8, l: 'How to love you when' },
+    { t: 118.22, l: 'The summer ends' },
+    { t: 120.12, l: 'Will you love me when' },
+    { t: 122.75, l: 'The summer ends?' },
+    { t: 144.02, l: 'What happens next is a moment' },
+    { t: 148.46, l: 'Time is a picture of you' },
+    { t: 153.0, l: 'What happens next is a moment' },
+    { t: 160.2, l: 'Will you hold my hand?' },
+    { t: 162.46, l: 'Will you understand?' },
+    { t: 164.68, l: 'Can we still pretend' },
+    { t: 166.89, l: 'When the summer ends?' },
+    { t: 169.05, l: 'Nothing needs to hurry' },
+    { t: 171.64, l: "I'll wait, I'll learn" },
+    { t: 173.54, l: 'How to love you when' },
+    { t: 176.04, l: 'The summer ends' },
+    { t: 177.94, l: 'Will you hold my hand?' },
+    { t: 180.78, l: 'Will you understand?' },
+    { t: 182.34, l: 'Can we still pretend' },
+    { t: 184.61, l: 'When the summer ends?' },
+    { t: 186.87, l: 'Nothing needs to hurry' },
+    { t: 189.32, l: "I'll wait, I'll learn" },
+    { t: 191.32, l: 'How to love you when' },
+    { t: 193.84, l: 'The summer ends' },
+    { t: 195.76, l: 'Will you love me when' },
+    { t: 198.27, l: 'The summer ends?' },
+  ];
+
+  var lyricBoa = [
+    { t: 0.99, l: "And you don't seem to understand" },
+    { t: 5.79, l: 'A shame, you seemed an honest man' },
+    { t: 10.82, l: 'And all the fears you hold so dear' },
+    { t: 15.83, l: 'Will turn to whisper in your ear' },
+    { t: 21.08, l: 'And you know what they say might hurt you' },
+    { t: 23.75, l: 'And you know that it means so much' },
+    { t: 26.34, l: "And you don't even feel a thing" },
+    { t: 31.4, l: 'I am falling' },
+    { t: 34.29, l: 'I am fading' },
+    { t: 36.92, l: 'I have lost it all' },
+    { t: 41.78, l: "And you don't seem the lying kind" },
+    { t: 46.75, l: 'A shame that I can read your mind' },
+    { t: 52.12, l: 'And all the things that I read there' },
+    { t: 57.01, l: 'Candle lit smile that we both share' },
+    { t: 62.32, l: "And you know I don't mean to hurt you" },
+    { t: 65.09, l: 'But you know that it means so much' },
+    { t: 67.67, l: "And you don't even feel a thing" },
+    { t: 72.86, l: 'I am falling' },
+    { t: 75.44, l: 'I am fading' },
+    { t: 78.11, l: 'I am drowning' },
+    { t: 80.65, l: 'Help me to breathe' },
+    { t: 83.2, l: 'I am hurting' },
+    { t: 85.78, l: 'I have lost it all' },
+    { t: 88.46, l: 'I am losing' },
+    { t: 90.88, l: 'Help me to breathe' },
+    { t: 134.94, l: 'I am falling' },
+    { t: 137.48, l: 'I am fading' },
+    { t: 140.02, l: 'I am drowning' },
+    { t: 142.55, l: 'Help me to breathe' },
+    { t: 145.06, l: 'I am hurting' },
+    { t: 147.62, l: 'I have lost it all' },
+    { t: 150.35, l: 'I am losing' },
+    { t: 152.85, l: 'Help me to breathe' },
+    { t: 176.43, l: 'I am falling' },
+    { t: 178.78, l: 'I am fading' },
+    { t: 181.24, l: 'I am drowning' },
+    { t: 183.79, l: 'Help me to breathe' },
+    { t: 186.42, l: 'I am hurting' },
+    { t: 188.94, l: 'I have lost it all' },
+    { t: 191.68, l: 'I am losing' },
+    { t: 194.25, l: 'Help me to breathe' },
+  ];
+
+  var lyricCafune = [
+    { t: 0.1, l: 'Where did you learn what it means to reciprocate?' },
+    { t: 6.65, l: 'And how much can I be expected to tolerate?' },
+    { t: 12.67, l: 'So I started to think about the plans I made' },
+    { t: 15.84, l: 'The debt unpaid' },
+    { t: 19.5, l: "And you just can't call" },
+    { t: 22.0, l: 'A spade a spade' },
+    { t: 26.26, l: 'I watch the moon' },
+    { t: 31.0, l: 'Let it run my mood' },
+    { t: 34.27, l: "Can't stop thinking of you" },
+    { t: 39.26, l: 'I watch you (And I watch as things play out like)' },
+    { t: 45.72, l: "So long nice to know you I'll be" },
+    { t: 49.02, l: 'Moving on' },
+    { t: 52.4, l: 'We started off in such a nice place' },
+    { t: 55.6, l: 'We were talking the same language' },
+    { t: 58.9, l: "I open and I'm closing" },
+    { t: 62.25, l: "You can't stand the thought" },
+    { t: 64.2, l: 'Of a real beating heart' },
+    { t: 66.02, l: "You'd be holding, having trouble" },
+    { t: 69.38, l: 'Oh-oh' },
+    { t: 70.26, l: 'Owning and admit that' },
+    { t: 72.99, l: 'I am hoping' },
+    { t: 75.21, l: 'I watch the moon' },
+    { t: 79.87, l: 'Let it run my mood' },
+    { t: 83.27, l: "Can't stop thinking of you" },
+    { t: 88.2, l: 'I watch you (And I watch as things play out like)' },
+    { t: 94.68, l: "So long nice to know you I'll be" },
+    { t: 97.94, l: 'Moving on' },
+    { t: 101.47, l: 'Moving on' },
+    { t: 130.75, l: 'You' },
+    { t: 131.89, l: 'Yeah, I always know the truth' },
+    { t: 135.11, l: "But I can't just say it to you" },
+    { t: 138.87, l: 'Yeah, I know the truth' },
+    { t: 143.27, l: 'I knew' },
+    { t: 144.8, l: 'Yeah, I always know the truth' },
+    { t: 148.19, l: "But I can't just say it to you" },
+    { t: 151.85, l: 'Yeah, I know the truth' },
+    { t: 157.26, l: "I never thought we'd see it through" },
+    { t: 159.84, l: 'I never could rely on you' },
+    { t: 164.12, l: 'And few times your face came' },
+    { t: 169.2, l: 'Into view' },
+    { t: 172.65, l: 'Into view' },
+    { t: 175.73, l: 'Into view' },
+    { t: 178.78, l: 'Into you' },
+  ];
+
   var lyricWaiting = [
     { t: 17.13, l: 'Come on let\u2019s go sailing' },
     { t: 21.37, l: 'I don\u2019t really know how' },
@@ -433,9 +606,9 @@ body {
     { t: 93.57, l: 'So long, so long, so long, so long' }
   ];
   var tracks = [
-    { src: './music/savoir-adore-summer-ends.mp3', name: 'When the Summer Ends', artist: 'Savoir Adore', cover: './images/savoir.jpg' },
-    { src: './music/boa-duvet.mp3', name: 'Duvet', artist: 'bôa', cover: './images/boa.jpg' },
-    { src: './music/cafune-tek-it.mp3', name: 'Tek It', artist: 'Cafuné', cover: './images/cafune.jpg' },
+    { src: './music/savoir-adore-summer-ends.mp3', name: 'When the Summer Ends', artist: 'Savoir Adore', cover: './images/savoir.jpg', lyric: lyricSavoir },
+    { src: './music/boa-duvet.mp3', name: 'Duvet', artist: 'bôa', cover: './images/boa.jpg', lyric: lyricBoa },
+    { src: './music/cafune-tek-it.mp3', name: 'Tek It', artist: 'Cafuné', cover: './images/cafune.jpg', lyric: lyricCafune },
     { src: './music/juliana-chahayed-waiting.mp3', name: 'waiting...', artist: 'Juliana Chahayed', cover: './images/juliana.jpg', lyric: lyricWaiting }
   ];
   var idx = 0, on = false, repeat = true, shuffle = false;
