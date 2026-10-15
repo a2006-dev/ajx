@@ -303,6 +303,9 @@ body {
   .p-name { font-size:12px; }
   .p-prog { margin-top:6px; }
   .p-ctl { margin-top:6px; }
+  /* 横屏高度受限：压缩歌词区，保证展开态下折叠按钮可点 */
+  .p-lyric { height:56px; }
+  .lounge { max-height:100vh; overflow-y:auto; }
 }
 /* 移动端竖屏：布局整体上移、播放器贴底，歌词区可读性优先 */
 @media (max-width:520px) and (orientation:portrait) {
@@ -322,6 +325,22 @@ body {
   body { align-items:center; }
   .player { width:min(340px, 460px); }
   .p-lyric { height:112px; }
+}
+
+
+/* 横屏专属覆盖：显式压低歌词区高度并解除 max-height 钳制 */
+@media (max-height:520px) and (orientation:landscape) {
+  .p-lyric { height:56px; max-height:56px; }
+  .poem { display:none; }
+  .date { display:none; }
+  .stay { margin-top:6px; }
+  .player { margin-top:12px; }
+  .title .en { display:none; }
+  .time { font-size:clamp(34px, 8vh, 56px); margin-top:2px; }
+  .controls { margin-top:4px; }
+  .stay { display:none; }
+  .title { margin-top:0; }
+  .player { margin-top:8px; }
 }
 
 </style>
