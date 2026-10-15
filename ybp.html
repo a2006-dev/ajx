@@ -132,6 +132,17 @@
             .page-nav { flex-direction: column; align-items: stretch; }
             .page-nav a { justify-content: center; }
         }
+    
+    /* 从下到上入场动画（与主页 .iUp 一致） */
+    .iUp {
+        opacity: 0;
+        transform: translate3d(0, 80px, 0);
+        transition: all 2s cubic-bezier(0.19, 1, 0.22, 1);
+    }
+    .iUp.up {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
     </style>
 </head>
 <body>
@@ -143,7 +154,7 @@
 
     <canvas id="sakura-canvas"></canvas>
 
-    <div class="container">
+    <div class="container iUp">
         <header class="site-header">
             <div class="badge"><span class="dot"></span> LIVE · 站点统计</div>
             <h1>✦ 站点统计 ✦</h1>
@@ -602,5 +613,15 @@
 
         $('current-year').textContent = new Date().getFullYear();
     </script>
+<script>
+(function iUpAnim () {
+    var els = Array.prototype.slice.call(document.querySelectorAll('.iUp'));
+    var t = 0, d = 150;
+    els.forEach(function (e) {
+        setTimeout(function () { e.classList.add('up'); }, t);
+        t += d;
+    });
+})();
+</script>
 </body>
 </html>
