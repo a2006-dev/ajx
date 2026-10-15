@@ -199,11 +199,22 @@ body::after {
     .page-nav { flex-direction: column; align-items: stretch; }
     .page-nav a { justify-content: center; }
 }
-</style>
+
+    /* 从下到上入场动画（与主页 .iUp 一致） */
+    .iUp {
+        opacity: 0;
+        transform: translate3d(0, 80px, 0);
+        transition: all 2s cubic-bezier(0.19, 1, 0.22, 1);
+    }
+    .iUp.up {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+    </style>
 </head>
 <body>
 
-<div class="wrap">
+<div class="wrap iUp">
 
     <div class="top-cmd">
         <span class="prompt">$</span>
@@ -432,6 +443,16 @@ body::after {
             while (win.children.length > 40) { win.removeChild(win.firstChild); }
         }, 1600);
     })();
+</script>
+<script>
+(function iUpAnim () {
+    var els = Array.prototype.slice.call(document.querySelectorAll('.iUp'));
+    var t = 0, d = 150;
+    els.forEach(function (e) {
+        setTimeout(function () { e.classList.add('up'); }, t);
+        t += d;
+    });
+})();
 </script>
 </body>
 </html>
