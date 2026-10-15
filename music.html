@@ -126,7 +126,7 @@ body {
   <div class="controls iUp">
     <button class="ctl" id="btnFs"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></span>全屏</button>
     <button class="ctl" id="btnLand"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></span>横屏</button>
-    <button class="ctl" id="btnMute"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span>音乐 OFF</button>
+    <button class="ctl" id="btnMute"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span><span class="mlabel">音乐 OFF</span></button>
     <button class="ctl" id="btnNext"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg></span>换曲</button>
   </div>
   <div class="foot iUp">任时光流淌 · L O U N G E   M O D E</div>
@@ -241,38 +241,40 @@ body {
 
 /* ========== 4. 背景音乐（低音量氛围，非主题） ========== */
 (function () {
+  // 移除 FLAC：部分移动端（尤其 iOS Safari）不支持，正常保留 mp3 曲目
   var tracks = [
     './music/savoir-adore-summer-ends.mp3',
     './music/boa-duvet.mp3',
-    './music/cafune-tek-it.mp3',
-    './music/juliana-chahayed-waiting.flac'
+    './music/cafune-tek-it.mp3'
   ];
   var idx = 0, on = false;
   var audio = new Audio();
-  audio.loop = true;
   audio.volume = 0.22;
   audio.preload = 'auto';
+  var btnM = document.getElementById('btnMute');
+  var btnN = document.getElementById('btnNext');
+  var labelM = btnM.querySelector('.mlabel');
   function load(n) {
     idx = ((n % tracks.length) + tracks.length) % tracks.length;
     audio.src = tracks[idx];
     audio.load();
+    if (on) audio.play().catch(function () { });
   }
   load(0);
-  audio.addEventListener('error', function () { if (on) { load(idx + 1); audio.play().catch(function () { }); } });
-  var btnM = document.getElementById('btnMute');
-  var btnN = document.getElementById('btnNext');
+  // 单曲播完自动切下一首（轮播而非单曲循环）
+  audio.addEventListener('ended', function () { load(idx + 1); });
+  audio.addEventListener('error', function () { if (on) load(idx + 1); });
   btnM.addEventListener('click', function () {
     on = !on;
     if (on) {
       var p = audio.play();
-      if (p && p.catch) p.catch(function () { on = false; btnM.classList.remove('on'); btnM.lastChild.textContent = ' OFF'; });
+      if (p && p.catch) p.catch(function () { on = false; btnM.classList.remove('on'); labelM.textContent = 'OFF'; });
     } else { audio.pause(); }
     btnM.classList.toggle('on', on);
-    btnM.lastChild.textContent = on ? ' ON' : ' OFF';
+    labelM.textContent = on ? 'ON' : 'OFF';
   });
   btnN.addEventListener('click', function () {
     load(idx + 1);
-    if (on) audio.play().catch(function () { });
   });
 })();
 
