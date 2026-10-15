@@ -144,23 +144,154 @@
         margin: 4px 0;
         display: block;
     }
+    #weather-card-container .m-col {
+        display: contents;
+    }
+    #weather-card-container .chev {
+        display: none;
+    }
+    #weather-card-container .weather-drawer {
+        display: none;
+    }
     @media (max-width: 768px) {
         #weather-card-container {
-            top: 14px;
-            right: 14px;
-            transform: translateY(-8px) scale(0.72);
+            top: 10px;
+            right: 10px;
+            left: auto;
+            width: calc(100vw - 20px);
+            max-width: 320px;
+            transform: none;
             transform-origin: top right;
         }
         #weather-card-container.show {
-            transform: translateY(0) scale(0.72);
+            transform: none;
+        }
+        #weather-card-container .cardContainer {
+            display: block;
+            width: 100%;
+        }
+        #weather-card-container .card {
+            width: 100%;
+            height: 62px;
+            box-sizing: border-box;
+            flex-direction: row;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 10px;
+            padding: 8px 14px;
+            border-radius: 16px;
+        }
+        #weather-card-container .m-col {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 2px;
+            min-width: 0;
+        }
+        #weather-card-container .city {
+            font-size: 0.98em;
+            margin: 0;
+        }
+        #weather-card-container .weather {
+            font-size: 0.68em;
+            margin: 0;
+            letter-spacing: .4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 120px;
+        }
+        #weather-card-container .w-icon {
+            width: 30px;
+            height: 30px;
+            margin: 0;
+            flex: none;
+        }
+        #weather-card-container .temp {
+            font-size: 1.55em;
+            margin-left: auto;
+            white-space: nowrap;
+            line-height: 1;
+        }
+        #weather-card-container .minmaxContainer {
+            display: none;
+        }
+        #weather-card-container .chev {
+            display: inline-block;
+            flex: none;
+            font-size: 1.1em;
+            line-height: 1;
+            color: rgba(255,255,255,.75);
+            transform: rotate(0deg);
+            transition: transform .35s;
+            margin-left: 2px;
+            cursor: pointer;
+        }
+        #weather-card-container .chev.rot {
+            transform: rotate(180deg);
+        }
+        #weather-card-container .cardContainer::before {
+            display: none;
+        }
+        #weather-card-container .weather-drawer {
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(-8px);
+            margin-top: 0;
+            transition: max-height .5s cubic-bezier(.19,1,.22,1), opacity .4s, transform .4s, margin-top .4s;
+            background-color: rgba(65, 65, 65, 0.4);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+        }
+        #weather-card-container .weather-drawer.open {
+            max-height: 300px;
+            opacity: 1;
+            transform: translateY(0);
+            margin-top: 8px;
+        }
+        #weather-card-container .d-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px 18px;
+            padding: 14px 16px;
+        }
+        #weather-card-container .d-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.78em;
+            color: rgba(255,255,255,.72);
+            letter-spacing: .3px;
+        }
+        #weather-card-container .d-item b {
+            color: #fff;
+            font-weight: 600;
+            font-size: 1.05em;
         }
     }
     @media (max-width: 400px) {
         #weather-card-container {
-            transform: translateY(-8px) scale(0.6);
+            top: 8px;
+            right: 8px;
+            width: calc(100vw - 16px);
+            max-width: 280px;
         }
-        #weather-card-container.show {
-            transform: translateY(0) scale(0.6);
+        #weather-card-container .card {
+            height: 56px;
+            padding: 6px 12px;
+        }
+        #weather-card-container .temp {
+            font-size: 1.35em;
+        }
+        #weather-card-container .weather {
+            max-width: 100px;
         }
     }
     /* ===== Uiverse 社交卡片 (from Uiverse.io by vinodjangid07) ===== */
@@ -296,8 +427,6 @@
     <div id="weather-card-container">
         <div class="cardContainer">
             <div class="card">
-                <p class="city">--</p>
-                <p class="weather">--</p>
                 <svg class="w-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="4"></circle>
                     <path d="M12 2v2"></path><path d="M12 20v2"></path>
@@ -305,7 +434,12 @@
                     <path d="M2 12h2"></path><path d="M20 12h2"></path>
                     <path d="M6.34 17.66l-1.41 1.41"></path><path d="M19.07 4.93l-1.41 1.41"></path>
                 </svg>
+                <div class="m-col">
+                    <p class="city">--</p>
+                    <p class="weather">--</p>
+                </div>
                 <p class="temp">--°</p>
+                <span class="chev">⌄</span>
                 <div class="minmaxContainer">
                     <div class="min">
                         <div class="minHeading">Min</div>
@@ -315,6 +449,16 @@
                         <div class="maxHeading">Max</div>
                         <div class="maxTemp">--°</div>
                     </div>
+                </div>
+            </div>
+            <div class="weather-drawer" id="weather-drawer">
+                <div class="d-grid">
+                    <div class="d-item"><span>湿度</span><b id="d-humidity">--</b></div>
+                    <div class="d-item"><span>体感</span><b id="d-realfeel">--</b></div>
+                    <div class="d-item"><span>空气</span><b id="d-air">--</b></div>
+                    <div class="d-item"><span>PM2.5</span><b id="d-pm25">--</b></div>
+                    <div class="d-item"><span>PM10</span><b id="d-pm10">--</b></div>
+                    <div class="d-item"><span>今日</span><b id="d-range">--</b></div>
                 </div>
             </div>
         </div>
@@ -587,7 +731,7 @@ function weatherIconKey(code) {
     if (code >= 95 && code <= 99) return 'storm';
     return 'cloud';
 }
-function renderCard(cityName, iconKey, desc, tmin, tmax, currentTemp, humidity, airText, aqi, realfeel) {
+function renderCard(cityName, iconKey, desc, tmin, tmax, currentTemp, humidity, airText, aqi, realfeel, pm25, pm10) {
     var box = document.getElementById('weather-card-container');
     if (!box) return;
     var cityEl = box.querySelector('.city');
@@ -602,9 +746,33 @@ function renderCard(cityName, iconKey, desc, tmin, tmax, currentTemp, humidity, 
     if (tempEl) tempEl.textContent = (currentTemp !== null && currentTemp !== undefined) ? (Math.round(currentTemp) + '°') : '--°';
     if (minTempEl) minTempEl.textContent = (tmin !== null && tmin !== undefined) ? (Math.round(tmin) + '°') : '--°';
     if (maxTempEl) maxTempEl.textContent = (tmax !== null && tmax !== undefined) ? (Math.round(tmax) + '°') : '--°';
+    // 抽屉六项数据（移动端点击展开）
+    var dH = box.querySelector('#d-humidity');
+    var dR = box.querySelector('#d-realfeel');
+    var dA = box.querySelector('#d-air');
+    var dP25 = box.querySelector('#d-pm25');
+    var dP10 = box.querySelector('#d-pm10');
+    var dRange = box.querySelector('#d-range');
+    if (dH) dH.textContent = (humidity !== null && humidity !== undefined) ? (Math.round(humidity) + '%') : '--';
+    if (dR) dR.textContent = (realfeel !== null && realfeel !== undefined) ? (Math.round(realfeel) + '°') : '--';
+    if (dA) dA.textContent = airText || '--';
+    if (dP25) dP25.textContent = (pm25 !== null && pm25 !== undefined) ? (Math.round(pm25) + ' µg/m³') : '--';
+    if (dP10) dP10.textContent = (pm10 !== null && pm10 !== undefined) ? (Math.round(pm10) + ' µg/m³') : '--';
+    if (dRange) dRange.textContent = (tmin !== null && tmax !== null) ? (tmin + '°~' + tmax + '°') : '--';
     box.classList.add('show');
+    // 点击卡片展开/收起抽屉（绑定保护）
+    if (!box._bound) {
+        box._bound = true;
+        var card = box.querySelector('.card');
+        if (card) card.addEventListener('click', function () {
+            var chev = card.querySelector('.chev');
+            var drawer = card.parentNode ? card.parentNode.querySelector('.weather-drawer') : null;
+            if (chev) chev.classList.toggle('rot');
+            if (drawer) drawer.classList.toggle('open');
+        });
+    }
 }
-function fetchTencentWeather(lat, lon, cityName, tmin, tmax, icon, fallbackDesc, humidity, realfeel, aqi) {
+function fetchTencentWeather(lat, lon, cityName, tmin, tmax, icon, fallbackDesc, humidity, realfeel, aqi, pm25, pm10) {
     var QQ_KEY = '2OOBZ-BSY6M-SS362-6AT56-32XZE-KHFXZ', QQ_SK = 'ozFKOpSc3b078f0qQEdjlKZyPoObVca5';
     var done = false, cb = 'qw' + Date.now();
     function cleanup() { try { delete window[cb]; if (scr && scr.parentNode) scr.parentNode.removeChild(scr); } catch (e) {} }
@@ -629,9 +797,9 @@ function fetchTencentWeather(lat, lon, cityName, tmin, tmax, icon, fallbackDesc,
             var html = '<div class="w-line1">' + greet(cityName) + '</div>' +
                 '<div class="w-line2">' + cityName + ' ' + tEmoji + ' ' + (temp !== null ? Math.round(temp) + '°' : '') + ' ' + wea + ' ' + (tmin !== null && tmax !== null ? (tmin + '°~' + tmax + '°') : '') + '</div>';
             showBar(html);
-            renderCard(cityName, tKey, wea, tmin, tmax, temp, humidity, airLevel(aqi), aqi, realfeel);
+            renderCard(cityName, tKey, wea, tmin, tmax, temp, humidity, airLevel(aqi), aqi, realfeel, pm25, pm10);
         } else {
-            renderCard(cityName, icon || 'cloud', fallbackDesc || '', tmin, tmax, null, humidity, airLevel(aqi), aqi, realfeel);
+            renderCard(cityName, icon || 'cloud', fallbackDesc || '', tmin, tmax, null, humidity, airLevel(aqi), aqi, realfeel, pm25, pm10);
         }
     };
     var path = '/ws/weather/v1/';
@@ -643,9 +811,9 @@ function fetchTencentWeather(lat, lon, cityName, tmin, tmax, icon, fallbackDesc,
     try {
         scr = document.createElement('script');
         scr.src = 'https://apis.map.qq.com' + path + '?' + qs + '&sig=' + sig;
-        scr.onerror = function () { cleanup(); if (!done) { done = true; renderCard(cityName, icon || 'cloud', fallbackDesc || '', tmin, tmax, null, humidity, airLevel(aqi), aqi, realfeel); } };
+        scr.onerror = function () { cleanup(); if (!done) { done = true; renderCard(cityName, icon || 'cloud', fallbackDesc || '', tmin, tmax, null, humidity, airLevel(aqi), aqi, realfeel, pm25, pm10); } };
         document.head.appendChild(scr);
-    } catch (e) { renderCard(cityName, icon || 'cloud', fallbackDesc || '', tmin, tmax, null, humidity, airLevel(aqi), aqi, realfeel); }
+    } catch (e) { renderCard(cityName, icon || 'cloud', fallbackDesc || '', tmin, tmax, null, humidity, airLevel(aqi), aqi, realfeel, pm25, pm10); }
     setTimeout(function () { if (!done) { done = true; cleanup(); } }, 8000);
 }
 function fetchWeather(lat, lon, cityName) {
@@ -667,9 +835,11 @@ function fetchWeather(lat, lon, cityName) {
         var realfeel = (typeof cur.apparent_temperature !== 'undefined') ? cur.apparent_temperature : null;
         fetch(airUrl).then(function (r) { return r.json(); }).then(function (aq) {
             var aqi = (aq && aq.current && typeof aq.current.us_aqi !== 'undefined') ? aq.current.us_aqi : null;
-            fetchTencentWeather(lat, lon, cityName, tmin, tmax, icon, desc, humidity, realfeel, aqi);
+            var pm25 = (aq && aq.current && typeof aq.current.pm2_5 !== 'undefined') ? aq.current.pm2_5 : null;
+            var pm10 = (aq && aq.current && typeof aq.current.pm10 !== 'undefined') ? aq.current.pm10 : null;
+            fetchTencentWeather(lat, lon, cityName, tmin, tmax, icon, desc, humidity, realfeel, aqi, pm25, pm10);
         }).catch(function () {
-            fetchTencentWeather(lat, lon, cityName, tmin, tmax, icon, desc, humidity, realfeel, null);
+            fetchTencentWeather(lat, lon, cityName, tmin, tmax, icon, desc, humidity, realfeel, null, null, null);
         });
     }).catch(function () { showBar(greet()); });
 }
