@@ -641,6 +641,23 @@ body {
     renderLyric();
   }
 
+  function fitLine(li) {
+    // 测量文本宽度，超出歌词区可用宽度则缩小字体
+    var box = elLyric.parentElement;
+    var avail = box ? (box.clientWidth || box.offsetWidth || 260) : 260;
+    // 先恢复基准字号以测量
+    li.style.fontSize = '';
+    li.style.whiteSpace = 'nowrap';
+    li.style.width = 'auto';
+    var w = li.scrollWidth;
+    if (w > avail) {
+      var ratio = avail / w;
+      var fs = Math.max(9, Math.floor(13 * ratio));
+      li.style.fontSize = fs + 'px';
+      li.style.letterSpacing = '0';
+    }
+  }
+
   function renderLyric() {
     var t = tracks[idx];
     if (!elLyric) return;
@@ -658,6 +675,7 @@ body {
       li.className = 'l-line';
       li.textContent = lines[i].l;
       elLyric.appendChild(li);
+      fitLine(li);
     }
   }
 
