@@ -118,6 +118,7 @@
         .card-2 { border-color: rgba(0,198,255,0.45); box-shadow: 0 15px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1), 0 0 24px rgba(0,198,255,0.25); }
         .card-3 { border-color: rgba(255,125,165,0.45); box-shadow: 0 15px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12), 0 0 24px rgba(255,125,165,0.28); }
         .card-4 { border-color: rgba(61,220,132,0.45); box-shadow: 0 15px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12), 0 0 24px rgba(61,220,132,0.28); }
+        .card-5 { border-color: rgba(167,139,250,0.45); box-shadow: 0 15px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12), 0 0 24px rgba(167,139,250,0.28); }
 
         /* 卡片内部光斑（右上角白色高光） */
         .cube-card::before {
@@ -179,6 +180,18 @@
             bottom: -35px;
             left: -35px;
             background: radial-gradient(circle, rgba(61,220,132,0.55) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .card-5::after {
+            content: "";
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            bottom: -35px;
+            left: -35px;
+            background: radial-gradient(circle, rgba(167,139,250,0.55) 0%, transparent 70%);
             pointer-events: none;
             z-index: 0;
         }
@@ -253,12 +266,15 @@
         .card-3 .card-name { color: #ff9db9; }
         .card-4 .card-icon { color: #8ef0b5; }
         .card-4 .card-name { color: #8ef0b5; }
+        .card-5 .card-icon { color: #c4b5fd; }
+        .card-5 .card-name { color: #c4b5fd; }
 
         /* 方位 */
         .card-3d .c1 { transform: translate(-50%, -50%) rotateY(0deg) translateZ(220px); }
-        .card-3d .c2 { transform: translate(-50%, -50%) rotateY(90deg) translateZ(220px); }
-        .card-3d .c3 { transform: translate(-50%, -50%) rotateY(180deg) translateZ(220px); }
-        .card-3d .c4 { transform: translate(-50%, -50%) rotateY(270deg) translateZ(220px); }
+        .card-3d .c2 { transform: translate(-50%, -50%) rotateY(72deg) translateZ(220px); }
+        .card-3d .c3 { transform: translate(-50%, -50%) rotateY(144deg) translateZ(220px); }
+        .card-3d .c4 { transform: translate(-50%, -50%) rotateY(216deg) translateZ(220px); }
+        .card-3d .c5 { transform: translate(-50%, -50%) rotateY(288deg) translateZ(220px); }
 
         /* 控制按钮 */
         .controls {
@@ -365,9 +381,10 @@
             .card-3d { width: 300px; height: 230px; }
             .card-3d .cube-card { width: 165px; height: 225px; }
             .card-3d .c1 { transform: translate(-50%,-50%) rotateY(0deg) translateZ(175px); }
-            .card-3d .c2 { transform: translate(-50%,-50%) rotateY(90deg) translateZ(175px); }
-            .card-3d .c3 { transform: translate(-50%,-50%) rotateY(180deg) translateZ(175px); }
-            .card-3d .c4 { transform: translate(-50%,-50%) rotateY(270deg) translateZ(175px); }
+            .card-3d .c2 { transform: translate(-50%,-50%) rotateY(72deg) translateZ(175px); }
+            .card-3d .c3 { transform: translate(-50%,-50%) rotateY(144deg) translateZ(175px); }
+            .card-3d .c4 { transform: translate(-50%,-50%) rotateY(216deg) translateZ(175px); }
+            .card-3d .c5 { transform: translate(-50%,-50%) rotateY(288deg) translateZ(175px); }
         }
     </style>
 </head>
@@ -418,9 +435,21 @@
                             <circle cx="18.5" cy="18" r="1.8" fill="currentColor"/>
                             <path d="M18.5 4v3M18.5 14v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                         </svg>
-                    </div>
                     <div class="card-name">LogCatcher</div>
                     <div class="card-desc">Log</div>
+                </div>
+            </a>
+            <a class="cube-card c5 card-5" href="./music.html">
+                <div class="card-inner">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9 18.5V5.5L20 3v13.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="6.5" cy="18.5" r="2.5" fill="currentColor" opacity="0.9"/>
+                            <circle cx="17.5" cy="16.5" r="2.5" fill="currentColor" opacity="0.9"/>
+                        </svg>
+                    </div>
+                    <div class="card-name">挂机音乐</div>
+                    <div class="card-desc">Music</div>
                 </div>
             </a>
         </div>
@@ -474,7 +503,7 @@
             if (Math.abs(velocity) < 0.05) {
                 mode = 'settle';
                 settleFrom = rotY;
-                settleTarget = Math.round(rotY / 90) * 90;
+                settleTarget = Math.round(rotY / 72) * 72;
                 settleStart = 0;
                 settleDur = 260;
             }
@@ -491,10 +520,10 @@
         settleDur = 360;
     }
     prevBtn.addEventListener('click', function () {
-        settleTo(Math.round(rotY / 90) * 90 + 90);
+        settleTo(Math.round(rotY / 72) * 72 + 72);
     });
     nextBtn.addEventListener('click', function () {
-        settleTo(Math.round(rotY / 90) * 90 - 90);
+        settleTo(Math.round(rotY / 72) * 72 - 72);
     });
     var dragging = false;
     var startX = 0, startRot = 0, lastX = 0, lastT = 0;
@@ -544,8 +573,8 @@
         if (dragging) { dragging = false; mode = 'inertia'; }
     });
     window.addEventListener('keydown', function (e) {
-        if (e.key === 'ArrowLeft') { settleTo(Math.round(rotY / 90) * 90 + 90); }
-        else if (e.key === 'ArrowRight') { settleTo(Math.round(rotY / 90) * 90 - 90); }
+        if (e.key === 'ArrowLeft') { settleTo(Math.round(rotY / 72) * 72 + 72); }
+        else if (e.key === 'ArrowRight') { settleTo(Math.round(rotY / 72) * 72 - 72); }
     });
 })();
 
