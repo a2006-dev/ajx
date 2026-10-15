@@ -93,7 +93,8 @@
             left: 50%;
             border-radius: 20px;
             transform-origin: center center;
-            backface-visibility: visible;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -270,11 +271,11 @@
         .card-5 .card-name { color: #c4b5fd; }
 
         /* 方位 */
-        .card-3d .c1 { transform: translate(-50%, -50%) rotateY(0deg) translateZ(220px); }
-        .card-3d .c2 { transform: translate(-50%, -50%) rotateY(72deg) translateZ(220px); }
-        .card-3d .c3 { transform: translate(-50%, -50%) rotateY(144deg) translateZ(220px); }
-        .card-3d .c4 { transform: translate(-50%, -50%) rotateY(216deg) translateZ(220px); }
-        .card-3d .c5 { transform: translate(-50%, -50%) rotateY(288deg) translateZ(220px); }
+        .card-3d .c1 { transform: translate(-50%, -50%) rotateY(0deg) translateZ(260px); }
+        .card-3d .c2 { transform: translate(-50%, -50%) rotateY(72deg) translateZ(260px); }
+        .card-3d .c3 { transform: translate(-50%, -50%) rotateY(144deg) translateZ(260px); }
+        .card-3d .c4 { transform: translate(-50%, -50%) rotateY(216deg) translateZ(260px); }
+        .card-3d .c5 { transform: translate(-50%, -50%) rotateY(288deg) translateZ(260px); }
 
         /* 控制按钮 */
         .controls {
@@ -378,13 +379,13 @@
         }
 
         @media (max-width: 560px) {
-            .card-3d { width: 300px; height: 230px; }
-            .card-3d .cube-card { width: 165px; height: 225px; }
-            .card-3d .c1 { transform: translate(-50%,-50%) rotateY(0deg) translateZ(175px); }
-            .card-3d .c2 { transform: translate(-50%,-50%) rotateY(72deg) translateZ(175px); }
-            .card-3d .c3 { transform: translate(-50%,-50%) rotateY(144deg) translateZ(175px); }
-            .card-3d .c4 { transform: translate(-50%,-50%) rotateY(216deg) translateZ(175px); }
-            .card-3d .c5 { transform: translate(-50%,-50%) rotateY(288deg) translateZ(175px); }
+            .card-3d { width: 340px; height: 250px; }
+            .card-3d .cube-card { width: 150px; height: 210px; }
+            .card-3d .c1 { transform: translate(-50%,-50%) rotateY(0deg) translateZ(210px); }
+            .card-3d .c2 { transform: translate(-50%,-50%) rotateY(72deg) translateZ(210px); }
+            .card-3d .c3 { transform: translate(-50%,-50%) rotateY(144deg) translateZ(210px); }
+            .card-3d .c4 { transform: translate(-50%,-50%) rotateY(216deg) translateZ(210px); }
+            .card-3d .c5 { transform: translate(-50%,-50%) rotateY(288deg) translateZ(210px); }
         }
     </style>
 </head>
