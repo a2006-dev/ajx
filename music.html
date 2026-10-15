@@ -662,16 +662,23 @@ body {
   }
 
   function fitLine(el, baseFs) {
-    var box = elLyric.parentElement;
-    var avail = (box ? (box.clientWidth || box.offsetWidth || 240) : 240) - 8;
+    var box = elLyric.parentElement || elLyric;
+    var avail = (box ? (box.clientWidth || box.offsetWidth || 300) : 300) - 8;
     el.style.fontSize = baseFs + 'px';
     el.style.whiteSpace = 'nowrap';
     el.style.width = 'auto';
-    var w = el.scrollWidth;
-    if (w > avail) {
-      var ratio = avail / w;
-      var fs = Math.max(8, Math.floor(baseFs * ratio));
+    el.style.letterSpacing = (baseFs >= 13 ? '.05em' : '.02em');
+    var w = el.scrollWidth || el.offsetWidth;
+    if (w > avail && w > 0) {
+      var fs = baseFs * avail / w;
+      if (fs < 6) fs = 6;
       el.style.fontSize = fs + 'px';
+      var w2 = el.scrollWidth || el.offsetWidth;
+      if (w2 > avail) {
+        var fs2 = fs * avail / w2;
+        if (fs2 < 6) fs2 = 6;
+        el.style.fontSize = fs2 + 'px';
+      }
       el.style.letterSpacing = '0';
     }
   }
@@ -770,8 +777,7 @@ body {
   audio.addEventListener('timeupdate', function () {
     if (!audio.duration) return;
     elCur.textContent = fmt(audio.currentTime);
-    var pct = (audio.currentTime / audio.duration) * 100;
-    elSeek.value = pct;
+    elSeek.value = audio.currentTime;
     updateLyric(audio.currentTime);
   });
   audio.addEventListener('ended', function () {
@@ -809,8 +815,20 @@ body {
 
   elSeek.addEventListener('input', function () {
     if (audio.duration) {
-      audio.currentTime = (elSeek.value / 100) * audio.duration;
+      audio.currentTime = elSeek.value;
     }
+  });
+
+  // 窗口尺寸变化时重新适配歌词字体、重算滚动偏移
+  addEventListener('resize', function () {
+    var groups = elLyric.querySelectorAll('.l-group');
+    for (var k = 0; k < groups.length; k++) {
+      var li = groups[k].querySelector('.l-line');
+      if (li) fitLine(li, 13);
+      var tr = groups[k].querySelector('.l-tr');
+      if (tr) fitLine(tr, 9);
+    }
+    if (audio.currentTime) updateLyric(audio.currentTime);
   });
 
   // 首次进入不自动播放，等待用户点击
