@@ -209,12 +209,16 @@ body {
   background:#cfe0ff; border:none;
 }
 .p-time {
-  margin-top:4px;
-  display:flex; justify-content:space-between;
-  font-size:9px; font-weight:300; letter-spacing:.1em;
-  color:rgba(170,196,236,.5);
+  margin-top:6px;
+  display:flex; justify-content:space-between; align-items:baseline;
+  font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;
+  font-size:12px; font-weight:500; letter-spacing:.05em;
+  color:rgba(206,224,255,.92);
   font-variant-numeric:tabular-nums;
 }
+.p-time span { display:inline-block; }
+.p-time .dur { margin-left:auto; }
+.p-time .sep { color:rgba(122,162,255,.45); margin:0 4px; }
 .p-ctl {
   margin-top:8px;
   display:flex; align-items:center; justify-content:space-between;
@@ -306,7 +310,7 @@ body {
           <input type="range" id="seek" min="0" max="100" value="0" step="0.1">
         </div>
         <div class="p-time">
-          <span id="cur">0:00</span><span id="dur">0:00</span>
+          <span id="cur">0:00</span><span class="sep">/</span><span class="dur" id="dur">0:00</span>
         </div>
       </div>
     </div>
