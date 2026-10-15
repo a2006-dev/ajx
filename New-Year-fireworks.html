@@ -239,7 +239,18 @@
     .page-nav { flex-direction: column; align-items: stretch; gap: 4px; padding: 10px 12px; }
     .page-nav a { justify-content: center; }
   }
-  </style>
+  
+    /* 从下到上入场动画（与主页 .iUp 一致） */
+    .iUp {
+        opacity: 0;
+        transform: translate3d(0, 80px, 0);
+        transition: all 2s cubic-bezier(0.19, 1, 0.22, 1);
+    }
+    .iUp.up {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+    </style>
   </head>
   <body>
   <!-- partial:index.partial.html -->
@@ -268,7 +279,7 @@
   </div>
 
   <!-- App -->
-  <div class="container">
+  <div class="container iUp">
     <div id="loading-init">加载中...</div>
     <div id="stage-container" class="remove">
       <div id="canvas-container">
@@ -1694,5 +1705,15 @@
     <a href="./index.html" class="home-btn"><span>🏠</span><span class="nav-label">主页</span></a>
     <a href="./heart.html"><span class="nav-label">下一页 →</span><span>❤️ 心迹 Heart</span></a>
   </nav>
+<script>
+(function iUpAnim () {
+    var els = Array.prototype.slice.call(document.querySelectorAll('.iUp'));
+    var t = 0, d = 150;
+    els.forEach(function (e) {
+        setTimeout(function () { e.classList.add('up'); }, t);
+        t += d;
+    });
+})();
+</script>
 </body>
 </html>
