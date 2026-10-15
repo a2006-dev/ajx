@@ -100,7 +100,7 @@ body {
 }
 /* ========== 播放器（黑胶唱片折叠卡） ========== */
 .player {
-  margin-top:40px;
+  margin-top:40px; margin-left:auto; margin-right:auto;
   display:flex; flex-direction:column; align-items:stretch; gap:0;
   width:min(320px, 88vw);
   padding:14px 15px 12px;
@@ -546,49 +546,38 @@ body {
   ];
 
   var lyricCafune = [
-    { t: 0.1, l: 'Where did you learn what it means to reciprocate?' },
-    { t: 6.65, l: 'And how much can I be expected to tolerate?' },
-    { t: 12.67, l: 'So I started to think about the plans I made' },
-    { t: 15.84, l: 'The debt unpaid' },
-    { t: 19.5, l: "And you just can't call" },
-    { t: 22.0, l: 'A spade a spade' },
-    { t: 26.26, l: 'I watch the moon' },
-    { t: 31.0, l: 'Let it run my mood' },
-    { t: 34.27, l: "Can't stop thinking of you" },
-    { t: 39.26, l: 'I watch you (And I watch as things play out like)' },
-    { t: 45.72, l: "So long nice to know you I'll be" },
-    { t: 49.02, l: 'Moving on' },
-    { t: 52.4, l: 'We started off in such a nice place' },
-    { t: 55.6, l: 'We were talking the same language' },
-    { t: 58.9, l: "I open and I'm closing" },
-    { t: 62.25, l: "You can't stand the thought" },
-    { t: 64.2, l: 'Of a real beating heart' },
-    { t: 66.02, l: "You'd be holding, having trouble" },
-    { t: 69.38, l: 'Oh-oh' },
-    { t: 70.26, l: 'Owning and admit that' },
-    { t: 72.99, l: 'I am hoping' },
-    { t: 75.21, l: 'I watch the moon' },
-    { t: 79.87, l: 'Let it run my mood' },
-    { t: 83.27, l: "Can't stop thinking of you" },
-    { t: 88.2, l: 'I watch you (And I watch as things play out like)' },
-    { t: 94.68, l: "So long nice to know you I'll be" },
-    { t: 97.94, l: 'Moving on' },
-    { t: 101.47, l: 'Moving on' },
-    { t: 130.75, l: 'You' },
-    { t: 131.89, l: 'Yeah, I always know the truth' },
-    { t: 135.11, l: "But I can't just say it to you" },
-    { t: 138.87, l: 'Yeah, I know the truth' },
-    { t: 143.27, l: 'I knew' },
-    { t: 144.8, l: 'Yeah, I always know the truth' },
-    { t: 148.19, l: "But I can't just say it to you" },
-    { t: 151.85, l: 'Yeah, I know the truth' },
-    { t: 157.26, l: "I never thought we'd see it through" },
-    { t: 159.84, l: 'I never could rely on you' },
-    { t: 164.12, l: 'And few times your face came' },
-    { t: 169.2, l: 'Into view' },
-    { t: 172.65, l: 'Into view' },
-    { t: 175.73, l: 'Into view' },
-    { t: 178.78, l: 'Into you' },
+    { t: 0.08, l: 'Where did you learn what it means to reciprocate?' },
+    { t: 5.45, l: 'And how much can I be expected to tolerate?' },
+    { t: 10.93, l: "So I started to think 'bout the plans I made, the debt unpaid" },
+    { t: 16.97, l: 'And you just can\u2019t call a spade "a spade"' },
+    { t: 22.77, l: 'I watch the Moon, let it run my mood' },
+    { t: 29.55, l: "Can't stop thinking of you" },
+    { t: 34.16, l: "I watch you (now I let it go, and I watch as things play out like)" },
+    { t: 39.66, l: "So long, nice to know you, I'll be moving on" },
+    { t: 45.25, l: 'We started off in such a nice place' },
+    { t: 48.36, l: 'We were talking the same language' },
+    { t: 51.02, l: "I o-open, and I'm closing" },
+    { t: 53.99, l: "You can't stand the thought of a real beating heart" },
+    { t: 57.43, l: "You'd be holding, having trouble" },
+    { t: 60.15, l: "O-o-owning and admit that I am hoping" },
+    { t: 65.24, l: 'I watch the Moon, let it run my mood' },
+    { t: 72.18, l: "Can't stop thinking of you" },
+    { t: 76.93, l: "I watch you (now I let it go, and I watch as things play out like)" },
+    { t: 82.22, l: "So long, nice to know you, I'll be moving on, moving on" },
+    { t: 113.54, l: 'You' },
+    { t: 114.5, l: 'Yeah, I always know the truth' },
+    { t: 117.28, l: "But I can't just say it to you" },
+    { t: 120.37, l: 'Yeah, I know the truth' },
+    { t: 124.32, l: 'I knew' },
+    { t: 125.63, l: 'Yeah, I always know the truth' },
+    { t: 128.52, l: "But I can't just say it to you" },
+    { t: 131.71, l: 'Yeah, I know the truth' },
+    { t: 136.69, l: "I never thought we'd see it through" },
+    { t: 139.61, l: 'I never could rely on you' },
+    { t: 142.43, l: 'And the few times your face came into view' },
+    { t: 149.67, l: 'Into view' },
+    { t: 152.35, l: "I'm not into you" },
+    { t: 155.32, l: 'Into you' },
   ];
 
   var lyricWaiting = [
@@ -686,10 +675,18 @@ body {
       if (k === idxLine) lines[k].classList.add('on');
       else if (k === idxLine + 1) lines[k].classList.add('preview');
     }
-    var lineH = 27; // 歌词行高近似值
-    var off = lineH * 2.6; // 使当前行居中（约视口104px / 2 = 52px，行高27 → 偏移约 52 - 27/2 = 38）
+    // 动态测量，确保当前句在歌词区严格垂直居中
+    var inner = elLyric;
+    var boxH = inner.clientHeight || inner.offsetHeight || 104;
+    var first = lines[0];
+    var lineH = 27;
+    if (first) {
+      var rec = first.getBoundingClientRect().height || 0;
+      if (rec > 0) lineH = rec; // 实测高度已含上下 padding，直接作为行间距
+    }
+    var off = boxH / 2 - lineH / 2; // 使当前行居中
     var y = -idxLine * lineH + off;
-    elLyric.style.transform = 'translateY(' + y + 'px)';
+    inner.style.transform = 'translateY(' + y + 'px)';
   }
 
   function playState() {
