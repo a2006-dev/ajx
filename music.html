@@ -38,6 +38,15 @@ body {
   text-indent:.95em;
   color:rgba(140,172,225,.42);
 }
+.poem {
+  margin-top:18px;
+  font-size:clamp(12px, 1.9vw, 16px);
+  font-weight:300;
+  letter-spacing:.34em;
+  text-indent:.34em;
+  color:rgba(160,185,225,.48);
+}
+.poem .dot { margin:0 .5em; opacity:.4; }
 .time {
   margin-top:36px;
   font-size:clamp(62px, 15vw, 172px);
@@ -110,6 +119,7 @@ body {
 <canvas id="dust"></canvas>
 <div class="lounge">
   <div class="title iUp">停 云<span class="en">T I M E&nbsp;&nbsp;L O U N G E</span></div>
+  <div class="poem iUp">霭霭停云<span class="dot">·</span>濛濛时雨</div>
   <div class="time iUp" id="clock">--:--:--</div>
   <div class="date iUp" id="date">----</div>
   <div class="stay iUp"><span class="label">HANGING</span><span id="stay">00:00:00</span></div>
