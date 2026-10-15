@@ -239,7 +239,7 @@ body {
 .p-time .sep { color:rgba(122,162,255,.45); margin:0 4px; }
 .p-ctl {
   margin-top:8px;
-  display:flex; align-items:center; justify-content:space-between;
+  display:flex; align-items:center; justify-content:center; gap:2px; flex-wrap:wrap;
 }
 .pc {
   display:inline-flex; align-items:center; justify-content:center;
@@ -258,6 +258,34 @@ body {
 }
 .pc.main:hover { background:linear-gradient(135deg, rgba(120,165,255,.5), rgba(120,165,255,.2)); }
 .pc svg { width:14px; height:14px; }
+/* 播放器折叠态（小黑胶） */
+.player.mini {
+  width:auto; padding:16px; cursor:pointer;
+  align-items:center;
+}
+.player.mini .player-top { justify-content:center; }
+.player.mini .discWrap { width:88px; height:88px; }
+.player.mini .p-main,
+.player.mini .p-lyric,
+.player.mini .p-ctl { display:none; }
+.player.mini .spindle { display:none; }
+.player.mini .discWrap::after {
+  content:''; position:absolute; top:50%; left:50%;
+  width:15px; height:15px; margin:-8px 0 0 -8px;
+  background:rgba(255,255,255,.92); border-radius:4px;
+  box-shadow:-6px 0 0 rgba(255,255,255,.92);
+  transition:opacity .25s ease;
+  z-index:3;
+}
+.player.mini:not(.playing) .discWrap::after {
+  width:0; height:0; margin:-9px 0 0 -2px;
+  background:transparent; box-shadow:none;
+  border-left:15px solid rgba(255,255,255,.92);
+  border-top:10px solid transparent;
+  border-bottom:10px solid transparent;
+  border-radius:0;
+}
+
 .pc.main svg { width:16px; height:16px; }
 /* 入场动画（全站统一 .iUp：从下到上浮现） */
 .iUp { opacity:0; transform:translate3d(0,80px,0); transition:all 2s cubic-bezier(.19,1,.22,1); }
@@ -314,6 +342,7 @@ body {
     <button class="ctl" id="btnLand"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></span>横屏</button>
   </div>
   <div class="player iUp">
+    <input type="file" id="fileLocal" accept="audio/*" style="display:none">
     <div class="player-top">
       <div class="discWrap">
         <div class="disc" id="disc">
@@ -336,11 +365,13 @@ body {
       <div class="l-inner" id="lInner"></div>
     </div>
     <div class="p-ctl">
+      <button class="pc" id="btnFile" title="上传本地音乐"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
       <button class="pc" id="btnTr" title="翻译"><span style="font-size:12px;font-weight:500;">译</span></button>
       <button class="pc act" id="btnRepeat" title="循环"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></button>
       <button class="pc" id="btnPrev" title="上一首"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg></button>
       <button class="pc main" id="btnPlay" title="播放/暂停"><svg id="icPlay" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg><svg id="icPause" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg></button>
       <button class="pc" id="btnNext" title="下一首"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg></button>
+      <button class="pc" id="btnFold" title="收起"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 13 12 18 17 13"/><polyline points="7 6 12 11 17 6"/></svg></button>
       <button class="pc act" id="btnShuffle" title="随机"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg></button>
     </div>
   </div>
@@ -644,6 +675,11 @@ body {
   var elShuffle = document.getElementById('btnShuffle');
   var elTr = document.getElementById('btnTr');
   var elLyric = document.getElementById('lInner');
+  var elFile = document.getElementById('btnFile');
+  var fileInput = document.getElementById('fileLocal');
+  var elFold = document.getElementById('btnFold');
+  var playerEl = document.querySelector('.player');
+  var localIdx = -1;
 
   function fmt(s) {
     if (!isFinite(s) || s < 0) s = 0;
@@ -747,6 +783,7 @@ body {
     elDisc.classList.toggle('paused', !on);
     icPlay.style.display = on ? 'none' : 'block';
     icPause.style.display = on ? 'block' : 'none';
+    if (playerEl) playerEl.classList.toggle('playing', on);
   }
 
   function load(n) {
@@ -778,6 +815,8 @@ body {
     if (!audio.duration) return;
     elCur.textContent = fmt(audio.currentTime);
     elSeek.value = audio.currentTime;
+    var pct = (audio.currentTime / audio.duration) * 100;
+    if (elSeek) elSeek.style.background = 'linear-gradient(to right, rgba(122,162,255,.9) ' + pct + '%, rgba(122,162,255,.2) ' + pct + '%)';
     updateLyric(audio.currentTime);
   });
   audio.addEventListener('ended', function () {
@@ -806,6 +845,24 @@ body {
     elShuffle.classList.toggle('act', shuffle);
   });
 
+  elFile.addEventListener('click', function () { if (fileInput) fileInput.click(); });
+  fileInput.addEventListener('change', function () {
+    var f = fileInput.files && fileInput.files[0];
+    if (!f) return;
+    var url = URL.createObjectURL(f);
+    var nm = (f.name || 'Local').replace(/\.[^.]+$/, '') || 'Local';
+    var cv = tracks[idx] ? tracks[idx].cover : './images/savoir.jpg';
+    tracks.push({ src: url, name: nm, artist: '本地音乐', cover: cv, lyric: null });
+    localIdx = tracks.length - 1;
+    on = true;
+    load(localIdx);
+    playState();
+  });
+  elFold.addEventListener('click', function (e) { e.stopPropagation(); if (playerEl) playerEl.classList.add('mini'); });
+  if (playerEl) playerEl.addEventListener('click', function () {
+    if (playerEl.classList.contains('mini')) { playerEl.classList.remove('mini'); }
+  });
+
   elTr.addEventListener('click', function () {
     tr = !tr;
     elTr.classList.toggle('act', tr);
@@ -816,6 +873,8 @@ body {
   elSeek.addEventListener('input', function () {
     if (audio.duration) {
       audio.currentTime = elSeek.value;
+      var p2 = (elSeek.value / audio.duration) * 100;
+      elSeek.style.background = 'linear-gradient(to right, rgba(122,162,255,.9) ' + p2 + '%, rgba(122,162,255,.2) ' + p2 + '%)';
     }
   });
 
