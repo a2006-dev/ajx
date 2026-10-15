@@ -98,6 +98,109 @@ body {
   letter-spacing:.5em; text-indent:.5em;
   color:rgba(160,185,225,.3);
 }
+/* ========== 播放器（黑胶唱片折叠卡） ========== */
+.player {
+  margin-top:40px;
+  display:flex; align-items:center; gap:18px;
+  width:min(440px, 92vw);
+  padding:16px 20px;
+  border-radius:24px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(122,162,255,.18);
+  -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px);
+  box-shadow:0 10px 44px rgba(0,0,0,.38);
+  text-align:left;
+}
+.discWrap {
+  position:relative; flex:none;
+  width:104px; height:104px;
+}
+.disc {
+  width:100%; height:100%;
+  border-radius:50%;
+  background:radial-gradient(circle at 30% 30%, #262d3d, #0d1119 70%);
+  border:1px solid rgba(150,180,255,.28);
+  box-shadow:0 5px 24px rgba(0,0,0,.55), inset 0 0 0 6px rgba(255,255,255,.03);
+  display:flex; align-items:center; justify-content:center;
+  animation:spin 3s linear infinite;
+}
+.disc.paused { animation-play-state:paused; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.disc .cover {
+  width:54%; height:54%;
+  border-radius:50%;
+  object-fit:cover;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.22);
+}
+.discWrap .spindle {
+  position:absolute; top:50%; left:50%;
+  width:12px; height:12px;
+  border-radius:50%;
+  background:#eef4ff;
+  transform:translate(-50%,-50%);
+  box-shadow:0 0 8px rgba(255,255,255,.65);
+  z-index:2;
+  border:3px solid rgba(0,0,0,.4);
+}
+.p-main { flex:1; min-width:0; }
+.p-name {
+  font-size:15px; font-weight:400; letter-spacing:.04em;
+  color:#f2f6ff;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.p-artist {
+  margin-top:3px;
+  font-size:11px; font-weight:300; letter-spacing:.14em;
+  color:rgba(170,196,236,.6);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.p-prog { margin-top:12px; }
+.p-prog input[type=range] {
+  -webkit-appearance:none; appearance:none;
+  width:100%; height:4px; border-radius:999px;
+  background:rgba(122,162,255,.2);
+  outline:none; cursor:pointer;
+}
+.p-prog input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance:none; appearance:none;
+  width:12px; height:12px; border-radius:50%;
+  background:#cfe0ff;
+  box-shadow:0 0 10px rgba(120,165,255,.75);
+  border:none;
+}
+.p-prog input[type=range]::-moz-range-thumb {
+  width:12px; height:12px; border-radius:50%;
+  background:#cfe0ff; border:none;
+}
+.p-time {
+  margin-top:6px;
+  display:flex; justify-content:space-between;
+  font-size:10px; font-weight:300; letter-spacing:.1em;
+  color:rgba(170,196,236,.5);
+  font-variant-numeric:tabular-nums;
+}
+.p-ctl {
+  margin-top:12px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.pc {
+  display:inline-flex; align-items:center; justify-content:center;
+  padding:8px; border-radius:50%;
+  background:transparent; border:none;
+  color:#cfe0ff; cursor:pointer;
+  -webkit-transition:all .25s ease; transition:all .25s ease;
+}
+.pc:hover { background:rgba(120,165,255,.18); }
+.pc.act { color:#8ec2ff; }
+.pc.main {
+  width:44px; height:44px;
+  background:linear-gradient(135deg, rgba(120,165,255,.35), rgba(120,165,255,.12));
+  border:1px solid rgba(150,190,255,.4);
+  box-shadow:0 0 22px rgba(120,165,255,.3);
+}
+.pc.main:hover { background:linear-gradient(135deg, rgba(120,165,255,.5), rgba(120,165,255,.2)); }
+.pc svg { width:16px; height:16px; }
+.pc.main svg { width:19px; height:19px; }
 /* 入场动画（全站统一 .iUp：从下到上浮现） */
 .iUp { opacity:0; transform:translate3d(0,80px,0); transition:all 2s cubic-bezier(.19,1,.22,1); }
 .iUp.up { opacity:1; transform:translate3d(0,0,0); }
@@ -112,7 +215,13 @@ body {
   .controls { margin-top:14px; gap:8px; }
   .ctl { padding:8px 14px; font-size:12px; }
   .foot { margin-top:12px; }
+  .player { margin-top:16px; padding:12px 16px; gap:14px; }
+  .discWrap { width:78px; height:78px; }
+  .p-name { font-size:13px; }
+  .p-prog { margin-top:8px; }
+  .p-ctl { margin-top:8px; }
 }
+
 </style>
 </head>
 <body>
@@ -126,8 +235,31 @@ body {
   <div class="controls iUp">
     <button class="ctl" id="btnFs"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></span>全屏</button>
     <button class="ctl" id="btnLand"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></span>横屏</button>
-    <button class="ctl" id="btnMute"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span><span class="mlabel">音乐 OFF</span></button>
-    <button class="ctl" id="btnNext"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg></span>换曲</button>
+  </div>
+  <div class="player iUp">
+    <div class="discWrap">
+      <div class="disc" id="disc">
+        <img class="cover" id="cover" src="./images/savoir.jpg" alt="cover">
+      </div>
+      <div class="spindle"></div>
+    </div>
+    <div class="p-main">
+      <div class="p-name" id="pName">Savoir Adore</div>
+      <div class="p-artist" id="pArtist">When the Summer Ends</div>
+      <div class="p-prog">
+        <input type="range" id="seek" min="0" max="100" value="0" step="0.1">
+      </div>
+      <div class="p-time">
+        <span id="cur">0:00</span><span id="dur">0:00</span>
+      </div>
+      <div class="p-ctl">
+        <button class="pc act" id="btnRepeat" title="循环"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></button>
+        <button class="pc" id="btnPrev" title="上一首"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg></button>
+        <button class="pc main" id="btnPlay" title="播放/暂停"><svg id="icPlay" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg><svg id="icPause" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg></button>
+        <button class="pc" id="btnNext" title="下一首"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg></button>
+        <button class="pc act" id="btnShuffle" title="随机"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg></button>
+      </div>
+    </div>
   </div>
   <div class="foot iUp">任时光流淌 · L O U N G E   M O D E</div>
 </div>
@@ -239,43 +371,120 @@ body {
   });
 })();
 
-/* ========== 4. 背景音乐（低音量氛围，非主题） ========== */
+/* ========== 4. 音乐播放器（黑胶唱片 + 专辑封面） ========== */
 (function () {
-  // 移除 FLAC：部分移动端（尤其 iOS Safari）不支持，正常保留 mp3 曲目
   var tracks = [
-    './music/savoir-adore-summer-ends.mp3',
-    './music/boa-duvet.mp3',
-    './music/cafune-tek-it.mp3'
+    { src: './music/savoir-adore-summer-ends.mp3', name: 'When the Summer Ends', artist: 'Savoir Adore', cover: './images/savoir.jpg' },
+    { src: './music/boa-duvet.mp3', name: 'Duvet', artist: 'bôa', cover: './images/boa.jpg' },
+    { src: './music/cafune-tek-it.mp3', name: 'Tek It', artist: 'Cafuné', cover: './images/cafune.jpg' }
   ];
-  var idx = 0, on = false;
+  var idx = 0, on = false, repeat = true, shuffle = false;
   var audio = new Audio();
   audio.volume = 0.22;
   audio.preload = 'auto';
-  var btnM = document.getElementById('btnMute');
-  var btnN = document.getElementById('btnNext');
-  var labelM = btnM.querySelector('.mlabel');
+
+  var elCover = document.getElementById('cover');
+  var elName = document.getElementById('pName');
+  var elArtist = document.getElementById('pArtist');
+  var elSeek = document.getElementById('seek');
+  var elCur = document.getElementById('cur');
+  var elDur = document.getElementById('dur');
+  var elDisc = document.getElementById('disc');
+  var elPlay = document.getElementById('btnPlay');
+  var icPlay = document.getElementById('icPlay');
+  var icPause = document.getElementById('icPause');
+  var elPrev = document.getElementById('btnPrev');
+  var elNext = document.getElementById('btnNext');
+  var elRepeat = document.getElementById('btnRepeat');
+  var elShuffle = document.getElementById('btnShuffle');
+
+  function fmt(s) {
+    if (!isFinite(s) || s < 0) s = 0;
+    var m = Math.floor(s / 60);
+    var sec = Math.floor(s % 60);
+    return m + ':' + (sec < 10 ? '0' : '') + sec;
+  }
+
+  function setMeta() {
+    var t = tracks[idx];
+    elCover.src = t.cover;
+    elCover.alt = t.name;
+    elName.textContent = t.name;
+    elArtist.textContent = t.artist;
+  }
+
+  function playState() {
+    elDisc.classList.toggle('paused', !on);
+    icPlay.style.display = on ? 'none' : 'block';
+    icPause.style.display = on ? 'block' : 'none';
+  }
+
   function load(n) {
     idx = ((n % tracks.length) + tracks.length) % tracks.length;
-    audio.src = tracks[idx];
+    setMeta();
+    audio.src = tracks[idx].src;
     audio.load();
-    if (on) audio.play().catch(function () { });
+    if (on) audio.play().catch(function () { on = false; playState(); });
   }
+
+  function next() {
+    if (shuffle) {
+      var r;
+      do { r = Math.floor(Math.random() * tracks.length); } while (r === idx && tracks.length > 1);
+      load(r);
+    } else {
+      load(idx + 1);
+    }
+  }
+
+  setMeta();
   load(0);
-  // 单曲播完自动切下一首（轮播而非单曲循环）
-  audio.addEventListener('ended', function () { load(idx + 1); });
-  audio.addEventListener('error', function () { if (on) load(idx + 1); });
-  btnM.addEventListener('click', function () {
+
+  audio.addEventListener('loadedmetadata', function () {
+    elDur.textContent = fmt(audio.duration);
+    elSeek.max = audio.duration || 100;
+  });
+  audio.addEventListener('timeupdate', function () {
+    if (!audio.duration) return;
+    elCur.textContent = fmt(audio.currentTime);
+    var pct = (audio.currentTime / audio.duration) * 100;
+    elSeek.value = pct;
+  });
+  audio.addEventListener('ended', function () {
+    if (repeat) { audio.currentTime = 0; audio.play().catch(function () { }); }
+    else { next(); }
+  });
+  audio.addEventListener('error', function () { if (on) next(); });
+
+  elPlay.addEventListener('click', function () {
     on = !on;
     if (on) {
       var p = audio.play();
-      if (p && p.catch) p.catch(function () { on = false; btnM.classList.remove('on'); labelM.textContent = 'OFF'; });
+      if (p && p.catch) p.catch(function () { on = false; playState(); });
     } else { audio.pause(); }
-    btnM.classList.toggle('on', on);
-    labelM.textContent = on ? 'ON' : 'OFF';
+    playState();
   });
-  btnN.addEventListener('click', function () {
-    load(idx + 1);
+  elNext.addEventListener('click', function () { next(); });
+  elPrev.addEventListener('click', function () { load(idx - 1); });
+
+  elRepeat.addEventListener('click', function () {
+    repeat = !repeat;
+    elRepeat.classList.toggle('act', repeat);
   });
+  elShuffle.addEventListener('click', function () {
+    shuffle = !shuffle;
+    elShuffle.classList.toggle('act', shuffle);
+  });
+
+  elSeek.addEventListener('input', function () {
+    if (audio.duration) {
+      audio.currentTime = (elSeek.value / 100) * audio.duration;
+    }
+  });
+
+  // 首次进入不自动播放，等待用户点击
+  on = false;
+  playState();
 })();
 
 /* ========== 5. 入场动画（全站统一 .iUp） ========== */
