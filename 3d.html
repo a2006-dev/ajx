@@ -387,10 +387,41 @@
             .card-3d .c4 { transform: translate(-50%,-50%) rotateY(216deg) translateZ(210px); }
             .card-3d .c5 { transform: translate(-50%,-50%) rotateY(288deg) translateZ(210px); }
         }
+
+        /* 从下到上入场动画（与主页 .iUp 一致） */
+        .iUp {
+            opacity: 0;
+            -webkit-transform: translate3d(0, 80px, 0);
+            -moz-transform: translate3d(0, 80px, 0);
+            -ms-transform: translate3d(0, 80px, 0);
+            -o-transform: translate3d(0, 80px, 0);
+            transform: translate3d(0, 80px, 0);
+            -webkit-transition: all 2s cubic-bezier(0.19, 1, 0.22, 1);
+            -moz-transition: all 2s cubic-bezier(0.19, 1, 0.22, 1);
+            transition: all 2s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+        .iUp.up {
+            opacity: 1;
+            -webkit-transform: translate3d(0, 0, 0);
+            -moz-transform: translate3d(0, 0, 0);
+            -ms-transform: translate3d(0, 0, 0);
+            -o-transform: translate3d(0, 0, 0);
+            transform: translate3d(0, 0, 0);
+        }
+    /* 入场动画（仿主页 .iUp：从下到上逐步浮现） */
+    .iUp {
+        opacity: 0;
+        transform: translate3d(0, 80px, 0);
+        transition: all 2s cubic-bezier(0.19, 1, 0.22, 1);
+    }
+    .iUp.up {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
     </style>
 </head>
 <body>
-    <div class="stage">
+    <div class="stage iUp">
         <div class="card-3d" id="card3d">
             <a class="cube-card c1 card-1" href="./New-Year-fireworks.html">
                 <div class="card-inner">
@@ -436,6 +467,7 @@
                             <circle cx="18.5" cy="18" r="1.8" fill="currentColor"/>
                             <path d="M18.5 4v3M18.5 14v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                         </svg>
+                    </div>
                     <div class="card-name">LogCatcher</div>
                     <div class="card-desc">Log</div>
                 </div>
@@ -456,19 +488,28 @@
         </div>
     </div>
 
-    <div class="controls">
+    <div class="controls iUp">
         <button class="ctrl-btn" id="prevBtn" title="向左旋转">◀</button>
         <button class="ctrl-btn" id="nextBtn" title="向右旋转">▶</button>
     </div>
 
-    <div class="back-home">
+    <div class="back-home iUp">
         <a href="./index.html"><span class="arrow">‹</span> 返回主页</a>
     </div>
 
-    <div class="hint">拖动卡片手动旋转 · 点击卡片进入</div>
+    <div class="hint iUp">拖动卡片手动旋转 · 点击卡片进入</div>
 
     <script>
 (function () {
+    // 入场动画：从下到上逐步浮现（仿主页 .iUp）
+    (function iUpAnim () {
+        var els = Array.prototype.slice.call(document.querySelectorAll('.iUp'));
+        var t = 0, d = 150;
+        els.forEach(function (e) {
+            setTimeout(function () { e.classList.add('up'); }, t);
+            t += d;
+        });
+    })();
     var card3d = document.getElementById('card3d');
     var rotY = 0;
     var SPEED = 0.15;
@@ -579,6 +620,6 @@
     });
 })();
 
-    </script></script>
+    </script>
 </body>
 </html>
