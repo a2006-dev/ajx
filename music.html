@@ -110,6 +110,7 @@ body {
   -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px);
   box-shadow:0 10px 44px rgba(0,0,0,.38);
   text-align:left;
+  transition:padding .45s cubic-bezier(.19,1,.22,1), width .45s cubic-bezier(.19,1,.22,1), border-radius .45s ease;
 }
 .player-top {
   display:flex; align-items:center; gap:12px;
@@ -151,7 +152,9 @@ body {
   position:relative;
   margin:12px 4px 2px;
   height:104px;
+  max-height:104px; opacity:1;
   overflow:hidden;
+  transition:max-height .45s cubic-bezier(.19,1,.22,1), opacity .35s ease, margin .45s ease;
   -webkit-mask-image:linear-gradient(to bottom, transparent, #000 26%, #000 74%, transparent);
   mask-image:linear-gradient(to bottom, transparent, #000 26%, #000 74%, transparent);
 }
@@ -258,31 +261,37 @@ body {
 }
 .pc.main:hover { background:linear-gradient(135deg, rgba(120,165,255,.5), rgba(120,165,255,.2)); }
 .pc svg { width:14px; height:14px; }
-/* 播放器折叠态（小黑胶） */
+/* 播放器折叠态（黑胶 + 歌名 + 进度条 + 控制，带动画） */
 .player.mini {
-  width:auto; padding:16px; cursor:pointer;
-  align-items:center;
+  width:auto; min-width:230px; max-width:min(320px, 92vw);
+  padding:12px 14px; cursor:default;
 }
-.player.mini .player-top { justify-content:center; }
-.player.mini .discWrap { width:88px; height:88px; }
-.player.mini .p-main,
-.player.mini .p-lyric,
-.player.mini .p-ctl { display:none; }
+.player.mini .discWrap {
+  width:56px; height:56px; flex:none; cursor:pointer;
+}
+.player.mini .disc { animation-duration:2.8s; }
+.player.mini .p-main { flex:1; min-width:0; }
+/* mini 态把歌词收起来，保留歌名/进度/控制 */
+.player.mini .p-lyric { max-height:0; opacity:0; margin:0 4px; }
+.player.mini .p-ctl { margin-top:6px; }
+.player.mini .p-ctl #btnShuffle,
+.player.mini .p-ctl #btnRepeat,
+.player.mini .p-ctl #btnTr { display:none; }
 .player.mini .spindle { display:none; }
 .player.mini .discWrap::after {
   content:''; position:absolute; top:50%; left:50%;
-  width:15px; height:15px; margin:-8px 0 0 -8px;
-  background:rgba(255,255,255,.92); border-radius:4px;
-  box-shadow:-6px 0 0 rgba(255,255,255,.92);
-  transition:opacity .25s ease;
-  z-index:3;
+  width:14px; height:14px; margin:-7px 0 0 -7px;
+  background:rgba(255,255,255,.94); border-radius:4px;
+  box-shadow:-5px 0 0 rgba(255,255,255,.94);
+  transition:opacity .3s ease;
+  z-index:3; pointer-events:none;
 }
 .player.mini:not(.playing) .discWrap::after {
-  width:0; height:0; margin:-9px 0 0 -2px;
+  width:0; height:0; margin:-8px 0 0 -1px;
   background:transparent; box-shadow:none;
-  border-left:15px solid rgba(255,255,255,.92);
-  border-top:10px solid transparent;
-  border-bottom:10px solid transparent;
+  border-left:13px solid rgba(255,255,255,.94);
+  border-top:8px solid transparent;
+  border-bottom:8px solid transparent;
   border-radius:0;
 }
 
@@ -858,9 +867,20 @@ body {
     load(localIdx);
     playState();
   });
-  elFold.addEventListener('click', function (e) { e.stopPropagation(); if (playerEl) playerEl.classList.add('mini'); });
-  if (playerEl) playerEl.addEventListener('click', function () {
-    if (playerEl.classList.contains('mini')) { playerEl.classList.remove('mini'); }
+  elFold.addEventListener('click', function (e) {
+    e.stopPropagation();
+    if (playerEl) playerEl.classList.add('mini');
+  });
+  var elDiscWrap = document.querySelector('.discWrap');
+  if (elDiscWrap) elDiscWrap.addEventListener('click', function (e) {
+    e.stopPropagation();
+    if (playerEl && playerEl.classList.contains('mini')) playerEl.classList.remove('mini');
+  });
+  if (playerEl) playerEl.addEventListener('click', function (e) {
+    // mini 态：点击唱片区之外不退出（避免误触），只有点击黑胶才展开
+    if (playerEl.classList.contains('mini') && (e.target.closest && e.target.closest('.discWrap'))) {
+      playerEl.classList.remove('mini');
+    }
   });
 
   elTr.addEventListener('click', function () {
