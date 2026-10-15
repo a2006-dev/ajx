@@ -677,14 +677,15 @@ body {
     }
     // 动态测量，确保当前句在歌词区严格垂直居中
     var inner = elLyric;
-    var boxH = inner.clientHeight || inner.offsetHeight || 104;
+    var boxEl = elLyric.parentElement || elLyric; // .p-lyric 可视容器
+    var boxH = boxEl.clientHeight || boxEl.offsetHeight || 104;
     var first = lines[0];
     var lineH = 27;
     if (first) {
       var rec = first.getBoundingClientRect().height || 0;
       if (rec > 0) lineH = rec; // 实测高度已含上下 padding，直接作为行间距
     }
-    var off = boxH / 2 - lineH / 2; // 使当前行居中
+    var off = boxH / 2 - lineH / 2; // 使当前行在可视区居中
     var y = -idxLine * lineH + off;
     inner.style.transform = 'translateY(' + y + 'px)';
   }
