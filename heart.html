@@ -80,10 +80,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .cta .note{font-size:14px;color:var(--gray);margin-top:20px}
 .footer-nav{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-top:64px;padding:26px 0 20px;border-top:1px solid var(--line)}
 .credit{text-align:center;color:var(--gray);font-size:12px;letter-spacing:1px;padding-bottom:40px;opacity:.75}
-</style>
+
+    /* 从下到上入场动画（与主页 .iUp 一致） */
+    .iUp {
+        opacity: 0;
+        transform: translate3d(0, 80px, 0);
+        transition: all 2s cubic-bezier(0.19, 1, 0.22, 1);
+    }
+    .iUp.up {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+    </style>
 </head>
 <body>
-<div class="shell">
+<div class="shell iUp">
   <div class="topbar">
     <a class="nav-btn" href="index.html">← 返回主页</a>
     <span class="brand">心迹 HEART</span>
@@ -159,5 +170,15 @@ HEARTBEAT#V1#GUEMSNDM#broker-cn.emqx.io:1883#heart/rate</div>
   </div>
   <div class="credit">heart · 心迹 · AJX 个人站</div>
 </div>
+<script>
+(function iUpAnim () {
+    var els = Array.prototype.slice.call(document.querySelectorAll('.iUp'));
+    var t = 0, d = 150;
+    els.forEach(function (e) {
+        setTimeout(function () { e.classList.add('up'); }, t);
+        t += d;
+    });
+})();
+</script>
 </body>
 </html>
