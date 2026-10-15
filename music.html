@@ -277,23 +277,10 @@ body {
 .player.mini .p-ctl #btnShuffle,
 .player.mini .p-ctl #btnRepeat,
 .player.mini .p-ctl #btnTr { display:none; }
-.player.mini .spindle { display:none; }
-.player.mini .discWrap::after {
-  content:''; position:absolute; top:50%; left:50%;
-  width:14px; height:14px; margin:-7px 0 0 -7px;
-  background:rgba(255,255,255,.94); border-radius:4px;
-  box-shadow:-5px 0 0 rgba(255,255,255,.94);
-  transition:opacity .3s ease;
-  z-index:3; pointer-events:none;
-}
-.player.mini:not(.playing) .discWrap::after {
-  width:0; height:0; margin:-8px 0 0 -1px;
-  background:transparent; box-shadow:none;
-  border-left:13px solid rgba(255,255,255,.94);
-  border-top:8px solid transparent;
-  border-bottom:8px solid transparent;
-  border-radius:0;
-}
+.player.mini .discWrap .spindle { width:8px; height:8px; border-width:2px; }
+/* mini 态唱片干净无播放键残留：转而通过 .spindle 显示转轴 */
+.player.mini .discWrap::after { display:none; }
+.player.mini .spindle { display:block; }
 
 .pc.main svg { width:16px; height:16px; }
 /* 入场动画（全站统一 .iUp：从下到上浮现） */
