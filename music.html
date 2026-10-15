@@ -854,19 +854,31 @@ body {
     load(localIdx);
     playState();
   });
+  // 收起/展开切换：收缩按钮充当开关，点击黑胶也可展开
+  function setFold(on) {
+    if (!playerEl) return;
+    if (on) playerEl.classList.add('mini'); else playerEl.classList.remove('mini');
+    if (elFold) {
+      elFold.title = on ? '展开' : '收起';
+      // 翻转图标：收起态显示下拉箭头，展开态显示上拉箭头
+      elFold.innerHTML = on
+        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>'
+        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 13 12 18 17 13"/><polyline points="7 6 12 11 17 6"/></svg>';
+    }
+  }
   elFold.addEventListener('click', function (e) {
     e.stopPropagation();
-    if (playerEl) playerEl.classList.add('mini');
+    setFold(!(playerEl && playerEl.classList.contains('mini')));
   });
   var elDiscWrap = document.querySelector('.discWrap');
   if (elDiscWrap) elDiscWrap.addEventListener('click', function (e) {
     e.stopPropagation();
-    if (playerEl && playerEl.classList.contains('mini')) playerEl.classList.remove('mini');
+    if (playerEl && playerEl.classList.contains('mini')) setFold(false);
   });
   if (playerEl) playerEl.addEventListener('click', function (e) {
     // mini 态：点击唱片区之外不退出（避免误触），只有点击黑胶才展开
     if (playerEl.classList.contains('mini') && (e.target.closest && e.target.closest('.discWrap'))) {
-      playerEl.classList.remove('mini');
+      setFold(false);
     }
   });
 
