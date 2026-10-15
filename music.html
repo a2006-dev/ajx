@@ -160,24 +160,42 @@ body {
   will-change:transform;
   transition:transform .5s cubic-bezier(.19,1,.22,1);
 }
+.p-lyric .l-group {
+  transition:transform .35s ease;
+}
 .p-lyric .l-line {
   text-align:center;
   padding:5px 0;
   font-size:13px; font-weight:300; letter-spacing:.05em;
   color:rgba(170,196,236,.35);
-  transition:color .35s ease, font-weight .35s ease, text-shadow .35s ease, transform .35s ease, letter-spacing .35s ease;
+  transition:color .35s ease, font-weight .35s ease, text-shadow .35s ease;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
-.p-lyric .l-line.on {
+.p-lyric .l-tr {
+  text-align:center;
+  padding:0 0 5px;
+  font-size:9px; font-weight:300; letter-spacing:.02em;
+  color:rgba(170,196,236,.4);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  transition:color .35s ease;
+}
+.p-lyric .l-group.on {
+  transform:scale(1.06);
+}
+.p-lyric .l-group.on .l-line {
   color:#f2f6ff;
   font-weight:500;
   letter-spacing:.08em;
-  transform:scale(1.06);
   text-shadow:0 0 26px rgba(140,175,255,.55), 0 0 6px rgba(140,175,255,.35);
 }
-.p-lyric .l-line.preview {
-  color:rgba(200,220,255,.55);
+.p-lyric .l-group.on .l-tr {
+  color:rgba(200,220,255,.62);
+}
+.p-lyric .l-group.preview {
   transform:scale(1.02);
+}
+.p-lyric .l-group.preview .l-line {
+  color:rgba(200,220,255,.55);
 }
 .p-name {
   font-size:13px; font-weight:400; letter-spacing:.04em;
@@ -318,6 +336,7 @@ body {
       <div class="l-inner" id="lInner"></div>
     </div>
     <div class="p-ctl">
+      <button class="pc" id="btnTr" title="翻译"><span style="font-size:12px;font-weight:500;">译</span></button>
       <button class="pc act" id="btnRepeat" title="循环"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></button>
       <button class="pc" id="btnPrev" title="上一首"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg></button>
       <button class="pc main" id="btnPlay" title="播放/暂停"><svg id="icPlay" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg><svg id="icPause" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg></button>
@@ -439,164 +458,164 @@ body {
 (function () {
 
   var lyricSavoir = [
-    { t: 0.2, l: 'Will you hold my hand?' },
-    { t: 2.41, l: 'Will you understand?' },
-    { t: 4.62, l: 'Can we still pretend' },
-    { t: 6.93, l: 'When the summer ends?' },
-    { t: 10.19, l: 'Do you think the tides know' },
-    { t: 14.38, l: 'Where they might go' },
-    { t: 17.97, l: 'Before they move?' },
-    { t: 22.55, l: 'Are they scared too?' },
-    { t: 25.2, l: '(Are they scared?)' },
-    { t: 27.93, l: 'Do you think the moon would fall into the sea' },
-    { t: 35.74, l: 'If it pulled on the world' },
-    { t: 39.36, l: "As hard as your love's pulled on me?" },
-    { t: 44.79, l: 'Will you hold my hand?' },
-    { t: 46.98, l: 'Will you understand?' },
-    { t: 49.0, l: 'Can we still pretend' },
-    { t: 51.39, l: 'When the summer ends?' },
-    { t: 53.56, l: 'Nothing needs to hurry' },
-    { t: 56.04, l: "I'll wait, I'll learn" },
-    { t: 58.09, l: 'How to love you when' },
-    { t: 60.59, l: 'The summer ends' },
-    { t: 62.43, l: 'Will you love me when' },
-    { t: 64.9, l: 'The summer ends?' },
-    { t: 68.06, l: 'What happens next is a moment' },
-    { t: 73.0, l: 'Time is a picture of you' },
-    { t: 77.48, l: "Looking at me, it's a poem" },
-    { t: 80.5, l: "Where everything's moot" },
-    { t: 83.04, l: "(Where everything's moot)" },
-    { t: 85.7, l: "Do you think there's relief in the feeling of an endless day?" },
-    { t: 92.91, l: "Do we get stronger the longer the sun's awake?" },
-    { t: 102.49, l: 'Will you hold my hand?' },
-    { t: 104.71, l: 'Will you understand?' },
-    { t: 106.82, l: 'Can we still pretend' },
-    { t: 109.0, l: 'When the summer ends?' },
-    { t: 111.33, l: 'Nothing needs to hurry' },
-    { t: 113.85, l: "I'll wait, I'll learn" },
-    { t: 115.8, l: 'How to love you when' },
-    { t: 118.22, l: 'The summer ends' },
-    { t: 120.12, l: 'Will you love me when' },
-    { t: 122.75, l: 'The summer ends?' },
-    { t: 144.02, l: 'What happens next is a moment' },
-    { t: 148.46, l: 'Time is a picture of you' },
-    { t: 153.0, l: 'What happens next is a moment' },
-    { t: 160.2, l: 'Will you hold my hand?' },
-    { t: 162.46, l: 'Will you understand?' },
-    { t: 164.68, l: 'Can we still pretend' },
-    { t: 166.89, l: 'When the summer ends?' },
-    { t: 169.05, l: 'Nothing needs to hurry' },
-    { t: 171.64, l: "I'll wait, I'll learn" },
-    { t: 173.54, l: 'How to love you when' },
-    { t: 176.04, l: 'The summer ends' },
-    { t: 177.94, l: 'Will you hold my hand?' },
-    { t: 180.78, l: 'Will you understand?' },
-    { t: 182.34, l: 'Can we still pretend' },
-    { t: 184.61, l: 'When the summer ends?' },
-    { t: 186.87, l: 'Nothing needs to hurry' },
-    { t: 189.32, l: "I'll wait, I'll learn" },
-    { t: 191.32, l: 'How to love you when' },
-    { t: 193.84, l: 'The summer ends' },
-    { t: 195.76, l: 'Will you love me when' },
-    { t: 198.27, l: 'The summer ends?' },
+    { t: 0.2, l: 'Will you hold my hand?' , c: '你会握住我的手吗？' },
+    { t: 2.41, l: 'Will you understand?' , c: '你会明白我的心意吗？' },
+    { t: 4.62, l: 'Can we still pretend' , c: '我们是否还能假装' },
+    { t: 6.93, l: 'When the summer ends?' , c: '当夏日将尽？' },
+    { t: 10.19, l: 'Do you think the tides know' , c: '你可曾想，潮汐是否知道' },
+    { t: 14.38, l: 'Where they might go' , c: '它们将流向何方' },
+    { t: 17.97, l: 'Before they move?' , c: '在涌动之前？' },
+    { t: 22.55, l: 'Are they scared too?' , c: '它们是否也会害怕？' },
+    { t: 25.2, l: '(Are they scared?)' , c: '（它们也会害怕吗？）' },
+    { t: 27.93, l: 'Do you think the moon would fall into the sea' , c: '你可曾想，月亮是否坠入海中' },
+    { t: 35.74, l: 'If it pulled on the world' , c: '若它牵引整个世界' },
+    { t: 39.36, l: "As hard as your love's pulled on me?" , c: '正如你的爱将我牢牢牵引？' },
+    { t: 44.79, l: 'Will you hold my hand?' , c: '你会握住我的手吗？' },
+    { t: 46.98, l: 'Will you understand?' , c: '你会明白我的心意吗？' },
+    { t: 49.0, l: 'Can we still pretend' , c: '我们是否还能假装' },
+    { t: 51.39, l: 'When the summer ends?' , c: '当夏日将尽？' },
+    { t: 53.56, l: 'Nothing needs to hurry' , c: '一切都无需匆忙' },
+    { t: 56.04, l: "I'll wait, I'll learn" , c: '我会等待，我会学会' },
+    { t: 58.09, l: 'How to love you when' , c: '如何去爱你，当' },
+    { t: 60.59, l: 'The summer ends' , c: '夏日将尽' },
+    { t: 62.43, l: 'Will you love me when' , c: '你还会爱我吗，当' },
+    { t: 64.9, l: 'The summer ends?' , c: '夏日将尽？' },
+    { t: 68.06, l: 'What happens next is a moment' , c: '下一瞬的故事不过片刻' },
+    { t: 73.0, l: 'Time is a picture of you' , c: '时光是你的一幅画像' },
+    { t: 77.48, l: "Looking at me, it's a poem" , c: '凝望我的你，如诗一般' },
+    { t: 80.5, l: "Where everything's moot" , c: '万物皆已无关紧要' },
+    { t: 83.04, l: "(Where everything's moot)" , c: '（万物皆已无关紧要）' },
+    { t: 85.7, l: "Do you think there's relief in the feeling of an endless day?" , c: '你可曾想，无尽的白天反而令人解脱？' },
+    { t: 92.91, l: "Do we get stronger the longer the sun's awake?" , c: '阳光越久不落，我们是否越发坚强？' },
+    { t: 102.49, l: 'Will you hold my hand?' , c: '你会握住我的手吗？' },
+    { t: 104.71, l: 'Will you understand?' , c: '你会明白我的心意吗？' },
+    { t: 106.82, l: 'Can we still pretend' , c: '我们是否还能假装' },
+    { t: 109.0, l: 'When the summer ends?' , c: '当夏日将尽？' },
+    { t: 111.33, l: 'Nothing needs to hurry' , c: '一切都无需匆忙' },
+    { t: 113.85, l: "I'll wait, I'll learn" , c: '我会等待，我会学会' },
+    { t: 115.8, l: 'How to love you when' , c: '如何去爱你，当' },
+    { t: 118.22, l: 'The summer ends' , c: '夏日将尽' },
+    { t: 120.12, l: 'Will you love me when' , c: '你还会爱我吗，当' },
+    { t: 122.75, l: 'The summer ends?' , c: '夏日将尽？' },
+    { t: 144.02, l: 'What happens next is a moment' , c: '下一瞬的故事不过片刻' },
+    { t: 148.46, l: 'Time is a picture of you' , c: '时光是你的一幅画像' },
+    { t: 153.0, l: 'What happens next is a moment' , c: '下一瞬的故事不过片刻' },
+    { t: 160.2, l: 'Will you hold my hand?' , c: '你会握住我的手吗？' },
+    { t: 162.46, l: 'Will you understand?' , c: '你会明白我的心意吗？' },
+    { t: 164.68, l: 'Can we still pretend' , c: '我们是否还能假装' },
+    { t: 166.89, l: 'When the summer ends?' , c: '当夏日将尽？' },
+    { t: 169.05, l: 'Nothing needs to hurry' , c: '一切都无需匆忙' },
+    { t: 171.64, l: "I'll wait, I'll learn" , c: '我会等待，我会学会' },
+    { t: 173.54, l: 'How to love you when' , c: '如何去爱你，当' },
+    { t: 176.04, l: 'The summer ends' , c: '夏日将尽' },
+    { t: 177.94, l: 'Will you hold my hand?' , c: '你会握住我的手吗？' },
+    { t: 180.78, l: 'Will you understand?' , c: '你会明白我的心意吗？' },
+    { t: 182.34, l: 'Can we still pretend' , c: '我们是否还能假装' },
+    { t: 184.61, l: 'When the summer ends?' , c: '当夏日将尽？' },
+    { t: 186.87, l: 'Nothing needs to hurry' , c: '一切都无需匆忙' },
+    { t: 189.32, l: "I'll wait, I'll learn" , c: '我会等待，我会学会' },
+    { t: 191.32, l: 'How to love you when' , c: '如何去爱你，当' },
+    { t: 193.84, l: 'The summer ends' , c: '夏日将尽' },
+    { t: 195.76, l: 'Will you love me when' , c: '你还会爱我吗，当' },
+    { t: 198.27, l: 'The summer ends?' , c: '夏日将尽？' },
   ];
 
   var lyricBoa = [
-    { t: 0.99, l: "And you don't seem to understand" },
-    { t: 5.79, l: 'A shame, you seemed an honest man' },
-    { t: 10.82, l: 'And all the fears you hold so dear' },
-    { t: 15.83, l: 'Will turn to whisper in your ear' },
-    { t: 21.08, l: 'And you know what they say might hurt you' },
-    { t: 23.75, l: 'And you know that it means so much' },
-    { t: 26.34, l: "And you don't even feel a thing" },
-    { t: 31.4, l: 'I am falling' },
-    { t: 34.29, l: 'I am fading' },
-    { t: 36.92, l: 'I have lost it all' },
-    { t: 41.78, l: "And you don't seem the lying kind" },
-    { t: 46.75, l: 'A shame that I can read your mind' },
-    { t: 52.12, l: 'And all the things that I read there' },
-    { t: 57.01, l: 'Candle lit smile that we both share' },
-    { t: 62.32, l: "And you know I don't mean to hurt you" },
-    { t: 65.09, l: 'But you know that it means so much' },
-    { t: 67.67, l: "And you don't even feel a thing" },
-    { t: 72.86, l: 'I am falling' },
-    { t: 75.44, l: 'I am fading' },
-    { t: 78.11, l: 'I am drowning' },
-    { t: 80.65, l: 'Help me to breathe' },
-    { t: 83.2, l: 'I am hurting' },
-    { t: 85.78, l: 'I have lost it all' },
-    { t: 88.46, l: 'I am losing' },
-    { t: 90.88, l: 'Help me to breathe' },
-    { t: 134.94, l: 'I am falling' },
-    { t: 137.48, l: 'I am fading' },
-    { t: 140.02, l: 'I am drowning' },
-    { t: 142.55, l: 'Help me to breathe' },
-    { t: 145.06, l: 'I am hurting' },
-    { t: 147.62, l: 'I have lost it all' },
-    { t: 150.35, l: 'I am losing' },
-    { t: 152.85, l: 'Help me to breathe' },
-    { t: 176.43, l: 'I am falling' },
-    { t: 178.78, l: 'I am fading' },
-    { t: 181.24, l: 'I am drowning' },
-    { t: 183.79, l: 'Help me to breathe' },
-    { t: 186.42, l: 'I am hurting' },
-    { t: 188.94, l: 'I have lost it all' },
-    { t: 191.68, l: 'I am losing' },
-    { t: 194.25, l: 'Help me to breathe' },
+    { t: 0.99, l: "And you don't seem to understand" , c: '你似乎并不明白' },
+    { t: 5.79, l: 'A shame, you seemed an honest man' , c: '可惜，你曾像个坦荡的人' },
+    { t: 10.82, l: 'And all the fears you hold so dear' , c: '你如此珍视的那些恐惧' },
+    { t: 15.83, l: 'Will turn to whisper in your ear' , c: '终将化作耳畔的低语' },
+    { t: 21.08, l: 'And you know what they say might hurt you' , c: '你知道那些话可能会伤到你' },
+    { t: 23.75, l: 'And you know that it means so much' , c: '你也明白它意义深重' },
+    { t: 26.34, l: "And you don't even feel a thing" , c: '而你竟毫无知觉' },
+    { t: 31.4, l: 'I am falling' , c: '我正坠落' },
+    { t: 34.29, l: 'I am fading' , c: '我正消逝' },
+    { t: 36.92, l: 'I have lost it all' , c: '我已失去一切' },
+    { t: 41.78, l: "And you don't seem the lying kind" , c: '你看起来并非说谎之人' },
+    { t: 46.75, l: 'A shame that I can read your mind' , c: '可惜我看得透你的心思' },
+    { t: 52.12, l: 'And all the things that I read there' , c: '而我在那里读到的一切' },
+    { t: 57.01, l: 'Candle lit smile that we both share' , c: '烛火映照的微笑，你我共有' },
+    { t: 62.32, l: "And you know I don't mean to hurt you" , c: '你知道我无意伤害你' },
+    { t: 65.09, l: 'But you know that it means so much' , c: '但你知道它意义深重' },
+    { t: 67.67, l: "And you don't even feel a thing" , c: '而你竟毫无知觉' },
+    { t: 72.86, l: 'I am falling' , c: '我正坠落' },
+    { t: 75.44, l: 'I am fading' , c: '我正消逝' },
+    { t: 78.11, l: 'I am drowning' , c: '我正沉溺' },
+    { t: 80.65, l: 'Help me to breathe' , c: '救我，让我呼吸' },
+    { t: 83.2, l: 'I am hurting' , c: '我正受伤' },
+    { t: 85.78, l: 'I have lost it all' , c: '我已失去一切' },
+    { t: 88.46, l: 'I am losing' , c: '我正失去' },
+    { t: 90.88, l: 'Help me to breathe' , c: '救我，让我呼吸' },
+    { t: 134.94, l: 'I am falling' , c: '我正坠落' },
+    { t: 137.48, l: 'I am fading' , c: '我正消逝' },
+    { t: 140.02, l: 'I am drowning' , c: '我正沉溺' },
+    { t: 142.55, l: 'Help me to breathe' , c: '救我，让我呼吸' },
+    { t: 145.06, l: 'I am hurting' , c: '我正受伤' },
+    { t: 147.62, l: 'I have lost it all' , c: '我已失去一切' },
+    { t: 150.35, l: 'I am losing' , c: '我正失去' },
+    { t: 152.85, l: 'Help me to breathe' , c: '救我，让我呼吸' },
+    { t: 176.43, l: 'I am falling' , c: '我正坠落' },
+    { t: 178.78, l: 'I am fading' , c: '我正消逝' },
+    { t: 181.24, l: 'I am drowning' , c: '我正沉溺' },
+    { t: 183.79, l: 'Help me to breathe' , c: '救我，让我呼吸' },
+    { t: 186.42, l: 'I am hurting' , c: '我正受伤' },
+    { t: 188.94, l: 'I have lost it all' , c: '我已失去一切' },
+    { t: 191.68, l: 'I am losing' , c: '我正失去' },
+    { t: 194.25, l: 'Help me to breathe' , c: '救我，让我呼吸' },
   ];
 
   var lyricCafune = [
-    { t: 0.08, l: 'Where did you learn what it means to reciprocate?' },
-    { t: 5.45, l: 'And how much can I be expected to tolerate?' },
-    { t: 10.93, l: "So I started to think 'bout the plans I made, the debt unpaid" },
-    { t: 16.97, l: 'And you just can\u2019t call a spade "a spade"' },
-    { t: 22.77, l: 'I watch the Moon, let it run my mood' },
-    { t: 29.55, l: "Can't stop thinking of you" },
-    { t: 34.16, l: "I watch you (now I let it go, and I watch as things play out like)" },
-    { t: 39.66, l: "So long, nice to know you, I'll be moving on" },
-    { t: 45.25, l: 'We started off in such a nice place' },
-    { t: 48.36, l: 'We were talking the same language' },
-    { t: 51.02, l: "I o-open, and I'm closing" },
-    { t: 53.99, l: "You can't stand the thought of a real beating heart" },
-    { t: 57.43, l: "You'd be holding, having trouble" },
-    { t: 60.15, l: "O-o-owning and admit that I am hoping" },
-    { t: 65.24, l: 'I watch the Moon, let it run my mood' },
-    { t: 72.18, l: "Can't stop thinking of you" },
-    { t: 76.93, l: "I watch you (now I let it go, and I watch as things play out like)" },
-    { t: 82.22, l: "So long, nice to know you, I'll be moving on, moving on" },
-    { t: 113.54, l: 'You' },
-    { t: 114.5, l: 'Yeah, I always know the truth' },
-    { t: 117.28, l: "But I can't just say it to you" },
-    { t: 120.37, l: 'Yeah, I know the truth' },
-    { t: 124.32, l: 'I knew' },
-    { t: 125.63, l: 'Yeah, I always know the truth' },
-    { t: 128.52, l: "But I can't just say it to you" },
-    { t: 131.71, l: 'Yeah, I know the truth' },
-    { t: 136.69, l: "I never thought we'd see it through" },
-    { t: 139.61, l: 'I never could rely on you' },
-    { t: 142.43, l: 'And the few times your face came into view' },
-    { t: 149.67, l: 'Into view' },
-    { t: 152.35, l: "I'm not into you" },
-    { t: 155.32, l: 'Into you' },
+    { t: 0.08, l: 'Where did you learn what it means to reciprocate?' , c: '你从何处学会，何为以心换心？' },
+    { t: 5.45, l: 'And how much can I be expected to tolerate?' , c: '我又能指望自己忍受多少？' },
+    { t: 10.93, l: "So I started to think 'bout the plans I made, the debt unpaid" , c: '于是我回想许下的计划，那未偿的亏欠' },
+    { t: 16.97, l: 'And you just can\u2019t call a spade "a spade"' , c: '而你始终不肯直言不讳' },
+    { t: 22.77, l: 'I watch the Moon, let it run my mood' , c: '我凝望月亮，任它牵引心情' },
+    { t: 29.55, l: "Can't stop thinking of you" , c: '无法停止想你' },
+    { t: 34.16, l: "I watch you (now I let it go, and I watch as things play out like)" , c: '我注视着你（如今我已放手，看一切如何上演）' },
+    { t: 39.66, l: "So long, nice to know you, I'll be moving on" , c: '再会了，很高兴认识你，我将继续前行' },
+    { t: 45.25, l: 'We started off in such a nice place' , c: '我们曾从那般美好的地方启程' },
+    { t: 48.36, l: 'We were talking the same language' , c: '我们曾说着同一种语言' },
+    { t: 51.02, l: "I o-open, and I'm closing" , c: '我敞开心扉，又亲手关上' },
+    { t: 53.99, l: "You can't stand the thought of a real beating heart" , c: '你受不了那颗真实跳动的心' },
+    { t: 57.43, l: "You'd be holding, having trouble" , c: '你拥抱时，心中满是犹疑' },
+    { t: 60.15, l: "O-o-owning and admit that I am hoping" , c: '承认吧，我还在期盼' },
+    { t: 65.24, l: 'I watch the Moon, let it run my mood' , c: '我凝望月亮，任它牵引心情' },
+    { t: 72.18, l: "Can't stop thinking of you" , c: '无法停止想你' },
+    { t: 76.93, l: "I watch you (now I let it go, and I watch as things play out like)" , c: '我注视着你（如今我已放手，看一切如何上演）' },
+    { t: 82.22, l: "So long, nice to know you, I'll be moving on, moving on" , c: '再会了，很高兴认识你，我将继续前行，继续前行' },
+    { t: 113.54, l: 'You' , c: '你' },
+    { t: 114.5, l: 'Yeah, I always know the truth' , c: '是啊，我一直知道真相' },
+    { t: 117.28, l: "But I can't just say it to you" , c: '却无法向你道明' },
+    { t: 120.37, l: 'Yeah, I know the truth' , c: '是啊，我知道真相' },
+    { t: 124.32, l: 'I knew' , c: '我早已知晓' },
+    { t: 125.63, l: 'Yeah, I always know the truth' , c: '是啊，我一直知道真相' },
+    { t: 128.52, l: "But I can't just say it to you" , c: '却无法向你道明' },
+    { t: 131.71, l: 'Yeah, I know the truth' , c: '是啊，我知道真相' },
+    { t: 136.69, l: "I never thought we'd see it through" , c: '我从未想过我们能走到最后' },
+    { t: 139.61, l: 'I never could rely on you' , c: '我从来无法依靠你' },
+    { t: 142.43, l: 'And the few times your face came into view' , c: '而那几次你的面容映入眼帘' },
+    { t: 149.67, l: 'Into view' , c: '映入眼帘' },
+    { t: 152.35, l: "I'm not into you" , c: '我已不再爱你' },
+    { t: 155.32, l: 'Into you' , c: '不再爱你' },
   ];
 
   var lyricWaiting = [
-    { t: 17.13, l: 'Come on let\u2019s go sailing' },
-    { t: 21.37, l: 'I don\u2019t really know how' },
-    { t: 25.15, l: 'Set the sun to daydream' },
-    { t: 28.82, l: 'We don\u2019t got much time now' },
-    { t: 32.72, l: 'I\u2019m fading faster lately' },
-    { t: 36.08, l: 'Don\u2019t make me sit here waiting' },
-    { t: 40.49, l: 'So long, so long, so long, so long' },
-    { t: 62.80, l: 'Locked in when there\u2019s no sound' },
-    { t: 65.93, l: 'Put my headphones loud' },
-    { t: 70.86, l: 'Hit the spacebar hard now' },
-    { t: 74.47, l: 'Taking off jump around' },
-    { t: 78.29, l: 'I can\u2019t remember lately' },
-    { t: 81.92, l: 'I fall apart it\u2019s daily' },
-    { t: 85.78, l: 'I\u2019m fading faster take me' },
-    { t: 89.49, l: 'Don\u2019t make me sit here waiting' },
-    { t: 93.57, l: 'So long, so long, so long, so long' }
+    { t: 17.13, l: 'Come on let\u2019s go sailing' , c: '来吧，我们起航' },
+    { t: 21.37, l: 'I don\u2019t really know how' , c: '我其实不知如何去航' },
+    { t: 25.15, l: 'Set the sun to daydream' , c: '让太阳坠入白日梦' },
+    { t: 28.82, l: 'We don\u2019t got much time now' , c: '我们已没有多少时间' },
+    { t: 32.72, l: 'I\u2019m fading faster lately' , c: '近来我消逝得愈发快' },
+    { t: 36.08, l: 'Don\u2019t make me sit here waiting' , c: '别让我在此空等' },
+    { t: 40.49, l: 'So long, so long, so long, so long' , c: '太久，太久，太久，太久' },
+    { t: 62.80, l: 'Locked in when there\u2019s no sound' , c: '无声之时我被困在原地' },
+    { t: 65.93, l: 'Put my headphones loud' , c: '将耳机音量调到最大' },
+    { t: 70.86, l: 'Hit the spacebar hard now' , c: '狠狠敲下空格键' },
+    { t: 74.47, l: 'Taking off jump around' , c: '腾空而起，纵情跃动' },
+    { t: 78.29, l: 'I can\u2019t remember lately' , c: '近来我已记不清' },
+    { t: 81.92, l: 'I fall apart it\u2019s daily' , c: '我日日分崩离析' },
+    { t: 85.78, l: 'I\u2019m fading faster take me' , c: '我消逝得更快，带我走吧' },
+    { t: 89.49, l: 'Don\u2019t make me sit here waiting' , c: '别让我在此空等' },
+    { t: 93.57, l: 'So long, so long, so long, so long' , c: '太久，太久，太久，太久' }
   ];
   var tracks = [
     { src: './music/savoir-adore-summer-ends.mp3', name: 'When the Summer Ends', artist: 'Savoir Adore', cover: './images/savoir.jpg', lyric: lyricSavoir },
@@ -604,7 +623,7 @@ body {
     { src: './music/cafune-tek-it.mp3', name: 'Tek It', artist: 'Cafuné', cover: './images/cafune.jpg', lyric: lyricCafune },
     { src: './music/juliana-chahayed-waiting.mp3', name: 'waiting...', artist: 'Juliana Chahayed', cover: './images/juliana.jpg', lyric: lyricWaiting }
   ];
-  var idx = 0, on = false, repeat = true, shuffle = false;
+  var idx = 0, on = false, repeat = true, shuffle = false, tr = false;
   var audio = new Audio();
   audio.volume = 0.22;
   audio.preload = 'auto';
@@ -623,6 +642,7 @@ body {
   var elNext = document.getElementById('btnNext');
   var elRepeat = document.getElementById('btnRepeat');
   var elShuffle = document.getElementById('btnShuffle');
+  var elTr = document.getElementById('btnTr');
   var elLyric = document.getElementById('lInner');
 
   function fmt(s) {
@@ -641,20 +661,18 @@ body {
     renderLyric();
   }
 
-  function fitLine(li) {
-    // 测量文本宽度，超出歌词区可用宽度则缩小字体
+  function fitLine(el, baseFs) {
     var box = elLyric.parentElement;
-    var avail = box ? (box.clientWidth || box.offsetWidth || 260) : 260;
-    // 先恢复基准字号以测量
-    li.style.fontSize = '';
-    li.style.whiteSpace = 'nowrap';
-    li.style.width = 'auto';
-    var w = li.scrollWidth;
+    var avail = (box ? (box.clientWidth || box.offsetWidth || 240) : 240) - 8;
+    el.style.fontSize = baseFs + 'px';
+    el.style.whiteSpace = 'nowrap';
+    el.style.width = 'auto';
+    var w = el.scrollWidth;
     if (w > avail) {
       var ratio = avail / w;
-      var fs = Math.max(9, Math.floor(13 * ratio));
-      li.style.fontSize = fs + 'px';
-      li.style.letterSpacing = '0';
+      var fs = Math.max(8, Math.floor(baseFs * ratio));
+      el.style.fontSize = fs + 'px';
+      el.style.letterSpacing = '0';
     }
   }
 
@@ -671,39 +689,49 @@ body {
       return;
     }
     for (var i = 0; i < lines.length; i++) {
+      var g = document.createElement('div');
+      g.className = 'l-group';
       var li = document.createElement('div');
       li.className = 'l-line';
       li.textContent = lines[i].l;
-      elLyric.appendChild(li);
-      fitLine(li);
+      g.appendChild(li);
+      fitLine(li, 13);
+      if (tr && lines[i].c) {
+        var trDiv = document.createElement('div');
+        trDiv.className = 'l-tr';
+        trDiv.textContent = lines[i].c;
+        g.appendChild(trDiv);
+        fitLine(trDiv, 9);
+      }
+      elLyric.appendChild(g);
     }
   }
 
   function updateLyric(tm) {
     var t = tracks[idx];
     if (!elLyric || !t.lyric || !t.lyric.length) return;
-    var lines = elLyric.querySelectorAll('.l-line');
-    if (!lines.length) return;
+    var groups = elLyric.querySelectorAll('.l-group');
+    if (!groups.length) return;
     var idxLine = 0;
     for (var i = 0; i < t.lyric.length; i++) {
       if (tm >= t.lyric[i].t) idxLine = i; else break;
     }
-    for (var k = 0; k < lines.length; k++) {
-      lines[k].classList.remove('on', 'preview');
-      if (k === idxLine) lines[k].classList.add('on');
-      else if (k === idxLine + 1) lines[k].classList.add('preview');
+    for (var k = 0; k < groups.length; k++) {
+      groups[k].classList.remove('on', 'preview');
+      if (k === idxLine) groups[k].classList.add('on');
+      else if (k === idxLine + 1) groups[k].classList.add('preview');
     }
     // 动态测量，确保当前句在歌词区严格垂直居中
     var inner = elLyric;
     var boxEl = elLyric.parentElement || elLyric; // .p-lyric 可视容器
     var boxH = boxEl.clientHeight || boxEl.offsetHeight || 104;
-    var first = lines[0];
+    var first = groups[0];
     var lineH = 27;
     if (first) {
       var rec = first.getBoundingClientRect().height || 0;
-      if (rec > 0) lineH = rec; // 实测高度已含上下 padding，直接作为行间距
+      if (rec > 0) lineH = rec; // 实测高度已含中文行与上下 padding
     }
-    var off = boxH / 2 - lineH / 2; // 使当前行在可视区居中
+    var off = boxH / 2 - lineH / 2; // 使当前句在可视区居中
     var y = -idxLine * lineH + off;
     inner.style.transform = 'translateY(' + y + 'px)';
   }
@@ -770,6 +798,13 @@ body {
   elShuffle.addEventListener('click', function () {
     shuffle = !shuffle;
     elShuffle.classList.toggle('act', shuffle);
+  });
+
+  elTr.addEventListener('click', function () {
+    tr = !tr;
+    elTr.classList.toggle('act', tr);
+    renderLyric();
+    if (audio.currentTime) updateLyric(audio.currentTime);
   });
 
   elSeek.addEventListener('input', function () {
