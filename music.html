@@ -421,6 +421,17 @@
             .aux { flex-wrap: wrap; }
             .track .t-artist { display: none; }
         }
+    
+    /* 从下到上入场动画（与主页 .iUp 一致） */
+    .iUp {
+        opacity: 0;
+        transform: translate3d(0, 80px, 0);
+        transition: all 2s cubic-bezier(0.19, 1, 0.22, 1);
+    }
+    .iUp.up {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
     </style>
 </head>
 <body>
@@ -437,7 +448,7 @@
         </div>
     </div>
 
-    <div class="player">
+    <div class="player iUp">
         <div class="player-top">
             <span class="logo">AJX · 挂机音乐</span>
             <span class="mode">循环播放</span>
@@ -631,5 +642,15 @@
             load(0, false);
         })();
     </script>
+<script>
+(function iUpAnim () {
+    var els = Array.prototype.slice.call(document.querySelectorAll('.iUp'));
+    var t = 0, d = 150;
+    els.forEach(function (e) {
+        setTimeout(function () { e.classList.add('up'); }, t);
+        t += d;
+    });
+})();
+</script>
 </body>
 </html>
