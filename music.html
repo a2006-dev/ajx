@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>挂机音乐 · 小站</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        body {
+            font-family: 'Comfortaa', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at 20% 20%, #1a1a2e, #0f0f1e 60%, #09090f);
+            color: #eaeaf0;
+            overflow: hidden;
+            position: relative;
+        }
+        /* 动态星点背景 */
+        body::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(1px 1px at 20% 30%, #fff8, transparent),
+                radial-gradient(1px 1px at 60% 70%, #fff6, transparent),
+                radial-gradient(2px 2px at 80% 20%, #fff5, transparent),
+                radial-gradient(1px 1px at 40% 80%, #fff7, transparent);
+            opacity: 0.4;
+            animation: drift 20s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes drift {
+            from { transform: translateY(0); }
+            to { transform: translateY(-60px); }
+        }
+        /* 主卡片 */
+        .player {
+            position: relative;
+            z-index: 2;
+            width: min(420px, 92vw);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 24px;
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+            padding: 28px 24px 20px;
+            animation: rise 0.6s ease;
+        }
+        @keyframes rise {
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* 顶部状态 */
+        .player-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 22px;
+        }
+        .player-top .logo {
+            font-size: 0.8rem;
+            letter-spacing: 0.2em;
+            color: #9aa0b5;
+            text-transform: uppercase;
+        }
+        .player-top .mode {
+            font-size: 0.75rem;
+            color: #6ab0ff;
+            border: 1px solid #6ab0ff55;
+            padding: 4px 12px;
+            border-radius: 20px;
+            letter-spacing: 0.1em;
+        }
+        /* 唱片 */
+        .cover {
+            position: relative;
+            width: 220px;
+            height: 220px;
+            margin: 0 auto 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at 35% 30%, #3a3a55, #1c1c2e);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            animation: spin 12s linear infinite;
+            animation-play-state: paused;
+            cursor: pointer;
+        }
+        .cover.playing {
+            animation-play-state: running;
+        }
+        @keyframes spin {
+            from { transform: rotate(0); }
+            to { transform: rotate(360deg); }
+        }
+        .cover::before {
+            content: "";
+            position: absolute;
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 30%, #6ab0ff33, #6ab0ff08 60%);
+            border: 1px solid #6ab0ff44;
+        }
+        .cover::after {
+            content: "";
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #111;
+            border: 2px solid #6ab0ff66;
+            z-index: 2;
+        }
+        .cover .disc-icon {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            opacity: 0.6;
+        }
+        /* 曲目信息 */
+        .info {
+            text-align: center;
+            margin-bottom: 18px;
+        }
+        .info .title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .info .artist {
+            font-size: 0.78rem;
+            color: #9aa0b5;
+        }
+        /* 进度条 */
+        .progress {
+            margin-bottom: 14px;
+        }
+        .progress-track {
+            height: 5px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            position: relative;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: 5px;
+            background: linear-gradient(90deg, #6ab0ff, #8f6aff);
+            width: 0%;
+            position: relative;
+        }
+        .progress-fill::after {
+            content: "";
+            position: absolute;
+            right: -5px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 0 8px #6ab0ff;
+        }
+        .progress-time {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.68rem;
+            color: #7c8296;
+            margin-top: 8px;
+            font-variant-numeric: tabular-nums;
+        }
+        /* 控制按钮 */
+        .controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 22px;
+            margin-bottom: 14px;
+        }
+        .ctrl {
+            background: none;
+            border: none;
+            color: #cfd3e0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s, transform 0.2s;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        .ctrl:hover { color: #6ab0ff; }
+        .ctrl:active { transform: scale(0.92); }
+        .ctrl svg { width: 26px; height: 26px; }
+        .ctrl.play {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6ab0ff, #8f6aff);
+            color: #fff;
+            box-shadow: 0 8px 24px #6ab0ff44;
+        }
+        .ctrl.play:hover { color: #fff; }
+        .ctrl.play svg { width: 30px; height: 30px; }
+        /* 下方辅助 */
+        .aux {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .aux .vol {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+        }
+        .aux .vol svg { width: 18px; height: 18px; color: #9aa0b5; }
+        .aux .vol input {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 4px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.15);
+            outline: none;
+        }
+        .aux .vol input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #6ab0ff;
+            cursor: pointer;
+        }
+        .aux .speed {
+            font-size: 0.72rem;
+            color: #9aa0b5;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 5px 10px;
+            border-radius: 14px;
+            cursor: pointer;
+            white-space: nowrap;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        .aux .speed:hover { color: #6ab0ff; border-color: #6ab0ff55; }
+        /* 播放列表 */
+        .playlist {
+            margin-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 12px;
+        }
+        .playlist .ph {
+            font-size: 0.66rem;
+            letter-spacing: 0.18em;
+            color: #7c8296;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        .track {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        .track:hover { background: rgba(255, 255, 255, 0.06); }
+        .track.active { background: rgba(106, 176, 255, 0.12); }
+        .track .idx {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.62rem;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.12);
+            flex-shrink: 0;
+        }
+        .track.active .idx { background: #6ab0ff; }
+        .track .t-title {
+            flex: 1;
+            font-size: 0.82rem;
+            color: #eaeaf0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .track .t-artist {
+            font-size: 0.68rem;
+            color: #7c8296;
+            flex-shrink: 0;
+        }
+        .track .playing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #6ab0ff;
+            box-shadow: 0 0 8px #6ab0ff;
+            flex-shrink: 0;
+        }
+        /* 返回主页 */
+        .back-home {
+            margin-top: 16px;
+            text-align: center;
+        }
+        .back-home a {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            color: #9aa0b5;
+            font-size: 0.75rem;
+            letter-spacing: 0.12em;
+            padding: 8px 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.04);
+            transition: all 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        .back-home a:hover {
+            color: #fff;
+            border-color: #6ab0ff66;
+            background: rgba(106, 176, 255, 0.12);
+        }
+        .back-home a .arrow { font-size: 1rem; }
+        /* 移动端适配 */
+        @media (max-width: 560px) {
+            .player { padding: 22px 18px 16px; }
+            .cover { width: 180px; height: 180px; }
+            .cover .disc-icon { font-size: 2.4rem; }
+            .info .title { font-size: 1.02rem; }
+            .ctrl.play { width: 56px; height: 56px; }
+            .ctrl.play svg { width: 26px; height: 26px; }
+        }
+        @media (max-width: 360px) {
+            .cover { width: 150px; height: 150px; }
+            .controls { gap: 16px; }
+            .aux { flex-wrap: wrap; }
+            .track .t-artist { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="player">
+        <div class="player-top">
+            <span class="logo">AJX · 挂机音乐</span>
+            <span class="mode">循环播放</span>
+        </div>
+
+        <div class="cover" id="cover">
+            <div class="disc-icon" id="discIcon">♪</div>
+        </div>
+
+        <div class="info">
+            <div class="title" id="title">--</div>
+            <div class="artist" id="artist">--</div>
+        </div>
+
+        <div class="progress">
+            <div class="progress-track" id="track">
+                <div class="progress-fill" id="fill"></div>
+            </div>
+            <div class="progress-time">
+                <span id="cur">0:00</span>
+                <span id="dur">0:00</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="ctrl" id="prev" title="上一首">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zM20 6l-9 6 9 6V6z"/></svg>
+            </button>
+            <button class="ctrl play" id="play" title="播放/暂停">
+                <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                <svg id="pauseIcon" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+            </button>
+            <button class="ctrl" id="next" title="下一首">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 6h2v12h-2zM4 6l9 6-9 6V6z" transform="scale(-1,1) translate(-24,0)"/></svg>
+            </button>
+        </div>
+
+        <div class="aux">
+            <div class="vol">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>
+                <input type="range" id="vol" min="0" max="1" step="0.01" value="0.8">
+            </div>
+            <span class="speed" id="speed">1.0x</span>
+        </div>
+
+        <div class="playlist">
+            <div class="ph">播放列表 · 4 首</div>
+            <div id="list"></div>
+        </div>
+
+        <div class="back-home">
+            <a href="./index.html"><span class="arrow">‹</span> 返回主页</a>
+        </div>
+    </div>
+
+    <audio id="audio" preload="metadata"></audio>
+
+    <script>
+        (function () {
+            var songs = [
+                { title: "When the Summer Ends", artist: "Savoir Adore", src: "music/savoir-adore-summer-ends.mp3" },
+                { title: "waiting...", artist: "Juliana Chahayed", src: "music/juliana-chahayed-waiting.flac" },
+                { title: "Duvet", artist: "Bôa", src: "music/boa-duvet.mp3" },
+                { title: "Tek It (Sped Up)", artist: "Cafuné", src: "music/cafune-tek-it.mp3" }
+            ];
+            var audio = document.getElementById('audio');
+            var list = document.getElementById('list');
+            var title = document.getElementById('title');
+            var artist = document.getElementById('artist');
+            var cover = document.getElementById('cover');
+            var discIcon = document.getElementById('discIcon');
+            var fill = document.getElementById('fill');
+            var cur = document.getElementById('cur');
+            var dur = document.getElementById('dur');
+            var play = document.getElementById('play');
+            var playIcon = document.getElementById('playIcon');
+            var pauseIcon = document.getElementById('pauseIcon');
+            var prev = document.getElementById('prev');
+            var next = document.getElementById('next');
+            var speedEl = document.getElementById('speed');
+            var vol = document.getElementById('vol');
+            var track = document.getElementById('track');
+            var idx = 0;
+            var SPEEDS = [1, 1.25, 1.5, 2];
+            var speedIdx = 0;
+
+            function fmt(s) {
+                if (isNaN(s) || s < 0) return '0:00';
+                s = Math.round(s);
+                var m = Math.floor(s / 60), sec = s % 60;
+                return m + ':' + (sec < 10 ? '0' : '') + sec;
+            }
+
+            function buildList() {
+                songs.forEach(function (s, i) {
+                    var d = document.createElement('div');
+                    d.className = 'track' + (i === idx ? ' active' : '');
+                    d.innerHTML = '<span class="idx">' + (i + 1) + '</span>' +
+                        '<span class="t-title">' + s.title + '</span>' +
+                        '<span class="t-artist">' + s.artist + '</span>' +
+                        (i === idx ? '<span class="playing-dot"></span>' : '');
+                    d.addEventListener('click', function () { select(i); });
+                    list.appendChild(d);
+                });
+            }
+
+            function renderRows() {
+                var rows = document.querySelectorAll('.track');
+                rows.forEach(function (r, i) {
+                    r.className = 'track' + (i === idx ? ' active' : '');
+                    var dot = r.querySelector('.playing-dot');
+                    if (dot && i !== idx) dot.remove();
+                    if (i === idx && !r.querySelector('.playing-dot')) {
+                        r.insertAdjacentHTML('beforeend', '<span class="playing-dot"></span>');
+                    }
+                });
+            }
+
+            function load(i, autoplay) {
+                idx = i;
+                var s = songs[i];
+                audio.src = s.src;
+                title.textContent = s.title;
+                artist.textContent = s.artist;
+                discIcon.textContent = ['♪', '♫', '♬', '♩'][i % 4];
+                renderRows();
+                if (autoplay) { audio.play(); }
+            }
+
+            function select(i) {
+                if (i === idx) {
+                    if (audio.paused) audio.play(); else audio.pause();
+                } else {
+                    load(i, true);
+                }
+            }
+
+            function setPlayState(isPlaying) {
+                playIcon.style.display = isPlaying ? 'none' : '';
+                pauseIcon.style.display = isPlaying ? '' : 'none';
+                cover.classList.toggle('playing', isPlaying);
+            }
+
+            audio.addEventListener('play', function () { setPlayState(true); });
+            audio.addEventListener('pause', function () { setPlayState(false); });
+            audio.addEventListener('ended', function () {
+                load((idx + 1) % songs.length, true);
+            });
+
+            audio.addEventListener('timeupdate', function () {
+                if (audio.duration) {
+                    fill.style.width = (audio.currentTime / audio.duration * 100) + '%';
+                    cur.textContent = fmt(audio.currentTime);
+                    dur.textContent = fmt(audio.duration);
+                }
+            });
+
+            audio.addEventListener('loadedmetadata', function () { dur.textContent = fmt(audio.duration); });
+
+            play.addEventListener('click', function () {
+                if (audio.paused) audio.play(); else audio.pause();
+            });
+            prev.addEventListener('click', function () { load((idx - 1 + songs.length) % songs.length, true); });
+            next.addEventListener('click', function () { load((idx + 1) % songs.length, true); });
+
+            track.addEventListener('click', function (e) {
+                var rect = track.getBoundingClientRect();
+                var ratio = (e.clientX - rect.left) / rect.width;
+                if (audio.duration) {
+                    audio.currentTime = ratio * audio.duration;
+                    fill.style.width = (ratio * 100) + '%';
+                }
+            });
+
+            vol.addEventListener('input', function () {
+                audio.volume = parseFloat(vol.value);
+            });
+
+            speedEl.addEventListener('click', function () {
+                speedIdx = (speedIdx + 1) % SPEEDS.length;
+                audio.playbackRate = SPEEDS[speedIdx];
+                speedEl.textContent = SPEEDS[speedIdx] + 'x';
+            });
+
+            cover.addEventListener('click', function () {
+                if (audio.paused) audio.play(); else audio.pause();
+            });
+
+            buildList();
+            audio.volume = parseFloat(vol.value);
+            load(0, false);
+        })();
+    </script>
+</body>
+</html>
