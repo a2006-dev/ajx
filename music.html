@@ -174,6 +174,7 @@ body {
   color:rgba(170,196,236,.35);
   transition:color .35s ease, font-weight .35s ease, text-shadow .35s ease;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  min-width:0;
 }
 .p-lyric .l-tr {
   text-align:center;
@@ -766,26 +767,101 @@ body {
     renderLyric();
   }
 
-  function fitLine(el, baseFs) {
-    var box = elLyric.parentElement || elLyric;
-    var avail = (box ? (box.clientWidth || box.offsetWidth || 300) : 300) - 8;
-    el.style.fontSize = baseFs + 'px';
-    el.style.whiteSpace = 'nowrap';
-    el.style.width = 'auto';
-    el.style.letterSpacing = (baseFs >= 13 ? '.05em' : '.02em');
-    var w = el.scrollWidth || el.offsetWidth;
+  /* ===== 歌词自适应缩放 =====
+     原理：先让所有歌词行回到基准字号并测量自然宽度，取最宽的一行算出统一缩放比例，
+           再整体应用。这样所有行等高，滚动居中才准确。
+           若缩到最小字号仍超宽，该行再单独兜底缩小。 */
+  var fitTimer = 0, fitRetry = 0;
+
+  /* 用 Range 精确测量文本真实宽度。
+     注意：.l-line 是块级元素，scrollWidth 返回的是元素宽度（撑满容器），
+     而非文本宽度，会导致误判为溢出。Range 取的是内联文本的实际排版宽度。 */
+  function textWidth(el) {
+    try {
+      var r = document.createRange();
+      r.selectNodeContents(el);
+      var w = r.getBoundingClientRect().width;
+      if (w > 0) return w;
+    } catch (e) {}
+    return el.scrollWidth || el.offsetWidth || 0;
+  }
+
+  function fitOne(el, avail) {
+    var w = textWidth(el);
     if (w > avail && w > 0) {
-      var fs = baseFs * avail / w;
+      var fs = parseFloat(el.style.fontSize) || 13;
+      fs = fs * avail / w;
       if (fs < 6) fs = 6;
-      el.style.fontSize = fs + 'px';
-      var w2 = el.scrollWidth || el.offsetWidth;
-      if (w2 > avail) {
-        var fs2 = fs * avail / w2;
-        if (fs2 < 6) fs2 = 6;
-        el.style.fontSize = fs2 + 'px';
-      }
+      el.style.fontSize = fs.toFixed(2) + 'px';
       el.style.letterSpacing = '0';
     }
+  }
+
+  function fitLyrics() {
+    if (!elLyric) return;
+    var box = elLyric.parentElement || elLyric;
+    var avail = (box.clientWidth || box.offsetWidth || 0) - 8;
+    if (avail <= 30) { scheduleFit(80); return; }
+
+    var mains = elLyric.querySelectorAll('.l-line');
+    var trs = elLyric.querySelectorAll('.l-tr');
+    var i, el, w, maxMain = 0, maxTr = 0;
+
+    for (i = 0; i < mains.length; i++) {
+      el = mains[i];
+      el.style.fontSize = '13px';
+      el.style.letterSpacing = '.05em';
+      w = textWidth(el);
+      if (w > maxMain) maxMain = w;
+    }
+    for (i = 0; i < trs.length; i++) {
+      el = trs[i];
+      el.style.fontSize = '9px';
+      el.style.letterSpacing = '.02em';
+      w = textWidth(el);
+      if (w > maxTr) maxTr = w;
+    }
+
+    /* 主歌词：最小 9px；翻译行：最小 7px（各自独立缩放，保证可读性） */
+    var sMain = 1, sTr = 1;
+    if (maxMain > avail) sMain = avail / maxMain;
+    if (maxTr > avail) sTr = avail / maxTr;
+    if (sMain > 1) sMain = 1;
+    if (sTr > 1) sTr = 1;
+    if (sMain < 9 / 13) sMain = 9 / 13;
+    if (sTr < 7 / 9) sTr = 7 / 9;
+
+    var mainFs = (13 * sMain).toFixed(2);
+    var trFs = (9 * sTr).toFixed(2);
+
+    for (i = 0; i < mains.length; i++) {
+      el = mains[i];
+      el.style.fontSize = mainFs + 'px';
+      el.style.letterSpacing = (sMain < 0.999 ? '0' : '.05em');
+      el.style.padding = (sMain < 0.999 ? '3px 0' : '5px 0');
+      fitOne(el, avail);
+    }
+    for (i = 0; i < trs.length; i++) {
+      el = trs[i];
+      el.style.fontSize = trFs + 'px';
+      el.style.letterSpacing = (sTr < 0.999 ? '0' : '.02em');
+      el.style.padding = (sTr < 0.999 ? '0 0 3px' : '0 0 5px');
+      fitOne(el, avail);
+    }
+  }
+
+  /* 布局未就绪时重试（容器宽度为 0 的情况） */
+  function scheduleFit(delay) {
+    if (fitTimer) clearTimeout(fitTimer);
+    fitTimer = setTimeout(function () {
+      fitTimer = 0;
+      var box = elLyric.parentElement || elLyric;
+      var w = (box.clientWidth || box.offsetWidth || 0) - 8;
+      if (w <= 30 && fitRetry < 30) { fitRetry++; scheduleFit(80); return; }
+      fitRetry = 0;
+      fitLyrics();
+      if (audio && audio.currentTime) updateLyric(audio.currentTime);
+    }, delay || 0);
   }
 
   function renderLyric() {
@@ -807,16 +883,16 @@ body {
       li.className = 'l-line';
       li.textContent = lines[i].l;
       g.appendChild(li);
-      fitLine(li, 13);
       if (tr && lines[i].c) {
         var trDiv = document.createElement('div');
         trDiv.className = 'l-tr';
         trDiv.textContent = lines[i].c;
         g.appendChild(trDiv);
-        fitLine(trDiv, 9);
       }
       elLyric.appendChild(g);
     }
+    /* 全部插入 DOM 后再测量缩放（此前在未入 DOM 时测量，导致 scrollWidth=0 而跳过缩放） */
+    scheduleFit(0);
   }
 
   function updateLyric(tm) {
@@ -837,14 +913,14 @@ body {
     var inner = elLyric;
     var boxEl = elLyric.parentElement || elLyric; // .p-lyric 可视容器
     var boxH = boxEl.clientHeight || boxEl.offsetHeight || 104;
-    var first = groups[0];
-    var lineH = 27;
-    if (first) {
-      var rec = first.getBoundingClientRect().height || 0;
-      if (rec > 0) lineH = rec; // 实测高度已含中文行与上下 padding
+    var cur = groups[idxLine] || groups[0];
+    var offTop = cur.offsetTop || 0;
+    if (!offTop) { // 兜底：累加各行实际高度
+      offTop = 0;
+      for (var k2 = 0; k2 < idxLine; k2++) offTop += groups[k2].offsetHeight;
     }
-    var off = boxH / 2 - lineH / 2; // 使当前句在可视区居中
-    var y = -idxLine * lineH + off;
+    var curH = cur.offsetHeight || 27; // offsetHeight 不含 transform scale，避免漂移
+    var y = -offTop + (boxH - curH) / 2; // 使当前句在可视区居中
     inner.style.transform = 'translateY(' + y + 'px)';
   }
 
@@ -970,17 +1046,23 @@ body {
     }
   });
 
-  // 窗口尺寸变化时重新适配歌词字体、重算滚动偏移
+  // 尺寸变化时重新适配歌词字号（容器宽度、折叠/展开、横屏等都会触发）
   addEventListener('resize', function () {
-    var groups = elLyric.querySelectorAll('.l-group');
-    for (var k = 0; k < groups.length; k++) {
-      var li = groups[k].querySelector('.l-line');
-      if (li) fitLine(li, 13);
-      var tr = groups[k].querySelector('.l-tr');
-      if (tr) fitLine(tr, 9);
-    }
-    if (audio.currentTime) updateLyric(audio.currentTime);
+    scheduleFit(0);
   });
+
+  // 首次布局完成后再适配一次（保证首帧即正确，无需等待整首播放）
+  addEventListener('load', function () { scheduleFit(0); });
+  setTimeout(function () { scheduleFit(0); }, 120);
+  setTimeout(function () { scheduleFit(0); }, 600);
+
+  // 播放器容器尺寸变化时自动重算（折叠/展开/横屏切换）
+  if (window.ResizeObserver && elLyric && elLyric.parentElement) {
+    try {
+      var ro = new ResizeObserver(function () { scheduleFit(0); });
+      ro.observe(elLyric.parentElement);
+    } catch (e) {}
+  }
 
   // 首次进入不自动播放，等待用户点击
   on = false;
