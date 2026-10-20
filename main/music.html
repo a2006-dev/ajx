@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0e14">
+<title>停云 · TIME LOUNGE</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { height:100%; overflow:hidden; }
+body {
+  background:#0a0e14;
+  color:#e8eef8;
+  font-family:'Helvetica Neue','PingFang SC','Microsoft YaHei',sans-serif;
+  user-select:none; -webkit-user-select:none;
+  display:flex; align-items:center; justify-content:center;
+}
+#dust { position:fixed; inset:0; z-index:0; }
+.lounge {
+  position:relative; z-index:1;
+  text-align:center;
+  padding:20px;
+  max-width:94vw;
+}
+.title {
+  font-size:clamp(15px, 2.4vw, 24px);
+  font-weight:200;
+  letter-spacing:.55em;
+  text-indent:.55em;
+  color:rgba(236,244,255,.82);
+}
+.title .en {
+  display:block;
+  margin-top:12px;
+  font-size:.52em;
+  font-weight:300;
+  letter-spacing:.95em;
+  text-indent:.95em;
+  color:rgba(140,172,225,.42);
+}
+.poem {
+  margin-top:18px;
+  font-size:clamp(12px, 1.9vw, 16px);
+  font-weight:300;
+  letter-spacing:.34em;
+  text-indent:.34em;
+  color:rgba(160,185,225,.48);
+}
+.poem .dot { margin:0 .5em; opacity:.4; }
+.time {
+  margin-top:36px;
+  font-size:clamp(62px, 15vw, 172px);
+  font-weight:200;
+  font-family:'Didot','Bodoni MT','Georgia','Songti SC','STSong','STZhongsong','Noto Serif SC',serif;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:.05em;
+  line-height:1.02;
+  color:#f4f8ff;
+  text-shadow:0 0 46px rgba(110,160,255,.32), 0 0 120px rgba(110,160,255,.14);
+}
+.date {
+  margin-top:14px;
+  font-size:clamp(13px, 1.9vw, 16px);
+  font-weight:300;
+  letter-spacing:.32em;
+  text-indent:.32em;
+  color:rgba(180,202,238,.52);
+}
+.stay {
+  margin-top:32px;
+  display:inline-flex; align-items:center; gap:14px;
+  padding:11px 24px;
+  border-radius:999px;
+  background:rgba(255,255,255,.045);
+  border:1px solid rgba(122,162,255,.16);
+  -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px);
+}
+.stay .label { font-size:11px; letter-spacing:.42em; color:rgba(180,202,238,.48); }
+#stay { font-size:20px; font-weight:300; letter-spacing:.13em; color:#cfe0ff; font-variant-numeric:tabular-nums; }
+.controls { margin-top:36px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+.ctl {
+  display:inline-flex; align-items:center; gap:9px;
+  font-size:13px; font-weight:300; letter-spacing:.12em; color:#dce7ff;
+  padding:12px 21px; border-radius:999px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(122,162,255,.18);
+  cursor:pointer;
+  -webkit-transition:all .35s ease; transition:all .35s ease;
+}
+.ctl .ic { display:inline-flex; opacity:.75; }
+.ctl:hover, .ctl.on {
+  background:rgba(110,160,255,.2);
+  border-color:rgba(150,190,255,.55);
+  box-shadow:0 0 26px rgba(110,160,255,.28);
+}
+.foot {
+  margin-top:40px;
+  font-size:11px; font-weight:300;
+  letter-spacing:.5em; text-indent:.5em;
+  color:rgba(160,185,225,.3);
+}
+/* ========== 播放器（黑胶唱片折叠卡） ========== */
+.player {
+  margin-top:40px; margin-left:auto; margin-right:auto;
+  display:flex; flex-direction:column; align-items:stretch; gap:0;
+  width:min(320px, 88vw);
+  padding:14px 15px 12px;
+  border-radius:20px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(122,162,255,.18);
+  -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px);
+  box-shadow:0 10px 44px rgba(0,0,0,.38);
+  text-align:left;
+  transition:padding .45s cubic-bezier(.19,1,.22,1), width .45s cubic-bezier(.19,1,.22,1), border-radius .45s ease;
+}
+.player-top {
+  display:flex; align-items:center; gap:12px;
+}
+.discWrap {
+  position:relative; flex:none;
+  width:64px; height:64px;
+}
+.disc {
+  width:100%; height:100%;
+  border-radius:50%;
+  background:radial-gradient(circle at 30% 30%, #262d3d, #0d1119 70%);
+  border:1px solid rgba(150,180,255,.28);
+  box-shadow:0 5px 24px rgba(0,0,0,.55), inset 0 0 0 6px rgba(255,255,255,.03);
+  display:flex; align-items:center; justify-content:center;
+  animation:spin 3s linear infinite;
+}
+.disc.paused { animation-play-state:paused; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.disc .cover {
+  width:54%; height:54%;
+  border-radius:50%;
+  object-fit:cover;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.22);
+}
+.discWrap .spindle {
+  position:absolute; top:50%; left:50%;
+  width:12px; height:12px;
+  border-radius:50%;
+  background:#eef4ff;
+  transform:translate(-50%,-50%);
+  box-shadow:0 0 8px rgba(255,255,255,.65);
+  z-index:2;
+  border:3px solid rgba(0,0,0,.4);
+}
+.p-main { flex:1; min-width:0; }
+/* ===== 歌词滚动区（上下滚动 + 当前行高亮） ===== */
+.p-lyric {
+  position:relative;
+  margin:12px 4px 2px;
+  height:104px;
+  max-height:104px; opacity:1;
+  overflow:hidden;
+  transition:max-height .45s cubic-bezier(.19,1,.22,1), opacity .35s ease, margin .45s ease;
+  -webkit-mask-image:linear-gradient(to bottom, transparent, #000 26%, #000 74%, transparent);
+  mask-image:linear-gradient(to bottom, transparent, #000 26%, #000 74%, transparent);
+}
+.p-lyric .l-inner {
+  position:absolute; left:0; right:0; top:0;
+  will-change:transform;
+  transition:transform .5s cubic-bezier(.19,1,.22,1);
+}
+.p-lyric .l-group {
+  transition:transform .35s ease;
+}
+.p-lyric .l-line {
+  text-align:center;
+  padding:5px 0;
+  font-size:13px; font-weight:300; letter-spacing:.05em;
+  color:rgba(170,196,236,.35);
+  transition:color .35s ease, font-weight .35s ease, text-shadow .35s ease;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.p-lyric .l-tr {
+  text-align:center;
+  padding:0 0 5px;
+  font-size:9px; font-weight:300; letter-spacing:.02em;
+  color:rgba(170,196,236,.4);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  transition:color .35s ease;
+}
+.p-lyric .l-group.on {
+  transform:scale(1.06);
+}
+.p-lyric .l-group.on .l-line {
+  color:#f2f6ff;
+  font-weight:500;
+  letter-spacing:.08em;
+  text-shadow:0 0 26px rgba(140,175,255,.55), 0 0 6px rgba(140,175,255,.35);
+}
+.p-lyric .l-group.on .l-tr {
+  color:rgba(200,220,255,.62);
+}
+.p-lyric .l-group.preview {
+  transform:scale(1.02);
+}
+.p-lyric .l-group.preview .l-line {
+  color:rgba(200,220,255,.55);
+}
+.p-name {
+  font-size:13px; font-weight:400; letter-spacing:.04em;
+  color:#f2f6ff;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.p-artist {
+  margin-top:2px;
+  font-size:10px; font-weight:300; letter-spacing:.14em;
+  color:rgba(170,196,236,.6);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.p-prog { margin-top:8px; }
+.p-prog input[type=range] {
+  -webkit-appearance:none; appearance:none;
+  width:100%; height:4px; border-radius:999px;
+  background:rgba(122,162,255,.2);
+  outline:none; cursor:pointer;
+}
+.p-prog input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance:none; appearance:none;
+  width:12px; height:12px; border-radius:50%;
+  background:#cfe0ff;
+  box-shadow:0 0 10px rgba(120,165,255,.75);
+  border:none;
+}
+.p-prog input[type=range]::-moz-range-thumb {
+  width:12px; height:12px; border-radius:50%;
+  background:#cfe0ff; border:none;
+}
+.p-time {
+  margin-top:6px;
+  display:flex; justify-content:space-between; align-items:baseline;
+  font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;
+  font-size:12px; font-weight:500; letter-spacing:.05em;
+  color:rgba(206,224,255,.92);
+  font-variant-numeric:tabular-nums;
+}
+.p-time span { display:inline-block; }
+.p-time .dur { margin-left:auto; }
+.p-time .sep { color:rgba(122,162,255,.45); margin:0 4px; }
+.p-ctl {
+  margin-top:8px;
+  display:flex; align-items:center; justify-content:center; gap:2px; flex-wrap:wrap;
+}
+.pc {
+  display:inline-flex; align-items:center; justify-content:center;
+  padding:6px; border-radius:50%;
+  background:transparent; border:none;
+  color:#cfe0ff; cursor:pointer;
+  -webkit-transition:all .25s ease; transition:all .25s ease;
+}
+.pc:hover { background:rgba(120,165,255,.18); }
+.pc.act { color:#8ec2ff; }
+.pc.main {
+  width:36px; height:36px;
+  background:linear-gradient(135deg, rgba(120,165,255,.35), rgba(120,165,255,.12));
+  border:1px solid rgba(150,190,255,.4);
+  box-shadow:0 0 22px rgba(120,165,255,.3);
+}
+.pc.main:hover { background:linear-gradient(135deg, rgba(120,165,255,.5), rgba(120,165,255,.2)); }
+.pc svg { width:14px; height:14px; }
+/* 播放器折叠态（黑胶 + 歌名 + 进度条 + 控制，带动画） */
+.player.mini {
+  width:auto; min-width:230px; max-width:min(320px, 92vw);
+  padding:12px 14px; cursor:default;
+}
+.player.mini .discWrap {
+  width:56px; height:56px; flex:none; cursor:pointer;
+}
+.player.mini .disc { animation-duration:2.8s; }
+.player.mini .p-main { flex:1; min-width:0; }
+/* mini 态把歌词收起来，保留歌名/进度/控制 */
+.player.mini .p-lyric { max-height:0; opacity:0; margin:0 4px; }
+.player.mini .p-ctl { margin-top:6px; }
+.player.mini .p-ctl #btnShuffle,
+.player.mini .p-ctl #btnRepeat,
+.player.mini .p-ctl #btnTr { display:none; }
+.player.mini .discWrap .spindle { width:8px; height:8px; border-width:2px; }
+/* mini 态唱片干净无播放键残留：转而通过 .spindle 显示转轴 */
+.player.mini .discWrap::after { display:none; }
+.player.mini .spindle { display:block; }
+
+.pc.main svg { width:16px; height:16px; }
+/* 入场动画（全站统一 .iUp：从下到上浮现） */
+.iUp { opacity:0; transform:translate3d(0,80px,0); transition:all 2s cubic-bezier(.19,1,.22,1); }
+.iUp.up { opacity:1; transform:translate3d(0,0,0); }
+/* 横屏压缩布局（手机横屏/矮屏） */
+@media (max-height:520px) and (orientation:landscape) {
+  .title { font-size:clamp(12px, 2.6vh, 16px); }
+  .title .en { margin-top:4px; }
+  .time { margin-top:8px; font-size:clamp(42px, 12vh, 92px); }
+  .date { margin-top:6px; }
+  .stay { margin-top:10px; padding:6px 18px; }
+  #stay { font-size:16px; }
+  .controls { margin-top:14px; gap:8px; }
+  .ctl { padding:8px 14px; font-size:12px; }
+  .foot { margin-top:12px; }
+  .player { margin-top:16px; padding:10px 12px; gap:10px; max-width:min(300px, 92vw); }
+  .discWrap { width:52px; height:52px; }
+  .p-name { font-size:12px; }
+  .p-prog { margin-top:6px; }
+  .p-ctl { margin-top:6px; }
+  /* 横屏高度受限：压缩歌词区，保证展开态下折叠按钮可点 */
+  .p-lyric { height:56px; }
+  .lounge { max-height:100vh; overflow-y:auto; }
+}
+/* 移动端竖屏：布局整体上移、播放器贴底，歌词区可读性优先 */
+@media (max-width:520px) and (orientation:portrait) {
+  body { align-items:flex-start; }
+  .lounge { max-width:100vw; padding:16px; }
+  .time { margin-top:16px; font-size:clamp(46px, 16vw, 72px); }
+  .date { margin-top:8px; }
+  .stay { margin-top:18px; padding:9px 20px; }
+  .controls { margin-top:18px; gap:9px; }
+  .ctl { padding:10px 17px; font-size:12px; }
+  .foot { margin-top:20px; }
+  .player { margin-top:16px; padding:14px 14px 12px; }
+  .p-lyric { height:96px; }
+}
+/* PC 大屏：播放器加宽至舒适尺寸并垂直居中 */
+@media (min-width:768px) {
+  body { align-items:center; }
+  .player { width:min(340px, 460px); }
+  .p-lyric { height:112px; }
+}
+
+
+/* 横屏专属覆盖：显式压低歌词区高度并解除 max-height 钳制 */
+@media (max-height:520px) and (orientation:landscape) {
+  .p-lyric { height:48px; max-height:48px; margin:0 4px; }
+  .poem { display:none; }
+  .date { display:none; }
+  .title .en { display:none; }
+  .time { font-size:clamp(34px, 8vh, 56px); margin-top:2px; }
+  .controls { margin-top:4px; }
+  .stay { display:none; }
+  .title { margin-top:0; }
+  /* gap 从 10px 压到 2px，消除 player-top/p-lyric/p-ctl 之间的 22px 大间隙（空白根因） */
+  .player { margin-top:8px; padding:8px 10px; gap:2px; }
+  .player-top { gap:10px; }
+  .p-prog { margin-top:4px; }
+  .p-time { margin-top:2px; }
+  .p-ctl { margin-top:4px; }
+  .pc { padding:4px; }
+}
+
+</style>
+</head>
+<body>
+<canvas id="dust"></canvas>
+<div class="lounge">
+  <div class="title iUp">停 云<span class="en">T I M E&nbsp;&nbsp;L O U N G E</span></div>
+  <div class="poem iUp">霭霭停云<span class="dot">·</span>濛濛时雨</div>
+  <div class="time iUp" id="clock">--:--:--</div>
+  <div class="date iUp" id="date">----</div>
+  <div class="stay iUp"><span class="label">HANGING</span><span id="stay">00:00:00</span></div>
+  <div class="controls iUp">
+    <button class="ctl" id="btnFs"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></span>全屏</button>
+    <button class="ctl" id="btnLand"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></span>横屏</button>
+  </div>
+  <div class="player iUp">
+    <input type="file" id="fileLocal" accept="audio/*" style="display:none">
+    <div class="player-top">
+      <div class="discWrap">
+        <div class="disc" id="disc">
+          <img class="cover" id="cover" src="./images/savoir.jpg" alt="cover">
+        </div>
+        <div class="spindle"></div>
+      </div>
+      <div class="p-main">
+        <div class="p-name" id="pName">When the Summer Ends</div>
+        <div class="p-artist" id="pArtist">Savoir Adore</div>
+        <div class="p-prog">
+          <input type="range" id="seek" min="0" max="100" value="0" step="0.1">
+        </div>
+        <div class="p-time">
+          <span id="cur">0:00</span><span class="sep">/</span><span class="dur" id="dur">0:00</span>
+        </div>
+      </div>
+    </div>
+    <div class="p-lyric" id="pLyric">
+      <div class="l-inner" id="lInner"></div>
+    </div>
+    <div class="p-ctl">
+      <button class="pc" id="btnFile" title="上传本地音乐"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
+      <button class="pc" id="btnTr" title="翻译"><span style="font-size:12px;font-weight:500;">译</span></button>
+      <button class="pc act" id="btnRepeat" title="循环"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></button>
+      <button class="pc" id="btnPrev" title="上一首"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg></button>
+      <button class="pc main" id="btnPlay" title="播放/暂停"><svg id="icPlay" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg><svg id="icPause" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg></button>
+      <button class="pc" id="btnNext" title="下一首"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg></button>
+      <button class="pc" id="btnFold" title="收起"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 13 12 18 17 13"/><polyline points="7 6 12 11 17 6"/></svg></button>
+      <button class="pc" id="btnShuffle" title="随机"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg></button>
+    </div>
+  </div>
+  <div class="foot iUp">任时光流淌 · L O U N G E   M O D E</div>
+</div>
+<script>
+/* ========== 1. 星尘粒子循环动画 ========== */
+(function () {
+  var c = document.getElementById('dust');
+  if (!c) return;
+  var x = c.getContext('2d');
+  var w = 0, h = 0, ps = [];
+  function size() { w = c.width = innerWidth; h = c.height = innerHeight; }
+  size();
+  var N = Math.max(40, Math.min(150, Math.floor(w * h / 11000)));
+  for (var i = 0; i < N; i++) {
+    ps.push({
+      x: Math.random() * w, y: Math.random() * h,
+      r: Math.random() * 2.2 + 0.5,
+      vx: (Math.random() - 0.5) * 0.22,
+      vy: -(Math.random() * 0.5 + 0.12),
+      a: Math.random() * 0.5 + 0.12,
+      ph: Math.random() * Math.PI * 2
+    });
+  }
+  var mx = -1, my = -1;
+  addEventListener('mousemove', function (e) { mx = e.clientX; my = e.clientY; });
+  addEventListener('touchmove', function (e) { if (e.touches && e.touches[0]) { mx = e.touches[0].clientX; my = e.touches[0].clientY; } }, { passive: true });
+  var t = 0;
+  function frame() {
+    t += 0.016;
+    x.clearRect(0, 0, w, h);
+    var g = x.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, '#080c14');
+    g.addColorStop(0.55, '#0a101e');
+    g.addColorStop(1, '#101426');
+    x.fillStyle = g; x.fillRect(0, 0, w, h);
+    for (var i = 0; i < ps.length; i++) {
+      var p = ps[i];
+      p.x += p.vx; p.y += p.vy;
+      if (p.y < -10) { p.y = h + 10; p.x = Math.random() * w; }
+      if (p.x < -10) p.x = w + 10; else if (p.x > w + 10) p.x = -10;
+      if (mx > 0) {
+        var dx = mx - p.x, dy = my - p.y, d2 = dx * dx + dy * dy;
+        if (d2 < 14400 && d2 > 1) { var d = Math.sqrt(d2); p.x -= dx / d * 0.4; p.y -= dy / d * 0.4; }
+      }
+      var al = p.a * (0.55 + 0.45 * Math.sin(t * 1.4 + p.ph));
+      x.beginPath();
+      x.arc(p.x, p.y, p.r, 0, 6.2832);
+      x.fillStyle = 'rgba(182,206,255,' + al.toFixed(3) + ')';
+      x.fill();
+    }
+    var cg = x.createRadialGradient(w / 2, h * 0.42, 10, w / 2, h * 0.42, w * 0.55);
+    cg.addColorStop(0, 'rgba(96,142,255,' + (0.05 + 0.02 * Math.sin(t)).toFixed(3) + ')');
+    cg.addColorStop(1, 'rgba(96,142,255,0)');
+    x.fillStyle = cg; x.fillRect(0, 0, w, h);
+    requestAnimationFrame(frame);
+  }
+  frame();
+  addEventListener('resize', size);
+})();
+
+/* ========== 2. 大号时钟 + 挂机时长 ========== */
+(function () {
+  var clock = document.getElementById('clock');
+  var dateEl = document.getElementById('date');
+  var stayEl = document.getElementById('stay');
+  var start = Date.now();
+  var week = ['日', '一', '二', '三', '四', '五', '六'];
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function tick() {
+    var d = new Date();
+    clock.textContent = pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+    dateEl.textContent = d.getFullYear() + ' · ' + (d.getMonth() + 1) + '月' + d.getDate() + '日 · 星期' + week[d.getDay()];
+    var s = Math.floor((Date.now() - start) / 1000);
+    stayEl.textContent = pad(Math.floor(s / 3600)) + ':' + pad(Math.floor((s % 3600) / 60)) + ':' + pad(s % 60);
+  }
+  tick();
+  setInterval(tick, 1000);
+})();
+
+/* ========== 3. 全屏 / 横屏 ========== */
+(function () {
+  var btnFs = document.getElementById('btnFs');
+  var btnLand = document.getElementById('btnLand');
+  function isFs() { return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+  function enterFs() {
+    var el = document.documentElement;
+    var fn = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (fn) { var r = fn.call(el); if (r && r.catch) r.catch(function () { }); }
+  }
+  function exitFs() {
+    var fn = document.exitFullscreen || document.webkitExitFullscreen;
+    if (fn) fn.call(document);
+  }
+  btnFs.addEventListener('click', function () {
+    if (isFs()) exitFs(); else enterFs();
+  });
+  btnLand.addEventListener('click', function () {
+    if (!isFs()) enterFs();
+    var so = screen.orientation;
+    if (so && so.lock) {
+      so.lock('landscape').catch(function () { });
+    } else {
+      try {
+        var el = document.documentElement;
+        var fn = el.requestFullscreen || el.webkitRequestFullscreen;
+        if (fn) { var r = fn.call(el); if (r && r.catch) r.catch(function () { }); }
+      } catch (e) { }
+    }
+  });
+})();
+
+/* ========== 4. 音乐播放器（黑胶唱片 + 专辑封面） ========== */
+(function () {
+
+  var lyricSavoir = [
+    { t: 0.2, l: 'Will you hold my hand?' , c: '你会握住我的手吗？' },
+    { t: 2.41, l: 'Will you understand?' , c: '你会明白我的心意吗？' },
+    { t: 4.62, l: 'Can we still pretend' , c: '我们是否还能假装' },
+    { t: 6.93, l: 'When the summer ends?' , c: '当夏日将尽？' },
+    { t: 10.19, l: 'Do you think the tides know' , c: '你可曾想，潮汐是否知道' },
+    { t: 14.38, l: 'Where they might go' , c: '它们将流向何方' },
+    { t: 17.97, l: 'Before they move?' , c: '在涌动之前？' },
+    { t: 22.55, l: 'Are they scared too?' , c: '它们是否也会害怕？' },
+    { t: 25.2, l: '(Are they scared?)' , c: '（它们也会害怕吗？）' },
+    { t: 27.93, l: 'Do you think the moon would fall into the sea' , c: '你可曾想，月亮是否坠入海中' },
+    { t: 35.74, l: 'If it pulled on the world' , c: '若它牵引整个世界' },
+    { t: 39.36, l: "As hard as your love's pulled on me?" , c: '正如你的爱将我牢牢牵引？' },
+    { t: 44.79, l: 'Will you hold my hand?' , c: '你会握住我的手吗？' },
+    { t: 46.98, l: 'Will you understand?' , c: '你会明白我的心意吗？' },
+    { t: 49.0, l: 'Can we still pretend' , c: '我们是否还能假装' },
+    { t: 51.39, l: 'When the summer ends?' , c: '当夏日将尽？' },
+    { t: 53.56, l: 'Nothing needs to hurry' , c: '一切都无需匆忙' },
+    { t: 56.04, l: "I'll wait, I'll learn" , c: '我会等待，我会学会' },
+    { t: 58.09, l: 'How to love you when' , c: '如何去爱你，当' },
+    { t: 60.59, l: 'The summer ends' , c: '夏日将尽' },
+    { t: 62.43, l: 'Will you love me when' , c: '你还会爱我吗，当' },
+    { t: 64.9, l: 'The summer ends?' , c: '夏日将尽？' },
+    { t: 68.06, l: 'What happens next is a moment' , c: '下一瞬的故事不过片刻' },
+    { t: 73.0, l: 'Time is a picture of you' , c: '时光是你的一幅画像' },
+    { t: 77.48, l: "Looking at me, it's a poem" , c: '凝望我的你，如诗一般' },
+    { t: 80.5, l: "Where everything's moot" , c: '万物皆已无关紧要' },
+    { t: 83.04, l: "(Where everything's moot)" , c: '（万物皆已无关紧要）' },
+    { t: 85.7, l: "Do you think there's relief in the feeling of an endless day?" , c: '你可曾想，无尽的白天反而令人解脱？' },
+    { t: 92.91, l: "Do we get stronger the longer the sun's awake?" , c: '阳光越久不落，我们是否越发坚强？' },
+    { t: 102.49, l: 'Will you hold my hand?' , c: '你会握住我的手吗？' },
+    { t: 104.71, l: 'Will you understand?' , c: '你会明白我的心意吗？' },
+    { t: 106.82, l: 'Can we still pretend' , c: '我们是否还能假装' },
+    { t: 109.0, l: 'When the summer ends?' , c: '当夏日将尽？' },
+    { t: 111.33, l: 'Nothing needs to hurry' , c: '一切都无需匆忙' },
+    { t: 113.85, l: "I'll wait, I'll learn" , c: '我会等待，我会学会' },
+    { t: 115.8, l: 'How to love you when' , c: '如何去爱你，当' },
+    { t: 118.22, l: 'The summer ends' , c: '夏日将尽' },
+    { t: 120.12, l: 'Will you love me when' , c: '你还会爱我吗，当' },
+    { t: 122.75, l: 'The summer ends?' , c: '夏日将尽？' },
+    { t: 144.02, l: 'What happens next is a moment' , c: '下一瞬的故事不过片刻' },
+    { t: 148.46, l: 'Time is a picture of you' , c: '时光是你的一幅画像' },
+    { t: 153.0, l: 'What happens next is a moment' , c: '下一瞬的故事不过片刻' },
+    { t: 160.2, l: 'Will you hold my hand?' , c: '你会握住我的手吗？' },
+    { t: 162.46, l: 'Will you understand?' , c: '你会明白我的心意吗？' },
+    { t: 164.68, l: 'Can we still pretend' , c: '我们是否还能假装' },
+    { t: 166.89, l: 'When the summer ends?' , c: '当夏日将尽？' },
+    { t: 169.05, l: 'Nothing needs to hurry' , c: '一切都无需匆忙' },
+    { t: 171.64, l: "I'll wait, I'll learn" , c: '我会等待，我会学会' },
+    { t: 173.54, l: 'How to love you when' , c: '如何去爱你，当' },
+    { t: 176.04, l: 'The summer ends' , c: '夏日将尽' },
+    { t: 177.94, l: 'Will you hold my hand?' , c: '你会握住我的手吗？' },
+    { t: 180.78, l: 'Will you understand?' , c: '你会明白我的心意吗？' },
+    { t: 182.34, l: 'Can we still pretend' , c: '我们是否还能假装' },
+    { t: 184.61, l: 'When the summer ends?' , c: '当夏日将尽？' },
+    { t: 186.87, l: 'Nothing needs to hurry' , c: '一切都无需匆忙' },
+    { t: 189.32, l: "I'll wait, I'll learn" , c: '我会等待，我会学会' },
+    { t: 191.32, l: 'How to love you when' , c: '如何去爱你，当' },
+    { t: 193.84, l: 'The summer ends' , c: '夏日将尽' },
+    { t: 195.76, l: 'Will you love me when' , c: '你还会爱我吗，当' },
+    { t: 198.27, l: 'The summer ends?' , c: '夏日将尽？' },
+  ];
+
+  var lyricBoa = [
+    { t: 0.99, l: "And you don't seem to understand" , c: '你似乎并不明白' },
+    { t: 5.79, l: 'A shame, you seemed an honest man' , c: '可惜，你曾像个坦荡的人' },
+    { t: 10.82, l: 'And all the fears you hold so dear' , c: '你如此珍视的那些恐惧' },
+    { t: 15.83, l: 'Will turn to whisper in your ear' , c: '终将化作耳畔的低语' },
+    { t: 21.08, l: 'And you know what they say might hurt you' , c: '你知道那些话可能会伤到你' },
+    { t: 23.75, l: 'And you know that it means so much' , c: '你也明白它意义深重' },
+    { t: 26.34, l: "And you don't even feel a thing" , c: '而你竟毫无知觉' },
+    { t: 31.4, l: 'I am falling' , c: '我正坠落' },
+    { t: 34.29, l: 'I am fading' , c: '我正消逝' },
+    { t: 36.92, l: 'I have lost it all' , c: '我已失去一切' },
+    { t: 41.78, l: "And you don't seem the lying kind" , c: '你看起来并非说谎之人' },
+    { t: 46.75, l: 'A shame that I can read your mind' , c: '可惜我看得透你的心思' },
+    { t: 52.12, l: 'And all the things that I read there' , c: '而我在那里读到的一切' },
+    { t: 57.01, l: 'Candle lit smile that we both share' , c: '烛火映照的微笑，你我共有' },
+    { t: 62.32, l: "And you know I don't mean to hurt you" , c: '你知道我无意伤害你' },
+    { t: 65.09, l: 'But you know that it means so much' , c: '但你知道它意义深重' },
+    { t: 67.67, l: "And you don't even feel a thing" , c: '而你竟毫无知觉' },
+    { t: 72.86, l: 'I am falling' , c: '我正坠落' },
+    { t: 75.44, l: 'I am fading' , c: '我正消逝' },
+    { t: 78.11, l: 'I am drowning' , c: '我正沉溺' },
+    { t: 80.65, l: 'Help me to breathe' , c: '救我，让我呼吸' },
+    { t: 83.2, l: 'I am hurting' , c: '我正受伤' },
+    { t: 85.78, l: 'I have lost it all' , c: '我已失去一切' },
+    { t: 88.46, l: 'I am losing' , c: '我正失去' },
+    { t: 90.88, l: 'Help me to breathe' , c: '救我，让我呼吸' },
+    { t: 134.94, l: 'I am falling' , c: '我正坠落' },
+    { t: 137.48, l: 'I am fading' , c: '我正消逝' },
+    { t: 140.02, l: 'I am drowning' , c: '我正沉溺' },
+    { t: 142.55, l: 'Help me to breathe' , c: '救我，让我呼吸' },
+    { t: 145.06, l: 'I am hurting' , c: '我正受伤' },
+    { t: 147.62, l: 'I have lost it all' , c: '我已失去一切' },
+    { t: 150.35, l: 'I am losing' , c: '我正失去' },
+    { t: 152.85, l: 'Help me to breathe' , c: '救我，让我呼吸' },
+    { t: 176.43, l: 'I am falling' , c: '我正坠落' },
+    { t: 178.78, l: 'I am fading' , c: '我正消逝' },
+    { t: 181.24, l: 'I am drowning' , c: '我正沉溺' },
+    { t: 183.79, l: 'Help me to breathe' , c: '救我，让我呼吸' },
+    { t: 186.42, l: 'I am hurting' , c: '我正受伤' },
+    { t: 188.94, l: 'I have lost it all' , c: '我已失去一切' },
+    { t: 191.68, l: 'I am losing' , c: '我正失去' },
+    { t: 194.25, l: 'Help me to breathe' , c: '救我，让我呼吸' },
+  ];
+
+  var lyricCafune = [
+    { t: 0.08, l: 'Where did you learn what it means to reciprocate?' , c: '你从何处学会，何为以心换心？' },
+    { t: 5.45, l: 'And how much can I be expected to tolerate?' , c: '我又能指望自己忍受多少？' },
+    { t: 10.93, l: "So I started to think 'bout the plans I made, the debt unpaid" , c: '于是我回想许下的计划，那未偿的亏欠' },
+    { t: 16.97, l: 'And you just can\u2019t call a spade "a spade"' , c: '而你始终不肯直言不讳' },
+    { t: 22.77, l: 'I watch the Moon, let it run my mood' , c: '我凝望月亮，任它牵引心情' },
+    { t: 29.55, l: "Can't stop thinking of you" , c: '无法停止想你' },
+    { t: 34.16, l: "I watch you (now I let it go, and I watch as things play out like)" , c: '我注视着你（如今我已放手，看一切如何上演）' },
+    { t: 39.66, l: "So long, nice to know you, I'll be moving on" , c: '再会了，很高兴认识你，我将继续前行' },
+    { t: 45.25, l: 'We started off in such a nice place' , c: '我们曾从那般美好的地方启程' },
+    { t: 48.36, l: 'We were talking the same language' , c: '我们曾说着同一种语言' },
+    { t: 51.02, l: "I o-open, and I'm closing" , c: '我敞开心扉，又亲手关上' },
+    { t: 53.99, l: "You can't stand the thought of a real beating heart" , c: '你受不了那颗真实跳动的心' },
+    { t: 57.43, l: "You'd be holding, having trouble" , c: '你拥抱时，心中满是犹疑' },
+    { t: 60.15, l: "O-o-owning and admit that I am hoping" , c: '承认吧，我还在期盼' },
+    { t: 65.24, l: 'I watch the Moon, let it run my mood' , c: '我凝望月亮，任它牵引心情' },
+    { t: 72.18, l: "Can't stop thinking of you" , c: '无法停止想你' },
+    { t: 76.93, l: "I watch you (now I let it go, and I watch as things play out like)" , c: '我注视着你（如今我已放手，看一切如何上演）' },
+    { t: 82.22, l: "So long, nice to know you, I'll be moving on, moving on" , c: '再会了，很高兴认识你，我将继续前行，继续前行' },
+    { t: 113.54, l: 'You' , c: '你' },
+    { t: 114.5, l: 'Yeah, I always know the truth' , c: '是啊，我一直知道真相' },
+    { t: 117.28, l: "But I can't just say it to you" , c: '却无法向你道明' },
+    { t: 120.37, l: 'Yeah, I know the truth' , c: '是啊，我知道真相' },
+    { t: 124.32, l: 'I knew' , c: '我早已知晓' },
+    { t: 125.63, l: 'Yeah, I always know the truth' , c: '是啊，我一直知道真相' },
+    { t: 128.52, l: "But I can't just say it to you" , c: '却无法向你道明' },
+    { t: 131.71, l: 'Yeah, I know the truth' , c: '是啊，我知道真相' },
+    { t: 136.69, l: "I never thought we'd see it through" , c: '我从未想过我们能走到最后' },
+    { t: 139.61, l: 'I never could rely on you' , c: '我从来无法依靠你' },
+    { t: 142.43, l: 'And the few times your face came into view' , c: '而那几次你的面容映入眼帘' },
+    { t: 149.67, l: 'Into view' , c: '映入眼帘' },
+    { t: 152.35, l: "I'm not into you" , c: '我已不再爱你' },
+    { t: 155.32, l: 'Into you' , c: '不再爱你' },
+  ];
+
+  var lyricWaiting = [
+    { t: 17.13, l: 'Come on let\u2019s go sailing' , c: '来吧，我们起航' },
+    { t: 21.37, l: 'I don\u2019t really know how' , c: '我其实不知如何去航' },
+    { t: 25.15, l: 'Set the sun to daydream' , c: '让太阳坠入白日梦' },
+    { t: 28.82, l: 'We don\u2019t got much time now' , c: '我们已没有多少时间' },
+    { t: 32.72, l: 'I\u2019m fading faster lately' , c: '近来我消逝得愈发快' },
+    { t: 36.08, l: 'Don\u2019t make me sit here waiting' , c: '别让我在此空等' },
+    { t: 40.49, l: 'So long, so long, so long, so long' , c: '太久，太久，太久，太久' },
+    { t: 62.80, l: 'Locked in when there\u2019s no sound' , c: '无声之时我被困在原地' },
+    { t: 65.93, l: 'Put my headphones loud' , c: '将耳机音量调到最大' },
+    { t: 70.86, l: 'Hit the spacebar hard now' , c: '狠狠敲下空格键' },
+    { t: 74.47, l: 'Taking off jump around' , c: '腾空而起，纵情跃动' },
+    { t: 78.29, l: 'I can\u2019t remember lately' , c: '近来我已记不清' },
+    { t: 81.92, l: 'I fall apart it\u2019s daily' , c: '我日日分崩离析' },
+    { t: 85.78, l: 'I\u2019m fading faster take me' , c: '我消逝得更快，带我走吧' },
+    { t: 89.49, l: 'Don\u2019t make me sit here waiting' , c: '别让我在此空等' },
+    { t: 93.57, l: 'So long, so long, so long, so long' , c: '太久，太久，太久，太久' }
+  ];
+  var lyricCassia = [
+    { t: 0.0, l: '作词 : Robert Ellis/Jacob Leff', c: '作词 : Robert Ellis/Jacob Leff' }
+    { t: 0.17, l: '作曲 : Robert Ellis/Jacob Leff', c: '作曲 : Robert Ellis/Jacob Leff' }
+    { t: 0.35, l: 'I was sitting right there looking out the window', c: '我就坐在那里，望着窗外的风景' }
+    { t: 4.51, l: 'Trying to keep the day from losing all my light', c: '努力不让这一天带走我所有的光亮' }
+    { t: 8.7, l: 'Positive that someday looking up at Yahweh', c: '坚信总有一天仰望上帝' }
+    { t: 12.86, l: 'Dreaming on a light that\'ll touch my head', c: '梦想着一束能触及我头顶的光' }
+    { t: 15.99, l: 'I was sitting, I was sitting right down, took it hard', c: '我坐在那儿，我坐在那儿，痛楚难当' }
+    { t: 20.17, l: 'In my head and on my heart', c: '在脑海里，在心头上' }
+    { t: 23.04, l: 'I\'ll stick around, write it out to cool me down', c: '我会留下来，写下一切让自己冷静' }
+    { t: 27.13, l: 'You left too many holes to cover them all up', c: '你留下了太多裂痕，根本无法一一填补' }
+    { t: 31.34, l: 'At least enough to always bring me back to ya', c: '至少足够让我一次次回到你身边' }
+    { t: 34.69, l: 'Yeah, it\'s a lot of gold but not for real', c: '是的，那有很多黄金，却并非真实' }
+    { t: 38.98, l: 'If somebody comes then I will say', c: '如果有人前来，我会说' }
+    { t: 43.06, l: 'You were right, it\'s in my mind', c: '你是对的，那在我脑海里' }
+    { t: 46.03, l: 'But you were glowing gold in my last dream', c: '但你在我最后的梦里，闪耀着金色的光' }
+    { t: 49.3, l: 'I was sitting, I was sitting right there looking out the window', c: '我坐在那儿，我坐在那儿，望着窗外的风景' }
+    { t: 54.52, l: 'Trying to keep the day from losing all my light', c: '努力不让这一天带走我所有的光亮' }
+    { t: 58.68, l: 'Positive that someday looking up at Yahweh', c: '坚信总有一天仰望上帝' }
+    { t: 62.86, l: 'Dreaming on a light that\'ll touch my head', c: '梦想着一束能触及我头顶的光' }
+    { t: 65.99, l: 'I keep seeing, I keep seeing you still', c: '我不断看见，我不断看见你依然在那儿' }
+    { t: 69.1, l: 'Walking out of the woods looking back at me', c: '从林间走出，回头望向我' }
+    { t: 72.97, l: 'The warm and cold of being far from all you know', c: '远离所知的温暖与寒冷' }
+    { t: 77.51, l: 'Over time I fake a smile to get through it', c: '时光流逝，我假装微笑以撑过这一切' }
+    { t: 81.36, l: 'But beauty don\'t second guess when I\'ll be home', c: '但美丽不会犹豫，而我何时才能回家' }
+    { t: 84.77, l: 'Yeah, it\'s a lot of gold but not for real', c: '是的，那有很多黄金，却并非真实' }
+    { t: 88.85, l: 'If somebody comes then I will say', c: '如果有人前来，我会说' }
+    { t: 93.1, l: 'You were right, it\'s in my mind', c: '你是对的，那在我脑海里' }
+    { t: 96.1, l: 'But you were glowing gold in my last dream', c: '但你在我最后的梦里，闪耀着金色的光' }
+    { t: 99.31, l: 'I was sitting, I was sitting right', c: '我坐在那儿，我坐在那儿' }
+    { t: 107.72, l: 'I was sitting, I was sitting right', c: '我坐在那儿，我坐在那儿' }
+    { t: 117.46, l: 'I\'m all for the time it takes', c: '我愿付出所需的一切时间' }
+    { t: 121.54, l: 'I\'m absorbed with what you\'re thinking', c: '我全神贯注于你所想的一切' }
+    { t: 125.68, l: 'I\'ve been up and down again', c: '我又一次起起落落' }
+    { t: 129.53, l: 'Been a while, it\'s all slow-moving', c: '已过了很久，一切都缓慢前行' }
+    { t: 133.68, l: 'I was sitting right there looking out the window', c: '我就坐在那里，望着窗外的风景' }
+    { t: 137.9, l: 'Trying to keep the day from losing all my light', c: '努力不让这一天带走我所有的光亮' }
+    { t: 142.1, l: 'Positive that someday looking up at Yahweh', c: '坚信总有一天仰望上帝' }
+    { t: 146.21, l: 'Dreaming on a light that\'ll touch my head', c: '梦想着一束能触及我头顶的光' }
+    { t: 149.36, l: 'I was sitting, I was sitting right there looking out the window', c: '我坐在那儿，我坐在那儿，望着窗外的风景' }
+    { t: 154.57, l: 'Trying to keep the day from losing all my light', c: '努力不让这一天带走我所有的光亮' }
+    { t: 158.77, l: 'Positive that someday looking up at Yahweh', c: '坚信总有一天仰望上帝' }
+    { t: 162.91, l: 'Dreaming on a light that\'ll touch my head', c: '梦想着一束能触及我头顶的光' }
+    { t: 166.06, l: 'I was sitting, I was sitting right', c: '我坐在那儿，我坐在那儿' }
+    { t: 171.32, l: 'I was sitting right', c: '我坐在那儿' }
+    { t: 175.44, l: 'I was sitting right', c: '我坐在那儿' }
+    { t: 179.61, l: 'I was sitting right', c: '我坐在那儿' }
+  ];
+  var tracks = [
+    { src: './music/savoir-adore-summer-ends.mp3', name: 'When the Summer Ends', artist: 'Savoir Adore', cover: './images/savoir.jpg', lyric: lyricSavoir },
+    { src: './music/boa-duvet.mp3', name: 'Duvet', artist: 'bôa', cover: './images/boa.jpg', lyric: lyricBoa },
+    { src: './music/cafune-tek-it.mp3', name: 'Tek It', artist: 'Cafuné', cover: './images/cafune.jpg', lyric: lyricCafune },
+    { src: './music/juliana-chahayed-waiting.mp3', name: 'waiting...', artist: 'Juliana Chahayed', cover: './images/juliana.jpg', lyric: lyricWaiting }
+    { src: './music/cassia-right-there.mp3', name: 'Right There', artist: 'Cassia', cover: './images/cassia.jpg', lyric: lyricCassia }
+  ];
+  var idx = 0, on = false, repeat = true, shuffle = false, tr = false;
+  var audio = new Audio();
+  audio.volume = 0.22;
+  audio.preload = 'auto';
+
+  var elCover = document.getElementById('cover');
+  var elName = document.getElementById('pName');
+  var elArtist = document.getElementById('pArtist');
+  var elSeek = document.getElementById('seek');
+  var elCur = document.getElementById('cur');
+  var elDur = document.getElementById('dur');
+  var elDisc = document.getElementById('disc');
+  var elPlay = document.getElementById('btnPlay');
+  var icPlay = document.getElementById('icPlay');
+  var icPause = document.getElementById('icPause');
+  var elPrev = document.getElementById('btnPrev');
+  var elNext = document.getElementById('btnNext');
+  var elRepeat = document.getElementById('btnRepeat');
+  var elShuffle = document.getElementById('btnShuffle');
+  var elTr = document.getElementById('btnTr');
+  var elLyric = document.getElementById('lInner');
+  var elFile = document.getElementById('btnFile');
+  var fileInput = document.getElementById('fileLocal');
+  var elFold = document.getElementById('btnFold');
+  var playerEl = document.querySelector('.player');
+  var localIdx = -1;
+
+  function fmt(s) {
+    if (!isFinite(s) || s < 0) s = 0;
+    var m = Math.floor(s / 60);
+    var sec = Math.floor(s % 60);
+    return m + ':' + (sec < 10 ? '0' : '') + sec;
+  }
+
+  function setMeta() {
+    var t = tracks[idx];
+    elCover.src = t.cover;
+    elCover.alt = t.name;
+    elName.textContent = t.name;
+    elArtist.textContent = t.artist;
+    renderLyric();
+  }
+
+  function fitLine(el, baseFs) {
+    var box = elLyric.parentElement || elLyric;
+    var avail = (box ? (box.clientWidth || box.offsetWidth || 300) : 300) - 8;
+    el.style.fontSize = baseFs + 'px';
+    el.style.whiteSpace = 'nowrap';
+    el.style.width = 'auto';
+    el.style.letterSpacing = (baseFs >= 13 ? '.05em' : '.02em');
+    var w = el.scrollWidth || el.offsetWidth;
+    if (w > avail && w > 0) {
+      var fs = baseFs * avail / w;
+      if (fs < 6) fs = 6;
+      el.style.fontSize = fs + 'px';
+      var w2 = el.scrollWidth || el.offsetWidth;
+      if (w2 > avail) {
+        var fs2 = fs * avail / w2;
+        if (fs2 < 6) fs2 = 6;
+        el.style.fontSize = fs2 + 'px';
+      }
+      el.style.letterSpacing = '0';
+    }
+  }
+
+  function renderLyric() {
+    var t = tracks[idx];
+    if (!elLyric) return;
+    elLyric.innerHTML = '';
+    var lines = t.lyric;
+    if (!lines || !lines.length) {
+      var pre = document.createElement('div');
+      pre.className = 'l-line';
+      pre.textContent = '· · ·';
+      elLyric.appendChild(pre);
+      return;
+    }
+    for (var i = 0; i < lines.length; i++) {
+      var g = document.createElement('div');
+      g.className = 'l-group';
+      var li = document.createElement('div');
+      li.className = 'l-line';
+      li.textContent = lines[i].l;
+      g.appendChild(li);
+      fitLine(li, 13);
+      if (tr && lines[i].c) {
+        var trDiv = document.createElement('div');
+        trDiv.className = 'l-tr';
+        trDiv.textContent = lines[i].c;
+        g.appendChild(trDiv);
+        fitLine(trDiv, 9);
+      }
+      elLyric.appendChild(g);
+    }
+  }
+
+  function updateLyric(tm) {
+    var t = tracks[idx];
+    if (!elLyric || !t.lyric || !t.lyric.length) return;
+    var groups = elLyric.querySelectorAll('.l-group');
+    if (!groups.length) return;
+    var idxLine = 0;
+    for (var i = 0; i < t.lyric.length; i++) {
+      if (tm >= t.lyric[i].t) idxLine = i; else break;
+    }
+    for (var k = 0; k < groups.length; k++) {
+      groups[k].classList.remove('on', 'preview');
+      if (k === idxLine) groups[k].classList.add('on');
+      else if (k === idxLine + 1) groups[k].classList.add('preview');
+    }
+    // 动态测量，确保当前句在歌词区严格垂直居中
+    var inner = elLyric;
+    var boxEl = elLyric.parentElement || elLyric; // .p-lyric 可视容器
+    var boxH = boxEl.clientHeight || boxEl.offsetHeight || 104;
+    var first = groups[0];
+    var lineH = 27;
+    if (first) {
+      var rec = first.getBoundingClientRect().height || 0;
+      if (rec > 0) lineH = rec; // 实测高度已含中文行与上下 padding
+    }
+    var off = boxH / 2 - lineH / 2; // 使当前句在可视区居中
+    var y = -idxLine * lineH + off;
+    inner.style.transform = 'translateY(' + y + 'px)';
+  }
+
+  function playState() {
+    elDisc.classList.toggle('paused', !on);
+    icPlay.style.display = on ? 'none' : 'block';
+    icPause.style.display = on ? 'block' : 'none';
+    if (playerEl) playerEl.classList.toggle('playing', on);
+  }
+
+  function load(n) {
+    idx = ((n % tracks.length) + tracks.length) % tracks.length;
+    setMeta();
+    audio.src = tracks[idx].src;
+    audio.load();
+    if (on) audio.play().catch(function () { on = false; playState(); });
+  }
+
+  function next() {
+    if (shuffle) {
+      var r;
+      do { r = Math.floor(Math.random() * tracks.length); } while (r === idx && tracks.length > 1);
+      load(r);
+    } else {
+      load(idx + 1);
+    }
+  }
+
+  setMeta();
+  load(0);
+
+  audio.addEventListener('loadedmetadata', function () {
+    elDur.textContent = fmt(audio.duration);
+    elSeek.max = audio.duration || 100;
+  });
+  audio.addEventListener('timeupdate', function () {
+    if (!audio.duration) return;
+    elCur.textContent = fmt(audio.currentTime);
+    elSeek.value = audio.currentTime;
+    var pct = (audio.currentTime / audio.duration) * 100;
+    if (elSeek) elSeek.style.background = 'linear-gradient(to right, rgba(122,162,255,.9) ' + pct + '%, rgba(122,162,255,.2) ' + pct + '%)';
+    updateLyric(audio.currentTime);
+  });
+  audio.addEventListener('ended', function () {
+    if (repeat) { audio.currentTime = 0; audio.play().catch(function () { }); }
+    else { next(); }
+  });
+  audio.addEventListener('error', function () { if (on) next(); });
+
+  elPlay.addEventListener('click', function () {
+    on = !on;
+    if (on) {
+      var p = audio.play();
+      if (p && p.catch) p.catch(function () { on = false; playState(); });
+    } else { audio.pause(); }
+    playState();
+  });
+  elNext.addEventListener('click', function () { next(); });
+  elPrev.addEventListener('click', function () { load(idx - 1); });
+
+  elRepeat.addEventListener('click', function () {
+    repeat = !repeat;
+    elRepeat.classList.toggle('act', repeat);
+  });
+  elShuffle.addEventListener('click', function () {
+    shuffle = !shuffle;
+    elShuffle.classList.toggle('act', shuffle);
+  });
+
+  elFile.addEventListener('click', function () { if (fileInput) fileInput.click(); });
+  fileInput.addEventListener('change', function () {
+    var f = fileInput.files && fileInput.files[0];
+    if (!f) return;
+    var url = URL.createObjectURL(f);
+    var nm = (f.name || 'Local').replace(/\.[^.]+$/, '') || 'Local';
+    var cv = tracks[idx] ? tracks[idx].cover : './images/savoir.jpg';
+    tracks.push({ src: url, name: nm, artist: '本地音乐', cover: cv, lyric: null });
+    localIdx = tracks.length - 1;
+    on = true;
+    load(localIdx);
+    playState();
+  });
+  // 收起/展开切换：收缩按钮充当开关，点击黑胶也可展开
+  function setFold(on) {
+    if (!playerEl) return;
+    if (on) playerEl.classList.add('mini'); else playerEl.classList.remove('mini');
+    if (elFold) {
+      elFold.title = on ? '展开' : '收起';
+      // 翻转图标：收起态显示下拉箭头，展开态显示上拉箭头
+      elFold.innerHTML = on
+        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>'
+        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 13 12 18 17 13"/><polyline points="7 6 12 11 17 6"/></svg>';
+    }
+  }
+  elFold.addEventListener('click', function (e) {
+    e.stopPropagation();
+    setFold(!(playerEl && playerEl.classList.contains('mini')));
+  });
+  var elDiscWrap = document.querySelector('.discWrap');
+  if (elDiscWrap) elDiscWrap.addEventListener('click', function (e) {
+    e.stopPropagation();
+    if (playerEl && playerEl.classList.contains('mini')) setFold(false);
+  });
+  if (playerEl) playerEl.addEventListener('click', function (e) {
+    // mini 态：点击唱片区之外不退出（避免误触），只有点击黑胶才展开
+    if (playerEl.classList.contains('mini') && (e.target.closest && e.target.closest('.discWrap'))) {
+      setFold(false);
+    }
+  });
+
+  elTr.addEventListener('click', function () {
+    tr = !tr;
+    elTr.classList.toggle('act', tr);
+    renderLyric();
+    if (audio.currentTime) updateLyric(audio.currentTime);
+  });
+
+  elSeek.addEventListener('input', function () {
+    if (audio.duration) {
+      audio.currentTime = elSeek.value;
+      var p2 = (elSeek.value / audio.duration) * 100;
+      elSeek.style.background = 'linear-gradient(to right, rgba(122,162,255,.9) ' + p2 + '%, rgba(122,162,255,.2) ' + p2 + '%)';
+    }
+  });
+
+  // 窗口尺寸变化时重新适配歌词字体、重算滚动偏移
+  addEventListener('resize', function () {
+    var groups = elLyric.querySelectorAll('.l-group');
+    for (var k = 0; k < groups.length; k++) {
+      var li = groups[k].querySelector('.l-line');
+      if (li) fitLine(li, 13);
+      var tr = groups[k].querySelector('.l-tr');
+      if (tr) fitLine(tr, 9);
+    }
+    if (audio.currentTime) updateLyric(audio.currentTime);
+  });
+
+  // 首次进入不自动播放，等待用户点击
+  on = false;
+  playState();
+})();
+
+/* ========== 5. 入场动画（全站统一 .iUp） ========== */
+(function () {
+  var els = Array.prototype.slice.call(document.querySelectorAll('.iUp'));
+  var t = 0, d = 150;
+  els.forEach(function (e) {
+    setTimeout(function () { e.classList.add('up'); }, t);
+    t += d;
+  });
+})();
+</script>
+</body>
+</html>
