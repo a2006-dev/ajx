@@ -1,0 +1,25 @@
+# 禁止所有搜索引擎抓取本仓库（个人站，无收录需求）
+User-agent: *
+Disallow: /
+
+# 明确屏蔽主流爬虫
+User-agent: Googlebot
+Disallow: /
+
+User-agent: Bingbot
+Disallow: /
+
+User-agent: Baiduspider
+Disallow: /
+
+User-agent: YandexBot
+Disallow: /
+
+User-agent: DuckDuckBot
+Disallow: /
+
+User-agent: Applebot
+Disallow: /
+
+User-agent: Google-InspectionTool
+Disallow: /
