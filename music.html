@@ -510,8 +510,7 @@ body {
 /* ========== 4. 音乐播放器（黑胶唱片 + 专辑封面） ========== */
 (function () {
 
-  var lyricSavoir = [
-    { t: 0.2, l: 'Will you hold my hand?' , c: '你会握住我的手吗？' },
+  var lyricSavoir = [    { t: 0.2, l: 'Will you hold my hand?' , c: '你会握住我的手吗？' },
     { t: 2.41, l: 'Will you understand?' , c: '你会明白我的心意吗？' },
     { t: 4.62, l: 'Can we still pretend' , c: '我们是否还能假装' },
     { t: 6.93, l: 'When the summer ends?' , c: '当夏日将尽？' },
@@ -570,11 +569,10 @@ body {
     { t: 191.32, l: 'How to love you when' , c: '如何去爱你，当' },
     { t: 193.84, l: 'The summer ends' , c: '夏日将尽' },
     { t: 195.76, l: 'Will you love me when' , c: '你还会爱我吗，当' },
-    { t: 198.27, l: 'The summer ends?' , c: '夏日将尽？' },
+    { t: 198.27, l: 'The summer ends?' , c: '夏日将尽？' }
   ];
 
-  var lyricBoa = [
-    { t: 0.99, l: "And you don't seem to understand" , c: '你似乎并不明白' },
+  var lyricBoa = [    { t: 0.99, l: "And you don't seem to understand" , c: '你似乎并不明白' },
     { t: 5.79, l: 'A shame, you seemed an honest man' , c: '可惜，你曾像个坦荡的人' },
     { t: 10.82, l: 'And all the fears you hold so dear' , c: '你如此珍视的那些恐惧' },
     { t: 15.83, l: 'Will turn to whisper in your ear' , c: '终将化作耳畔的低语' },
@@ -614,11 +612,10 @@ body {
     { t: 186.42, l: 'I am hurting' , c: '我正受伤' },
     { t: 188.94, l: 'I have lost it all' , c: '我已失去一切' },
     { t: 191.68, l: 'I am losing' , c: '我正失去' },
-    { t: 194.25, l: 'Help me to breathe' , c: '救我，让我呼吸' },
+    { t: 194.25, l: 'Help me to breathe' , c: '救我，让我呼吸' }
   ];
 
-  var lyricCafune = [
-    { t: 0.08, l: 'Where did you learn what it means to reciprocate?' , c: '你从何处学会，何为以心换心？' },
+  var lyricCafune = [    { t: 0.08, l: 'Where did you learn what it means to reciprocate?' , c: '你从何处学会，何为以心换心？' },
     { t: 5.45, l: 'And how much can I be expected to tolerate?' , c: '我又能指望自己忍受多少？' },
     { t: 10.93, l: "So I started to think 'bout the plans I made, the debt unpaid" , c: '于是我回想许下的计划，那未偿的亏欠' },
     { t: 16.97, l: 'And you just can\u2019t call a spade "a spade"' , c: '而你始终不肯直言不讳' },
@@ -649,7 +646,7 @@ body {
     { t: 142.43, l: 'And the few times your face came into view' , c: '而那几次你的面容映入眼帘' },
     { t: 149.67, l: 'Into view' , c: '映入眼帘' },
     { t: 152.35, l: "I'm not into you" , c: '我已不再爱你' },
-    { t: 155.32, l: 'Into you' , c: '不再爱你' },
+    { t: 155.32, l: 'Into you' , c: '不再爱你' }
   ];
 
   var lyricWaiting = [
@@ -718,12 +715,51 @@ body {
     { t: 175.44, l: 'I was sitting right', c: '我坐在那儿' },
     { t: 179.61, l: 'I was sitting right', c: '我坐在那儿' }
   ];
+  var lyricMaybe = [
+    { t: 0.0, l: '作词 : Ed Barrios', c: '作词 : Ed Barrios' },
+    { t: 0.0, l: '作曲 : eduardo barrios', c: '作曲 : eduardo barrios' },
+    { t: 0.0, l: 'Maybe - mixed matches/Lukrative', c: 'Maybe - mixed matches/Lukrative' },
+    { t: 10.17, l: 'Just take', c: '就拿去吧' },
+    { t: 11.55, l: 'Just take it', c: '就拿去吧' },
+    { t: 13.66, l: 'With how you want to live', c: '随你如何去生活' },
+    { t: 17.36, l: 'And it\'s subtle in the moment when you want to begin', c: '而当你想要开始的那一刻，一切都很微妙' },
+    { t: 23.25, l: 'And you told me', c: '你曾告诉我' },
+    { t: 25.55, l: 'That everything is just stupid and', c: '说一切都愚蠢透了' },
+    { t: 29.74, l: 'I can\'t see it all when it goes to give', c: '当一切开始给予时，我无法看全' },
+    { t: 35.37, l: 'Well why would you try to make me', c: '那你为什么要让我' },
+    { t: 37.61, l: 'See that everything is happening', c: '看见正在发生的一切' },
+    { t: 41.19, l: 'And I can\'t seem to keep it all under our feet', c: '而我似乎无法把一切都踩在脚下' },
+    { t: 47.57, l: 'How would you know what else to', c: '你怎么会知道还能说些什么' },
+    { t: 49.43, l: 'Say when I don\'t think I\'ll ever change', c: '当我认为自己永远不会改变' },
+    { t: 53.16, l: 'When I can\'t seem to keep it all under our feet', c: '当我无法把一切都踩在脚下时' },
+    { t: 58.99, l: 'Because maybe I can\'t find a reason to feel whole then', c: '因为也许那时我找不到完整的理由' },
+    { t: 68.13, l: 'When I feel lonely', c: '当我感到孤独时' },
+    { t: 71.1, l: 'Say what you want of me', c: '说你想从我这里得到什么' },
+    { t: 74.45, l: 'Because I just want to be safe and sound', c: '因为我只想安然无恙' },
+    { t: 77.33, l: 'You got me in a corner I don\'t', c: '你把我逼到了角落，我' },
+    { t: 78.95, l: 'Want to say goodbye', c: '不想说再见' },
+    { t: 82.63, l: 'As long as I remember I won\'t cave', c: '只要我记得，我就不会屈服' },
+    { t: 88.59, l: 'Because you have the nerve to say I changed', c: '因为你竟敢说我变了' },
+    { t: 94.44, l: 'And you look to trade me I won\'t', c: '而你想拿我交换，我不会' },
+    { t: 97.28999999999999, l: 'Let you I won\'t gut the seer', c: '让你——我不会剖开那预言者' },
+    { t: 100.78, l: 'You\'re out of touch with everything', c: '你与一切都脱节了' },
+    { t: 103.34, l: 'Won\'t you be honest with me', c: '你难道不能对我坦诚一点吗' },
+    { t: 106.89, l: 'Well why would you want to make', c: '那你为什么要让' },
+    { t: 108.75, l: 'Me see that everything is happening', c: '我看见正在发生的一切' },
+    { t: 112.24000000000001, l: 'And I can\'t seem to keep it all under our feet', c: '而我似乎无法把一切都踩在脚下' },
+    { t: 118.55, l: 'How would you know what else to say when', c: '你怎么会知道还能说些什么，当' },
+    { t: 121.49, l: 'I don\'t think I\'ll ever change', c: '我认为自己永远不会改变' },
+    { t: 124.3, l: 'When I can\'t seem to keep it all under our feet', c: '当我无法把一切都踩在脚下时' },
+    { t: 130.15, l: 'Because maybe I can\'t find a reason to feel whole then', c: '因为也许那时我找不到完整的理由' },
+    { t: 139.21, l: 'When I feel lonely', c: '当我感到孤独时' }
+  ];
   var tracks = [
     { src: './music/savoir-adore-summer-ends.mp3', name: 'When the Summer Ends', artist: 'Savoir Adore', cover: './images/savoir.jpg', lyric: lyricSavoir },
     { src: './music/boa-duvet.mp3', name: 'Duvet', artist: 'bôa', cover: './images/boa.jpg', lyric: lyricBoa },
     { src: './music/cafune-tek-it.mp3', name: 'Tek It', artist: 'Cafuné', cover: './images/cafune.jpg', lyric: lyricCafune },
     { src: './music/juliana-chahayed-waiting.mp3', name: 'waiting...', artist: 'Juliana Chahayed', cover: './images/juliana.jpg', lyric: lyricWaiting },
-    { src: './music/cassia-right-there.mp3', name: 'Right There', artist: 'Cassia', cover: './images/cassia.jpg', lyric: lyricCassia }
+    { src: './music/cassia-right-there.mp3', name: 'Right There', artist: 'Cassia', cover: './images/cassia.jpg', lyric: lyricCassia },
+    { src: './music/maybe-mixed-matches.mp3', name: 'maybe', artist: 'mixed matches/Lukrative', cover: './images/maybe.jpg', lyric: lyricMaybe }
   ];
   var idx = 0, on = false, repeat = true, shuffle = false, tr = false;
   var audio = new Audio();
