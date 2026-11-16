@@ -251,7 +251,18 @@
             font-size: 12px;
             opacity: .38;
         }
-    </style>
+    
+/* ===== 临时调试面板 ===== */
+#ajx-dbg{position:fixed;left:8px;bottom:8px;z-index:99999;background:rgba(0,0,0,.86);
+color:#7ef;padding:10px 12px;border-radius:10px;font:12px/1.55 monospace;
+max-width:calc(100vw - 24px);max-height:44vh;overflow:auto;white-space:pre-wrap;
+word-break:break-all;border:1px solid rgba(126,238,255,.35);backdrop-filter:blur(6px)}
+#ajx-dbg b{color:#fff}
+#ajx-dbg .ok{color:#6f6}
+#ajx-dbg .er{color:#f88}
+#ajx-dbg .wa{color:#fc6}
+#ajx-dbg .x{position:absolute;right:8px;top:6px;cursor:pointer;color:#888}
+</style>
 </head>
 <body>
 
@@ -747,12 +758,48 @@
 
             function el(id) { return document.getElementById(id); }
 
+            /* ===== 临时调试面板 ===== */
+            var DBG = (function () {
+                var box = document.createElement('div');
+                box.id = 'ajx-dbg';
+                box.innerHTML = '<span class="x">×</span><b>worker() 调试</b>' + String.fromCharCode(10);
+                box.querySelector('.x').onclick = function () { box.style.display = 'none'; };
+                (document.body || document.documentElement).appendChild(box);
+                return {
+                    log: function (msg, cls) {
+                        var d = document.createElement('div');
+                        d.className = cls || '';
+                        d.textContent = msg;
+                        box.appendChild(d);
+                    },
+                    text: function (k, v) {
+                        var d = document.createElement('div');
+                        d.textContent = k + ' = ' + v;
+                        box.appendChild(d);
+                    }
+                };
+            })();
+
+            DBG.log('脚本已执行', 'ok');
+            DBG.text('document.readyState', document.readyState);
+            DBG.text('device-model 元素', !!el('device-model'));
+            DBG.text('device-os2 元素', !!el('device-os2'));
+            DBG.text('visit-list 元素', !!el('visit-list'));
+            DBG.text('modelName 函数', typeof modelName);
+            DBG.text('MODEL_MAP', typeof MODEL_MAP !== 'undefined' ? (MODEL_MAP ? '已加载 ' + Object.keys(MODEL_MAP).length + ' 条' : 'null（未加载）') : '未定义');
+            DBG.text('location.origin', location.origin);
+
             /* ---------- 设备信息 ---------- */
             function pullDevice(retry) {
+                DBG.log('pullDevice retry=' + retry + ' 发起请求', 'wa');
                 fetch(API + '/whoami', { cache: 'no-store' })
-                    .then(function (r) { return r.json(); })
+                    .then(function (r) {
+                        DBG.log('whoami HTTP ' + r.status, r.ok ? 'ok' : 'er');
+                        return r.json();
+                    })
                     .then(function (d) {
-                        if (!d || !d.ok) return;
+                        DBG.log('whoami 返回 model=' + JSON.stringify(d && d.model) + ' pv=' + JSON.stringify(d && d.platformVersion), 'ok');
+                        if (!d || !d.ok) { DBG.log('d.ok 为假，中断', 'er'); return; }
 
                         /* 缓存给 report() 用 */
                         if (d.model) DEV.model = d.model;
@@ -761,11 +808,16 @@
                         /* 型号：服务端拿到的可能是代号，走本地表翻译 */
                         if (d.model) {
                             var mEl = el('device-model');
+                            DBG.text('mEl 存在', !!mEl);
                             if (mEl) {
                                 if (typeof modelName === 'function') {
-                                    modelName(d.model, function (n) { if (mEl) mEl.textContent = n; });
+                                    modelName(d.model, function (n) {
+                                        DBG.log('modelName 回调 n=' + n, 'ok');
+                                        if (mEl) mEl.textContent = n;
+                                    });
                                 } else {
                                     mEl.textContent = d.model;
+                                    DBG.log('无 modelName，直接写 ' + d.model, 'wa');
                                 }
                             }
                         } else if (retry) {
@@ -814,10 +866,11 @@
                 if (reported) return;
                 /* 同一会话只报一次，避免刷新重复计数 */
                 try {
-                    if (sessionStorage.getItem('ajx_hit')) { reported = true; return; }
+                    if (sessionStorage.getItem('ajx_hit')) { DBG.log('本会话已上报过，跳过', 'wa'); reported = true; return; }
                 } catch (e) {}
                 reported = true;
                 try { sessionStorage.setItem('ajx_hit', '1'); } catch (e) {}
+                DBG.log('向 /hit 上报 model=' + JSON.stringify(DEV.model), 'wa');
                 fetch(API + '/hit', {
                     method: 'POST',
                     cache: 'no-store',
@@ -875,9 +928,11 @@
 
             /* ---------- 读访客列表 ---------- */
             function pullRecent() {
+                DBG.log('拉取 /recent', 'wa');
                 fetch(API + '/recent', { cache: 'no-store' })
                     .then(function (r) { return r.json(); })
                     .then(function (d) {
+                        DBG.log('recent 返回 total=' + (d && d.total) + ' 条数=' + (d && d.recent ? d.recent.length : '?'), 'ok');
                         if (!d || !d.ok) {
                             var box0 = el('visit-list');
                             if (box0) box0.innerHTML = '<div class="visit-empty">暂时无法读取（Worker 未就绪）</div>';
