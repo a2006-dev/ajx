@@ -39,7 +39,20 @@
   --glass:rgba(18,24,34,.34);
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;width:100%;overflow:hidden;overscroll-behavior:none}
+html{height:100%;width:100%;overflow:hidden;overscroll-behavior:none;
+  background:#070a0f;
+  color-scheme:dark;
+  -webkit-tap-highlight-color:transparent;
+}
+html::before{
+  content:'';position:fixed;inset:0;z-index:-1;
+  background:#070a0f;
+  pointer-events:none;
+}
+body{height:100%;width:100%;overflow:hidden;overscroll-behavior:none;
+  background:#070a0f;
+  color-scheme:dark;
+}
 body{
   background:#06090e;
   color:var(--ink);
@@ -73,6 +86,32 @@ body{
     linear-gradient(180deg,rgba(5,8,12,.34) 0%,rgba(5,8,12,.02) 40%,rgba(4,7,11,.46) 100%);
 }
 
+/* ============ 全屏雾面层（替代全屏 backdrop-filter） ============
+   全屏 blur 会让 GPU 每帧对整幅画面采样一次，全屏 + 高刷时是主要卡顿源。
+   这里改用「半透明垫色 + 静态细噪点」，观感接近哑光玻璃但没有实时采样开销。 */
+#glass{
+  position:fixed;inset:0;z-index:3;
+  pointer-events:none;
+  background:rgba(10,15,23,.20);
+  transition:background 1.6s var(--ease);
+}
+#glass::after{
+  content:'';
+  position:absolute;inset:0;
+  opacity:.5;
+  mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'>\
+<filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.92' numOctaves='2' stitchTiles='stitch'/>\
+<feColorMatrix type='saturate' values='0'/></filter>\
+<rect width='140' height='140' filter='url(%23n)' opacity='.42'/></svg>");
+  background-size:140px 140px;
+  pointer-events:none;
+}
+body.quiet #glass{
+  background:rgba(10,15,23,.13);
+}
+
 /* ============ 诗句（最顶） ============ */
 #verse{
   position:fixed;top:clamp(38px,7.4vh,72px);left:0;right:0;z-index:6;
@@ -84,12 +123,27 @@ body{
   transition:opacity .95s var(--ease),transform .95s var(--ease);
 }
 
+#verseEn{
+  position:fixed;left:0;right:0;z-index:6;
+  display:flex;flex-direction:row;gap:1.4em;align-items:center;justify-content:center;
+  top:calc(clamp(38px,7.4vh,72px) + clamp(20px,3.4vh,28px));
+  text-align:center;
+  font-size:clamp(9.5px,2.1vw,11.5px);
+  letter-spacing:.13em;
+  color:rgba(214,226,242,.26);
+  transition:opacity .95s var(--ease),transform .95s var(--ease);
+}
+body.quiet #verseEn{
+  opacity:0;
+  transform:translateY(-7px);
+}
+
 /* ============ 中轴 ============ */
 #stage{
   position:fixed;inset:0;z-index:4;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   padding:0 clamp(18px,5vw,52px);
-  padding-top:clamp(56px,11vh,96px);
+  padding-top:clamp(96px,17vh,150px);
   padding-bottom:clamp(104px,18vh,150px);
   pointer-events:none;
 }
@@ -99,10 +153,8 @@ body{
   position:relative;
   padding:clamp(22px,4.2vh,36px) clamp(24px,6.4vw,52px);
   border-radius:3px;
-  background:var(--glass);
-  -webkit-backdrop-filter:blur(22px) saturate(138%);
-  backdrop-filter:blur(22px) saturate(138%);
-  box-shadow:inset 0 0 0 1px rgba(200,222,248,.055),0 22px 64px rgba(0,0,0,.34);
+  background:rgba(14,20,30,.14);
+  box-shadow:0 18px 54px rgba(0,0,0,.22);
   text-align:center;
   max-width:min(660px,92vw);
   transition:background 1.1s var(--ease),box-shadow 1.1s var(--ease),opacity .9s var(--ease);
@@ -170,8 +222,8 @@ body.quiet #lyric{
   transform:translateY(-7px);
 }
 body.quiet #core{
-  background:rgba(18,24,34,.15);
-  box-shadow:inset 0 0 0 1px rgba(200,222,248,.03),0 12px 38px rgba(0,0,0,.2);
+  background:rgba(14,20,30,.07);
+  box-shadow:0 10px 30px rgba(0,0,0,.14);
 }
 body.quiet #deck{opacity:.56}
 
@@ -307,6 +359,38 @@ body.quiet #deck{opacity:.56}
   background:currentColor;opacity:.6;
 }
 
+/* 音量滑条：一条线一个点 */
+#volRange{
+  -webkit-appearance:none;appearance:none;
+  flex:1;min-width:0;height:14px;
+  background:transparent;cursor:pointer;
+  outline:none;
+}
+#volRange::-webkit-slider-runnable-track{
+  height:1px;
+  background:rgba(200,222,248,.14);
+  border-radius:1px;
+}
+#volRange::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;
+  width:8px;height:8px;margin-top:-3.5px;
+  border-radius:50%;
+  background:rgba(226,238,252,.82);
+  box-shadow:0 0 6px rgba(200,222,248,.34);
+  cursor:pointer;
+}
+#volRange::-moz-range-track{
+  height:1px;
+  background:rgba(200,222,248,.14);
+  border-radius:1px;
+}
+#volRange::-moz-range-thumb{
+  width:8px;height:8px;border:0;
+  border-radius:50%;
+  background:rgba(226,238,252,.82);
+  cursor:pointer;
+}
+
 /* 提示 */
 #tip{
   position:fixed;left:50%;bottom:clamp(96px,17vh,132px);
@@ -327,8 +411,7 @@ body.quiet #deck{opacity:.56}
 /* ============ 曲目列表 ============ */
 #list{
   position:fixed;inset:0;z-index:31;
-  background:rgba(5,8,12,.82);
-  -webkit-backdrop-filter:blur(22px);backdrop-filter:blur(22px);
+  background:rgba(5,8,12,.9);
   display:flex;flex-direction:column;
   padding:clamp(26px,7vh,58px) clamp(20px,6vw,56px) clamp(22px,5vh,42px);
   opacity:0;pointer-events:none;
@@ -384,6 +467,33 @@ body.quiet #deck{opacity:.56}
   position:relative;top:-2px;
 }
 
+
+/* ============ 手动横屏：整页旋转 90° ============ */
+body.rot #app{
+  position:fixed;
+  top:0;left:0;
+  width:100vh;
+  height:100vw;
+  transform-origin:0 0;
+  transform:rotate(90deg) translateY(-100vw);
+  overflow:hidden;
+}
+body.rot #rain,
+body.rot #bg,
+body.rot #veil,
+body.rot #glass{
+  width:100vh;
+  height:100vw;
+}
+
+/* ============ 全屏手势条：尽量压暗 ============ */
+html,body{
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+#deck{
+  padding-bottom:calc(clamp(12px,2.4vh,20px) + env(safe-area-inset-bottom,0px));
+}
+
 /* ============ 横屏 ============ */
 @media (orientation:landscape){
   #verse{top:clamp(20px,4.6vh,40px);font-size:clamp(10px,1.7vh,13px)}
@@ -415,14 +525,26 @@ body.quiet #deck{opacity:.56}
   *{transition-duration:.01ms!important;animation-duration:.01ms!important}
 }
 
+/* ============ 性能：限制重绘范围 ============ */
+#rain,#bg,#veil,#glass{
+  contain:paint;
+  will-change:auto;
+}
+#stage,#deck{
+  contain:layout style;
+}
+
 </style>
 </head>
 <body>
+<div id="app">
 <div id="bg"></div>
 <canvas id="rain"></canvas>
 <div id="veil"></div>
+<div id="glass"></div>
 
 <div id="verse">霭霭停云　濛濛时雨</div>
+<div id="verseEn"><span>clouds at rest</span><span>timely rain</span></div>
 
 <main id="stage">
   <section id="core">
@@ -461,13 +583,22 @@ body.quiet #deck{opacity:.56}
       <button class="tool" id="bFile" type="button">上传本地歌曲</button>
       <button class="tool" id="bList" type="button">曲目列表</button>
       <button class="tool" id="bFull" type="button">全屏</button>
+      <button class="tool" id="bRot" type="button">横屏</button>
     </div>
     <div id="amb">
-      <span id="ambLabel">白噪音</span>
-      <button class="amb" data-s="rain" type="button">雨</button>
-      <button class="amb" data-s="fire" type="button">火</button>
-      <button class="amb" data-s="forest" type="button">林</button>
-      <button class="amb" data-s="waves" type="button">浪</button>
+      <div id="ambTop">
+        <span id="ambLabel">白噪音</span>
+        <button class="amb" data-s="rain" type="button">雨</button>
+        <button class="amb" data-s="fire" type="button">火</button>
+        <button class="amb" data-s="forest" type="button">林</button>
+        <button class="amb" data-s="waves" type="button">浪</button>
+        <button id="ambOff" type="button">关</button>
+      </div>
+      <div id="ambVol">
+        <span id="volIcon">音量</span>
+        <input id="volRange" type="range" min="0" max="100" value="34" step="1" aria-label="白噪音音量">
+        <span id="volNum">34</span>
+      </div>
     </div>
   </div>
 </footer>
@@ -479,6 +610,7 @@ body.quiet #deck{opacity:.56}
 
 <div id="tip"></div>
 <input type="file" id="picker" accept="audio/*" multiple hidden>
+</div>
 <script>
 var lyricSavoir = [    { t: 0.2, l: 'Will you hold my hand?' , c: '你会握住我的手吗？' },
     { t: 2.41, l: 'Will you understand?' , c: '你会明白我的心意吗？' },
@@ -734,28 +866,30 @@ var lyricSavoir = [    { t: 0.2, l: 'Will you hold my hand?' , c: '你会握住�
 
 </script>
 <script>
-/* 停云 · 氛围层：雨幕 + 场景形态 */
+/* 停云 · 背景层：四个场景各自成景 */
 (function () {
   'use strict';
-  var cv, ctx, W = 0, H = 0, dpr = 1, raf = 0;
-  var drops = [], motes = [], t0 = 0;
+  var cv = null, ctx = null, W = 0, H = 0, dpr = 1;
   var scene = 'rain';
-  var tgt = { n: 150, sp: 1.0, ang: .10, len: 1.0, alpha: .34, mote: 0, moteSp: .16 };
-  var cur = { n: 150, sp: 1.0, ang: .10, len: 1.0, alpha: .34, mote: 0, moteSp: .16 };
-
-  var PRESET = {
-    rain:   { n: 170, sp: 1.00, ang: .11, len: 1.00, alpha: .34, mote: 0,  moteSp: .16 },
-    fire:   { n: 34,  sp: .46, ang: -.03, len: .70, alpha: .20, mote: 62, moteSp: -.30 },
-    forest: { n: 86,  sp: .68, ang: .05, len: .84, alpha: .26, mote: 30, moteSp: .10 },
-    waves:  { n: 118, sp: .78, ang: .16, len: 1.24, alpha: .30, mote: 18, moteSp: .04 }
-  };
+  var t0 = 0, last = 0, clock = 0;
+  var drops = [], motes = [], waves = [], stars = [];
+  var flick = 1;
 
   function rnd(a, b) { return a + Math.random() * (b - a); }
 
   function resize() {
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    if (!cv) return;
     W = cv.clientWidth || window.innerWidth;
     H = cv.clientHeight || window.innerHeight;
+
+    /* 像素预算：全屏时若按 3x 绘制会变成 9 倍开销，这里封顶 1.6M 像素 */
+    var raw = window.devicePixelRatio || 1;
+    if (raw > 2) raw = 2;
+    var budget = 1600000;
+    var px = W * H * raw * raw;
+    if (px > budget) raw = Math.max(1, Math.sqrt(budget / (W * H)));
+    dpr = raw;
+
     cv.width = Math.round(W * dpr);
     cv.height = Math.round(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -763,115 +897,425 @@ var lyricSavoir = [    { t: 0.2, l: 'Will you hold my hand?' , c: '你会握住�
   }
 
   function build() {
-    var max = Math.max(cur.n, tgt.n, 200);
     drops.length = 0;
-    for (var i = 0; i < max; i++) drops.push(newDrop(true));
+    for (var i = 0; i < 180; i++) drops.push(newDrop(true));
     motes.length = 0;
-    for (var j = 0; j < 70; j++) motes.push(newMote(true));
+    for (var j = 0; j < 90; j++) motes.push(newMote(true));
+    waves.length = 0;
+    for (var k = 0; k < 7; k++) {
+      waves.push({ y: .58 + k * .062, amp: rnd(3, 9), sp: rnd(.15, .46), ph: rnd(0, 6.28), a: .05 + k * .011 });
+    }
+    stars.length = 0;
+    for (var m = 0; m < 46; m++) {
+      stars.push({ x: rnd(0, W), y: rnd(0, H * .44), r: rnd(.4, 1.3), a: rnd(.10, .40), ph: rnd(0, 6.28) });
+    }
   }
 
   function newDrop(init) {
-    var z = rnd(.35, 1);
+    var z = rnd(.32, 1);
     return {
-      x: rnd(-W * .18, W * 1.18),
-      y: init ? rnd(-H, H) : rnd(-H * .5, -8),
-      z: z,
-      l: rnd(8, 22) * z,
-      v: rnd(5.2, 9.6) * z,
-      a: rnd(.35, 1)
+      x: rnd(-W * .2, W * 1.2),
+      y: init ? rnd(-H, H) : rnd(-H * .4, -8),
+      z: z, l: rnd(9, 26) * z, v: rnd(5.4, 10.2) * z, a: rnd(.3, 1)
     };
   }
-
   function newMote(init) {
     return {
-      x: rnd(0, W),
-      y: init ? rnd(0, H) : H + rnd(0, 60),
-      r: rnd(.5, 1.9),
-      v: rnd(.35, 1.15),
-      a: rnd(.12, .5),
-      ph: rnd(0, 6.28)
+      x: rnd(0, W), y: init ? rnd(0, H) : H + rnd(0, 50),
+      r: rnd(.5, 1.7), v: rnd(.3, 1.0), a: rnd(.12, .5), ph: rnd(0, 6.28)
     };
   }
 
-  function ease(k) { return 1 - Math.pow(1 - k, 3); }
+  /* ========== 一：窗外街道，下着雨 ========== */
+  var STREET = [
+    [0.00, 0.34, 0.17, 0.46], [0.18, 0.24, 0.14, 0.54], [0.33, 0.36, 0.20, 0.42],
+    [0.55, 0.28, 0.16, 0.50], [0.72, 0.20, 0.22, 0.58], [0.95, 0.32, 0.13, 0.46]
+  ];
 
-  function step(now) {
-    if (!t0) t0 = now;
-    var dt = Math.min((now - t0) / 1000, .05);
-    t0 = now;
+  function drawStreet(t, dt) {
+    /* 楼群 */
+    for (var i = 0; i < STREET.length; i++) {
+      var b = STREET[i];
+      var bx = b[0] * W, by = b[1] * H, bw = b[2] * W, bh = b[3] * H;
+      var g = ctx.createLinearGradient(0, by, 0, by + bh);
+      g.addColorStop(0, 'rgba(16,22,33,.62)');
+      g.addColorStop(1, 'rgba(9,13,20,.28)');
+      ctx.fillStyle = g;
+      ctx.fillRect(bx, by, bw, bh);
 
-    /* 参数缓动，切场景时平滑过渡 */
-    var k = ease(Math.min(dt * 1.5, 1));
-    cur.n     += (tgt.n - cur.n) * k;
-    cur.sp    += (tgt.sp - cur.sp) * k;
-    cur.ang   += (tgt.ang - cur.ang) * k;
-    cur.len   += (tgt.len - cur.len) * k;
-    cur.alpha += (tgt.alpha - cur.alpha) * k;
-    cur.mote  += (tgt.mote - cur.mote) * k;
-    cur.moteSp += (tgt.moteSp - cur.moteSp) * k;
-
-    ctx.clearRect(0, 0, W, H);
-
-    /* 雨丝 */
-    var n = Math.round(cur.n);
-    ctx.lineCap = 'round';
-    for (var i = 0; i < n && i < drops.length; i++) {
-      var p = drops[i];
-      var vy = p.v * cur.sp * (H / 800);
-      p.y += vy * dt * 60;
-      p.x += vy * cur.ang * dt * 60;
-      var len = p.l * cur.len * cur.sp;
-
-      if (p.y - len > H + 20 || p.x < -W * .3 || p.x > W * 1.3) {
-        var q = newDrop(false);
-        drops[i] = q;
-        continue;
+      /* 窗灯 */
+      var cols = Math.floor(bw / 20);
+      var rows = Math.floor(bh / 24);
+      for (var c = 0; c < cols; c++) {
+        for (var r = 0; r < rows; r++) {
+          var seed = (i * 97 + c * 31 + r * 17) % 13;
+          if (seed > 3) continue;
+          var lx = bx + 7 + c * 20;
+          var ly = by + 10 + r * 24;
+          if (lx + 3 > bx + bw) continue;
+          var br = .55 + .45 * Math.sin(t * .5 + seed * 2 + i);
+          ctx.fillStyle = 'rgba(228,205,164,' + (.04 + .06 * br) + ')';
+          ctx.fillRect(lx, ly, 3, 4);
+        }
       }
+    }
+
+    /* 街道地面 */
+    var sg = ctx.createLinearGradient(0, H * .68, 0, H);
+    sg.addColorStop(0, 'rgba(28,38,54,.28)');
+    sg.addColorStop(1, 'rgba(13,19,29,.62)');
+    ctx.fillStyle = sg;
+    ctx.fillRect(0, H * .68, W, H * .32);
+
+    /* 街面积水反光 */
+    var refl = ctx.createLinearGradient(0, H * .80, 0, H);
+    refl.addColorStop(0, 'rgba(120,158,205,.055)');
+    refl.addColorStop(1, 'rgba(90,125,175,.012)');
+    ctx.fillStyle = refl;
+    ctx.fillRect(0, H * .80, W, H * .20);
+
+    /* 两盏路灯 */
+    for (var L = 0; L < 2; L++) {
+      var lx2 = W * (.24 + L * .52), ly2 = H * .295;
+      var lg = ctx.createRadialGradient(lx2, ly2, 0, lx2, ly2, Math.min(W, H) * .18);
+      lg.addColorStop(0, 'rgba(242,210,154,.17)');
+      lg.addColorStop(.38, 'rgba(230,190,130,.055)');
+      lg.addColorStop(1, 'rgba(220,180,120,0)');
+      ctx.fillStyle = lg;
       ctx.beginPath();
-      ctx.strokeStyle = 'rgba(198,218,242,' + (cur.alpha * p.a) + ')';
-      ctx.lineWidth = .5 + p.z * .9;
-      ctx.moveTo(p.x, p.y);
-      ctx.lineTo(p.x - cur.ang * len * 2.2, p.y - len);
+      ctx.arc(lx2, ly2, Math.min(W, H) * .18, 0, 6.2832);
+      ctx.fill();
+
+      ctx.strokeStyle = 'rgba(32,42,56,.52)';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(lx2, ly2 + 4);
+      ctx.lineTo(lx2, H * .72);
       ctx.stroke();
     }
 
-    /* 浮尘 / 余烬 / 萤火 */
-    var mn = Math.round(cur.mote);
-    for (var j = 0; j < mn && j < motes.length; j++) {
-      var m = motes[j];
-      m.ph += dt * 1.6;
-      m.y += m.v * cur.moteSp * (H / 800) * 60 * dt * 1.2;
-      m.x += Math.sin(m.ph) * .28;
-      if (m.y < -30) { m.y = H + 20; m.x = rnd(0, W); }
-      if (m.y > H + 40) { m.y = -20; m.x = rnd(0, W); }
-      if (m.x < -20) m.x = W + 10;
-      if (m.x > W + 20) m.x = -10;
-      var g = ctx.createRadialGradient(m.x, m.y, 0, m.x, m.y, m.r * 3.4);
-      g.addColorStop(0, 'rgba(255,236,206,' + (m.a * .8) + ')');
-      g.addColorStop(1, 'rgba(255,220,170,0)');
-      ctx.fillStyle = g;
+    /* 雨丝 */
+    for (var d = 0; d < drops.length; d++) {
+      var p = drops[d];
+      var vy = p.v * (H / 800);
+      p.y += vy * dt * 60;
+      p.x += vy * .11 * dt * 60;
+      if (p.y - p.l > H + 20 || p.x > W * 1.3) {
+        drops[d] = newDrop(false);
+        continue;
+      }
       ctx.beginPath();
-      ctx.arc(m.x, m.y, m.r * 3.4, 0, 6.2832);
+      ctx.strokeStyle = 'rgba(202,222,244,' + (.28 * p.a) + ')';
+      ctx.lineWidth = .5 + p.z * .85;
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(p.x - .11 * p.l * 2.2, p.y - p.l);
+      ctx.stroke();
+    }
+
+    /* 玻璃上的水痕 */
+    for (var w2 = 0; w2 < 9; w2++) {
+      var wx = ((w2 * 137.3) % 100) / 100 * W;
+      var sp = .020 + (w2 % 3) * .009;
+      var wy2 = ((t * sp * 60 + w2 * 137) % (H * 1.15)) - H * .1;
+      ctx.strokeStyle = 'rgba(214,232,250,.09)';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(wx, wy2);
+      ctx.lineTo(wx + Math.sin(wy2 * .04) * 4, wy2 + 24);
+      ctx.stroke();
+    }
+  }
+
+  /* ========== 二：林间 ========== */
+  function drawForest(t) {
+    for (var i = 0; i < 16; i++) {
+      var x = (i / 16 + ((i * 37) % 11) / 160) * W;
+      var wid = 5 + ((i * 17) % 20);
+      var sw = Math.sin(t * .26 + i) * 3.4;
+      var gr = ctx.createLinearGradient(x + sw, 0, x + sw, H);
+      gr.addColorStop(0, 'rgba(20,38,29,.26)');
+      gr.addColorStop(.55, 'rgba(15,30,23,.40)');
+      gr.addColorStop(1, 'rgba(8,17,13,.58)');
+      ctx.fillStyle = gr;
+      ctx.fillRect(x + sw, -40, wid, H + 80);
+    }
+
+    for (var s = 0; s < 5; s++) {
+      var sx = W * (.10 + s * .20) + Math.sin(t * .2 + s) * 15;
+      var lg = ctx.createLinearGradient(sx, -80, sx - 66, H * .96);
+      lg.addColorStop(0, 'rgba(180,224,186,.075)');
+      lg.addColorStop(1, 'rgba(150,205,160,0)');
+      ctx.fillStyle = lg;
+      ctx.beginPath();
+      ctx.moveTo(sx - 14, -80);
+      ctx.lineTo(sx + 32, -80);
+      ctx.lineTo(sx + 2, H * .96);
+      ctx.lineTo(sx - 76, H * .96);
+      ctx.closePath();
       ctx.fill();
     }
 
-    raf = requestAnimationFrame(step);
+    /* 飘叶 */
+    for (var m = 0; m < 26; m++) {
+      var mx = (m * 71.3 % 100) / 100 * W + Math.sin(t * .4 + m) * 26;
+      var my = ((t * (.012 + (m % 5) * .004) * 60 + m * 43) % (H * 1.2)) - H * .1;
+      ctx.fillStyle = 'rgba(150,196,158,.13)';
+      ctx.beginPath();
+      ctx.ellipse(mx, my, 2.4, 1.2, Math.sin(t + m) * .9, 0, 6.2832);
+      ctx.fill();
+    }
+
+    /* 萤火 */
+    for (var f = 0; f < 14; f++) {
+      var fx = (f * 83.7 % 100) / 100 * W + Math.sin(t * .5 + f) * 30;
+      var fy = H * .45 + Math.sin(t * .38 + f * 2) * H * .22;
+      var fa = .25 + .25 * Math.sin(t * 1.5 + f);
+      var fg2 = ctx.createRadialGradient(fx, fy, 0, fx, fy, 9);
+      fg2.addColorStop(0, 'rgba(198,238,178,' + (fa * .55) + ')');
+      fg2.addColorStop(1, 'rgba(198,238,178,0)');
+      ctx.fillStyle = fg2;
+      ctx.beginPath();
+      ctx.arc(fx, fy, 9, 0, 6.2832);
+      ctx.fill();
+    }
+
+    var fg = ctx.createLinearGradient(0, H * .72, 0, H);
+    fg.addColorStop(0, 'rgba(10,22,15,0)');
+    fg.addColorStop(1, 'rgba(5,13,8,.68)');
+    ctx.fillStyle = fg;
+    ctx.fillRect(0, H * .72, W, H * .28);
+  }
+
+  /* ========== 三：篝火 ========== */
+  function drawFire(t, dt) {
+    var cx = W * .5, cy = H * .795;
+
+    var gg = ctx.createLinearGradient(0, H * .72, 0, H);
+    gg.addColorStop(0, 'rgba(16,10,7,0)');
+    gg.addColorStop(1, 'rgba(11,6,4,.74)');
+    ctx.fillStyle = gg;
+    ctx.fillRect(0, H * .72, W, H * .28);
+
+    /* 远处树剪影 */
+    for (var i = 0; i < 9; i++) {
+      var x = (i / 9 + .04) * W;
+      ctx.fillStyle = 'rgba(12,7,5,.40)';
+      ctx.beginPath();
+      ctx.moveTo(x - 8, H * .74);
+      ctx.lineTo(x - 3, H * (.50 + (i % 3) * .04));
+      ctx.lineTo(x + 5, H * (.52 + (i % 4) * .03));
+      ctx.lineTo(x + 10, H * .74);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    /* 火光晕 */
+    flick += (rnd(.93, 1.07) - flick) * .14;
+    var halo = ctx.createRadialGradient(cx, cy - 20, 8, cx, cy - 20, H * .50);
+    halo.addColorStop(0, 'rgba(242,152,66,' + (.16 * flick) + ')');
+    halo.addColorStop(.30, 'rgba(218,112,48,' + (.075 * flick) + ')');
+    halo.addColorStop(.65, 'rgba(172,74,34,' + (.026 * flick) + ')');
+    halo.addColorStop(1, 'rgba(140,60,30,0)');
+    ctx.fillStyle = halo;
+    ctx.fillRect(0, 0, W, H);
+
+    /* 柴 */
+    ctx.strokeStyle = 'rgba(46,26,16,.88)';
+    ctx.lineWidth = 7;
+    ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(cx - 36, cy + 6); ctx.lineTo(cx + 28, cy + 21); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx + 36, cy + 6); ctx.lineTo(cx - 28, cy + 21); ctx.stroke();
+
+    /* 火焰三层 */
+    var layers = [
+      { h: 132, w: 42, c: 'rgba(255,184,88,.38)', ph: 0 },
+      { h: 90, w: 28, c: 'rgba(255,212,138,.42)', ph: 2.1 },
+      { h: 52, w: 16, c: 'rgba(255,242,208,.40)', ph: 4.2 }
+    ];
+    for (var L = 0; L < layers.length; L++) {
+      var l = layers[L];
+      var sway = Math.sin(t * 2.3 + l.ph) * 6.5;
+      var hh = l.h * (.86 + .18 * Math.sin(t * 5.1 + l.ph));
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - hh);
+      ctx.bezierCurveTo(cx + l.w * .92 + sway, cy - hh * .40, cx + l.w * .60, cy, cx, cy);
+      ctx.bezierCurveTo(cx - l.w * .60, cy, cx - l.w * .92 + sway, cy - hh * .40, cx, cy - hh);
+      ctx.fillStyle = l.c;
+      ctx.fill();
+    }
+
+    /* 火星上升 */
+    for (var m = 0; m < motes.length; m++) {
+      var p = motes[m];
+      p.ph += dt * 1.7;
+      p.y -= p.v * (H / 800) * 60 * dt * 1.1;
+      p.x += Math.sin(p.ph) * .42;
+      if (p.y < -20) { p.y = cy + 6; p.x = cx + rnd(-16, 16); }
+      var a = p.a * .55;
+      var g2 = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 3.2);
+      g2.addColorStop(0, 'rgba(255,222,164,' + a + ')');
+      g2.addColorStop(1, 'rgba(255,190,120,0)');
+      ctx.fillStyle = g2;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r * 3.2, 0, 6.2832);
+      ctx.fill();
+    }
+  }
+
+  /* ========== 四：夜海 ========== */
+  function drawWaves(t) {
+    var sg = ctx.createLinearGradient(0, H * .40, 0, H * .58);
+    sg.addColorStop(0, 'rgba(20,40,68,0)');
+    sg.addColorStop(1, 'rgba(16,34,58,.32)');
+    ctx.fillStyle = sg;
+    ctx.fillRect(0, H * .40, W, H * .18);
+
+    for (var i = 0; i < stars.length; i++) {
+      var s = stars[i];
+      var a = s.a * (.6 + .4 * Math.sin(t * .9 + s.ph));
+      ctx.fillStyle = 'rgba(226,238,252,' + (a * .8) + ')';
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, 6.2832);
+      ctx.fill();
+    }
+
+    /* 月亮 */
+    var mx = W * .76, my = H * .19;
+    var mg = ctx.createRadialGradient(mx, my, 0, mx, my, 78);
+    mg.addColorStop(0, 'rgba(238,244,252,.20)');
+    mg.addColorStop(.32, 'rgba(210,228,248,.070)');
+    mg.addColorStop(1, 'rgba(190,215,245,0)');
+    ctx.fillStyle = mg;
+    ctx.beginPath();
+    ctx.arc(mx, my, 78, 0, 6.2832);
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(240,246,254,.40)';
+    ctx.beginPath();
+    ctx.arc(mx, my, 15, 0, 6.2832);
+    ctx.fill();
+
+    /* 海浪 */
+    for (var w = 0; w < waves.length; w++) {
+      var L = waves[w];
+      var baseY = L.y * H;
+      ctx.beginPath();
+      ctx.moveTo(0, H);
+      for (var x = 0; x <= W; x += 8) {
+        var yy = baseY + Math.sin(x * .006 + t * L.sp * 3 + L.ph) * L.amp +
+                 Math.sin(x * .017 - t * L.sp * 2) * L.amp * .4;
+        ctx.lineTo(x, yy);
+      }
+      ctx.lineTo(W, H);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(96,150,208,' + L.a + ')';
+      ctx.fill();
+
+      ctx.beginPath();
+      for (var x2 = 0; x2 <= W; x2 += 8) {
+        var y2 = baseY + Math.sin(x2 * .006 + t * L.sp * 3 + L.ph) * L.amp +
+                 Math.sin(x2 * .017 - t * L.sp * 2) * L.amp * .4;
+        if (x2 === 0) ctx.moveTo(x2, y2);
+        else ctx.lineTo(x2, y2);
+      }
+      ctx.strokeStyle = 'rgba(170,206,242,' + (L.a * 1.6) + ')';
+      ctx.lineWidth = .7;
+      ctx.stroke();
+    }
+
+    /* 月光在水面的倒影 */
+    var rg = ctx.createLinearGradient(mx - 44, 0, mx + 44, 0);
+    rg.addColorStop(0, 'rgba(210,232,252,0)');
+    rg.addColorStop(.5, 'rgba(214,234,252,.048)');
+    rg.addColorStop(1, 'rgba(210,232,252,0)');
+    ctx.fillStyle = rg;
+    ctx.fillRect(mx - 44, H * .56, 88, H * .44);
+  }
+
+  /* ========== 主循环 ========== */
+  var FPS = 90;            /* 上限 90 帧；屏幕刷新率不足时自动跟随 */
+  var GAP = 1000 / FPS;
+  var acc = 0;
+  var paused = false;
+  var lowPower = false;
+
+  /* 省电模式：页面不可见时完全停绘 */
+  function pause() {
+    if (paused) return;
+    paused = true;
+    if (t0) { cancelAnimationFrame(t0); t0 = 0; }
+  }
+  function resume() {
+    if (!paused) return;
+    paused = false;
+    last = 0; acc = GAP;
+    t0 = requestAnimationFrame(frame);
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) pause();
+    else resume();
+  });
+  window.addEventListener('pagehide', pause);
+  window.addEventListener('pageshow', resume);
+
+  /* 低电量或系统要求降级时，把帧率再砍一半 */
+  if (window.matchMedia) {
+    var mqR = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (mqR && mqR.matches) lowPower = true;
+  }
+  if (navigator.connection && navigator.connection.saveData) lowPower = true;
+
+  function frame(now) {
+    if (paused) return;
+    if (!last) { last = now; acc = GAP; }
+    var dt = (now - last) / 1000;
+    last = now;
+    if (dt > .25) dt = .25;   /* 掉帧保护，避免一次跳太远 */
+
+    acc += dt * 1000;
+    var step = lowPower ? GAP * 2 : GAP;
+    /* 留 2ms 容差，避免 90 与 60 的 vsync 取整互相踩踏导致掉到 45 */
+    if (acc < step - 2) {
+      t0 = requestAnimationFrame(frame);
+      return;
+    }
+    acc = acc > step * 2 ? 0 : acc - step;
+
+    ctx.clearRect(0, 0, W, H);
+
+    if (scene === 'rain') drawStreet(clock, dt);
+    else if (scene === 'forest') drawForest(clock);
+    else if (scene === 'fire') drawFire(clock, dt);
+    else if (scene === 'waves') drawWaves(clock);
+
+    clock += dt;
+    t0 = requestAnimationFrame(frame);
   }
 
   function setScene(s) {
-    if (!PRESET[s]) return;
     scene = s;
-    tgt = PRESET[s];
+    last = 0;
   }
 
   function init(canvas) {
     cv = canvas;
-    ctx = cv.getContext('2d');
+    ctx = cv.getContext('2d', { alpha: false });
+    if (!ctx) return;
     resize();
-    raf = requestAnimationFrame(step);
+    last = 0;
+    paused = false;
+    t0 = requestAnimationFrame(frame);
   }
 
-  window.RAIN = { init: init, resize: resize, setScene: setScene, get scene() { return scene; } };
+  window.RAIN = {
+    init: init,
+    resize: resize,
+    setScene: setScene,
+    pause: pause,
+    resume: resume,
+    get scene() { return scene; },
+    get fps() { return FPS; }
+  };
 })();
 </script>
 <script>
@@ -888,6 +1332,8 @@ var lyricSavoir = [    { t: 0.2, l: 'Will you hold my hand?' , c: '你会握住�
   var bFile = id('bFile'), bList = id('bList'), bFull = id('bFull');
   var elList = id('list'), elRows = id('rows'), lClose = id('lClose');
   var elTip = id('tip'), picker = id('picker');
+  var bRot = id('bRot');
+  var ambOff = id('ambOff'), volRange = id('volRange'), volNum = id('volNum');
 
   /* ============ 曲库 ============ */
   var SITE = [
@@ -1085,6 +1531,7 @@ var lyricSavoir = [    { t: 0.2, l: 'Will you hold my hand?' , c: '你会握住�
   };
   var ambSrc = { rain: './sfx/rain.mp3', fire: './sfx/fire.mp3', forest: './sfx/forest.mp3', waves: './sfx/waves.mp3' };
   var ambEl = null, ambScene = 'rain', ambOn = false, ambFadeT = null;
+  var ambVol = .34;   /* 白噪音目标音量，由滑条写入 */
 
   function ambInit() {
     if (!ambEl) {
@@ -1111,7 +1558,7 @@ var lyricSavoir = [    { t: 0.2, l: 'Will you hold my hand?' , c: '你会握住�
     ambEl.src = ambSrc[ambScene];
     var p = ambEl.play();
     if (p && p.catch) p.catch(function () { ambOn = false; });
-    ambFadeTo(.34, 2600);
+    ambFadeTo(ambVol, 2600);
   }
 
   function applyScene(s) {
@@ -1141,12 +1588,65 @@ var lyricSavoir = [    { t: 0.2, l: 'Will you hold my hand?' , c: '你会握住�
         ambEl.src = ambSrc[s];
         var p = ambEl.play();
         if (p && p.catch) p.catch(function () {});
-        ambFadeTo(.34, 1100);
+        ambFadeTo(ambVol, 1100);
       }, 640);
     } else {
       ambInit();
       ambEl.src = ambSrc[s];
     }
+  }
+
+
+  /* ============ 白噪音：开关与音量 ============ */
+  function ambStop() {
+    if (!ambEl || !ambOn) return;
+    ambFadeTo(0, 700);
+    setTimeout(function () {
+      if (ambEl && !ambOn) { ambEl.pause(); }
+    }, 760);
+    ambOn = false;
+  }
+  function bindAmb() {
+    var off = document.getElementById('ambOff');
+    if (off) {
+      off.addEventListener('click', function () {
+        ambStop();
+        off.classList.remove('on');
+        wake();
+      });
+    }
+    var vr = document.getElementById('volRange');
+    var vn = document.getElementById('volNum');
+    if (vr) {
+      if (vn) vn.textContent = Math.round(ambVol * 100);
+      vr.addEventListener('input', function () {
+        ambVol = Math.max(0, Math.min(1, parseFloat(vr.value) / 100));
+        if (vn) vn.textContent = Math.round(ambVol * 100);
+        /* 调音量时立即跟上，不做淡变，手感更直接 */
+        if (ambEl && ambOn) {
+          clearInterval(ambFadeT);
+          ambEl.volume = ambVol;
+        }
+        wake();
+      });
+      /* 触摸滑条不要触发静默隐藏 */
+      vr.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+    }
+  }
+
+  /* ============ 横屏：整页旋转 90° ============ */
+  var rotated = false;
+  function setRot(on) {
+    rotated = !!on;
+    document.body.classList.toggle('rot', rotated);
+    if (bRot) bRot.textContent = rotated ? '竖屏' : '横屏';
+    setTimeout(function () {
+      if (window.RAIN) { window.RAIN.pause(); window.RAIN.resize(); window.RAIN.resume(); }
+    }, 160);
+    wake();
+  }
+  if (bRot) {
+    bRot.addEventListener('click', function () { setRot(!rotated); });
   }
 
   /* ============ 全屏 ============ */
@@ -1302,6 +1802,7 @@ var lyricSavoir = [    { t: 0.2, l: 'Will you hold my hand?' , c: '你会握住�
     applyScene('rain');
     /* 预置音频源，等用户第一次触摸再播 */
     ambInit();
+    bindAmb();
     ambEl.src = ambSrc.rain;
 
     if (SITE.length) load(0, false);
@@ -1312,7 +1813,25 @@ var lyricSavoir = [    { t: 0.2, l: 'Will you hold my hand?' , c: '你会握住�
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
+  /* resize 去抖：全屏动画期间尺寸会连续变化，避免重复重算与重建场景 */
+  var rzT = null;
+  window.addEventListener('resize', function () {
+    if (rzT) clearTimeout(rzT);
+    rzT = setTimeout(function () {
+      rzT = null;
+      if (window.RAIN) { window.RAIN.resize(); }
+    }, 180);
+  });
+  window.addEventListener('orientationchange', function () {
+    if (rzT) clearTimeout(rzT);
+    rzT = setTimeout(function () {
+      rzT = null;
+      if (window.RAIN) { window.RAIN.resize(); }
+    }, 320);
+  });
+
 })();
+
 </script>
 </body>
 </html>
