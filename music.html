@@ -118,10 +118,12 @@ body.quiet #glass{
   position:fixed;inset:0;z-index:1;
   width:100%;height:100%;
   object-fit:cover;
+  /* 按比例缩到 0.82，画面往后退一层，四周露出深底。数值越小越远 */
+  transform:scale(.82);
   opacity:0;
   pointer-events:none;
   transition:opacity 1.2s var(--ease);
-  background:#070a0f;
+  background:transparent;
 }
 #vbg.on{opacity:1}
 /* 视频播放时让出手绘雨，避免两层雨叠在一起 */
