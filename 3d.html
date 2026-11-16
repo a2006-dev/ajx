@@ -160,8 +160,8 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 13px;
-        min-height: 76px;
+        gap: 0;
+        min-height: 40px;
     }
     .dots {
         display: flex;
@@ -186,12 +186,6 @@
     }
     .dot.is-on { width: 22px; border-radius: 4px; background: rgba(255, 255, 255, .82); }
 
-    .hint {
-        font-size: 12px;
-        letter-spacing: .14em;
-        color: rgba(255, 255, 255, .34);
-        min-height: 18px;
-    }
 
     .back {
         position: fixed;
@@ -290,7 +284,6 @@
 
 <div class="foot rise">
     <div class="dots" id="dots"></div>
-    <div class="hint" id="hint">点一下展开</div>
 </div>
 
 <script>
@@ -305,7 +298,6 @@
     if (!total) return;
 
     var dotBox = document.getElementById('dots');
-    var hintEl = document.getElementById('hint');
 
     /* =========================================================
        state: 'folded' 扇面折叠（整块是一个按钮）
@@ -416,8 +408,7 @@
         state = 'spread';
         document.body.classList.add('spread');
         stage.classList.add('spread');
-        hintEl.textContent = '左右滑动选择 · 点中间那张进入 · 点空白收起';
-        dragDX = 0;
+dragDX = 0;
         layout();
     }
 
@@ -428,8 +419,7 @@
         document.body.classList.remove('spread');
         stage.classList.remove('spread');
         stage.classList.remove('dragging');
-        hintEl.textContent = '点一下展开';
-        layout();
+layout();
     }
 
     function goTo(i) {
