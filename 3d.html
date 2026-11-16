@@ -558,53 +558,107 @@
     nextBtn.addEventListener('click', function () {
         settleTo(Math.round(rotY / 72) * 72 - 72);
     });
+
     var dragging = false;
     var startX = 0, startRot = 0, lastX = 0, lastT = 0;
-    card3d.addEventListener('mousedown', function (e) {
+    var moved = 0;              // 按下后累计移动距离，用于区分「点击」与「拖拽」
+    var CLICK_SLOP = 8;         // 小于该像素视为点击
+    var downLink = null;        // 按下时命中的卡片链接
+
+    function findLink(el) {
+        while (el && el !== card3d) {
+            if (el.tagName === 'A' && el.getAttribute('href')) return el;
+            el = el.parentNode;
+        }
+        return null;
+    }
+
+    function onDown(x, target) {
         dragging = true;
         mode = 'drag';
-        startX = e.clientX;
+        startX = x;
         startRot = rotY;
-        lastX = e.clientX;
+        lastX = x;
         lastT = performance.now();
+        moved = 0;
+        downLink = findLink(target);
+    }
+
+    function onMove(x) {
+        if (!dragging) return;
+        var dx = x - startX;
+        if (Math.abs(dx) > moved) moved = Math.abs(dx);
+        rotY = startRot + dx * 0.5;
+        apply();
+        var now = performance.now();
+        var dt = now - lastT;
+        if (dt > 0) { velocity = ((x - lastX) * 0.5) / (dt / 16.7); }
+        lastX = x;
+        lastT = now;
+    }
+
+    function onUp() {
+        if (!dragging) return;
+        dragging = false;
+        if (moved < CLICK_SLOP) {
+            // 位移足够小 → 认为是点击
+            var link = downLink;
+            downLink = null;
+            if (link) {
+                var href = link.getAttribute('href');
+                if (href) { window.location.href = href; return; }
+            }
+            // 点在了空白处：平滑吸附回最近正面，再恢复自动旋转
+            settleTo(Math.round(rotY / 72) * 72);
+            return;
+        }
+        downLink = null;
+        mode = 'inertia';
+    }
+
+    // —— 鼠标 ——
+    card3d.addEventListener('mousedown', function (e) {
+        if (e.button !== 0) return;
+        onDown(e.clientX, e.target);
         e.preventDefault();
     });
     window.addEventListener('mousemove', function (e) {
         if (!dragging) return;
-        var dx = e.clientX - startX;
-        rotY = startRot + dx * 0.5;
-        apply();
-        var now = performance.now();
-        var dt = now - lastT;
-        if (dt > 0) { velocity = ((e.clientX - lastX) * 0.5) / (dt / 16.7); }
-        lastX = e.clientX;
-        lastT = now;
+        onMove(e.clientX);
     });
     window.addEventListener('mouseup', function () {
-        if (dragging) { dragging = false; mode = 'inertia'; }
+        onUp();
     });
+
+    // —— 触摸 ——
     card3d.addEventListener('touchstart', function (e) {
-        dragging = true;
-        mode = 'drag';
-        startX = e.touches[0].clientX;
-        startRot = rotY;
-        lastX = e.touches[0].clientX;
-        lastT = performance.now();
-    });
+        if (e.touches.length !== 1) return;
+        onDown(e.touches[0].clientX, e.target);
+    }, { passive: true });
     card3d.addEventListener('touchmove', function (e) {
-        if (!dragging) return;
-        var dx = e.touches[0].clientX - startX;
-        rotY = startRot + dx * 0.5;
-        apply();
-        var now = performance.now();
-        var dt = now - lastT;
-        if (dt > 0) { velocity = ((e.touches[0].clientX - lastX) * 0.5) / (dt / 16.7); }
-        lastX = e.touches[0].clientX;
-        lastT = now;
-    });
+        if (!dragging || e.touches.length !== 1) return;
+        onMove(e.touches[0].clientX);
+        // 只有确认是拖拽后才阻止滚动，保证「点一下」仍能触发点击
+        if (moved >= CLICK_SLOP) e.preventDefault();
+    }, { passive: false });
     card3d.addEventListener('touchend', function () {
-        if (dragging) { dragging = false; mode = 'inertia'; }
+        onUp();
     });
+    card3d.addEventListener('touchcancel', function () {
+        if (!dragging) return;
+        dragging = false;
+        downLink = null;
+        mode = 'inertia';
+    });
+
+    // 防止拖拽后浏览器仍补发一次 click（导致误跳转）
+    card3d.addEventListener('click', function (e) {
+        if (moved >= CLICK_SLOP) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    }, true);
+
     window.addEventListener('keydown', function (e) {
         if (e.key === 'ArrowLeft') { settleTo(Math.round(rotY / 72) * 72 + 72); }
         else if (e.key === 'ArrowRight') { settleTo(Math.round(rotY / 72) * 72 - 72); }
