@@ -1800,7 +1800,23 @@ var lyricSavoir = [
     forest: { c1: '#070e0b', c2: '#14231b', c3: '#050a08', glow: 'rgba(104,170,132,.095)', haze: 'rgba(120,180,145,.05)' },
     waves:  { c1: '#050a12', c2: '#0d1a2b', c3: '#040811', glow: 'rgba(92,150,214,.115)', haze: 'rgba(110,165,220,.055)' }
   };
-  var ambSrc = { rain: './sfx/rain.mp3', fire: './sfx/fire.mp3', forest: './sfx/forest.mp3', waves: './sfx/waves.mp3' };
+  /* 白噪音源：优先 Opus/OGG。
+     OGG 封装带 pre-skip 与原始样本数，播放器会精确裁掉编码器补的
+     前导/尾部静音，配合我们做好的首尾交叉淡化，loop 处无空隙。
+     不支持 Opus 的浏览器回退到 mp3。 */
+  var canOpus = (function () {
+    try {
+      var a = document.createElement('audio');
+      return !!(a.canPlayType && a.canPlayType('audio/ogg; codecs="opus"'));
+    } catch (e) { return false; }
+  })();
+  var ambExt = canOpus ? '.ogg' : '.mp3';
+  var ambSrc = {
+    rain:   './sfx/rain'   + ambExt,
+    fire:   './sfx/fire'   + ambExt,
+    forest: './sfx/forest' + ambExt,
+    waves:  './sfx/waves'  + ambExt
+  };
   var ambEl = null, ambScene = 'rain', ambOn = false, ambFadeT = null;
   var ambVol = .34;   /* 白噪音目标音量，由滑条写入 */
 
