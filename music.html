@@ -24,7 +24,6 @@ body:-moz-full-screen, body:-ms-fullscreen {
   background:#070a10;
   overflow:hidden;
 }
-/* 全屏时禁止在根元素出现滚动条/白边 */
 html:fullscreen, html:-webkit-full-screen { background:#070a10; overflow:hidden; }
 body {
   background:#0a0e14; color:#e8eef8;
@@ -174,12 +173,10 @@ body.idle .corner { opacity:0; pointer-events:none; }
   transition:all .3s ease;
 }
 .ico-btn:hover { background:rgba(110,160,255,.2); border-color:rgba(150,190,255,.5); color:#fff; }
-/* 全屏/横屏时：角落按钮去掉 backdrop-filter，避免贴近边缘模糊采样发灰 */
 body:fullscreen .ico-btn, body:-webkit-full-screen .ico-btn {
   -webkit-backdrop-filter:none; backdrop-filter:none;
   background:rgba(16,22,32,.62);
 }
-/* 全屏时角落安全内边距（env 全屏下为 0，会贴边） */
 body:fullscreen .corner.tr, body:-webkit-full-screen .corner.tr { top:22px; right:22px; }
 body:fullscreen .corner.tl, body:-webkit-full-screen .corner.tl { top:22px; left:22px; }
 body:fullscreen .sc-panel { top:70px; right:22px; }
@@ -287,55 +284,27 @@ body:fullscreen .sc-panel { top:70px; right:22px; }
   .corner.tr { top:26px; right:26px; }
   .corner.tl { top:26px; left:26px; }
 }
-/* ================= 横屏专用布局 ================= */
 @media (orientation:landscape) and (max-height:560px) {
-  /* 横屏两栏：左侧时钟+日期，右侧场景信息，避免中间空旷 */
-  .stage {
-    padding:12px max(20px, env(safe-area-inset-right)) 12px max(20px, env(safe-area-inset-left));
-  }
-  .center {
-    width:100%;
-    max-width:1120px;
-    padding:0 8px;
-  }
-  .poem { display:none; }
-  .clock {
-    font-size:clamp(52px, 17vh, 132px);
-    letter-spacing:-.02em;
-  }
-  .date {
-    margin-top:10px;
-    font-size:clamp(11px, 2.2vh, 15px);
-    letter-spacing:.22em;
-  }
-  .stay { display:none; }
-
-  /* 时钟左右两侧加装饰性细线，补横屏的横向留白 */
+  .stage { padding:12px 20px; }
+  .center { width:100%; max-width:1120px; padding:0 8px; position:relative; }
+  .clock { font-size:clamp(52px, 17vh, 132px); letter-spacing:-.02em; }
+  .date { margin-top:10px; font-size:clamp(11px, 2.2vh, 15px); letter-spacing:.22em; }
   .center::before, .center::after {
-    content:'';
-    position:absolute;
-    top:50%; width:clamp(40px, 9vw, 130px); height:1px;
+    content:''; position:absolute; top:50%; width:clamp(40px, 9vw, 130px); height:1px;
     background:linear-gradient(90deg, transparent, rgba(150,190,255,.30), transparent);
     pointer-events:none;
   }
-  .center::before { left:clamp(6px, 3vw, 40px); transform:translateY(-50%) rotate(0deg); }
+  .center::before { left:clamp(6px, 3vw, 40px); transform:translateY(-50%); }
   .center::after  { right:clamp(6px, 3vw, 40px); transform:translateY(-50%); }
-  .center { position:relative; }
-
-  /* 角落按钮缩一档，避免横屏占用过多高度 */
   .ico-btn { width:34px; height:34px; }
   .ico-btn svg { width:14px; height:14px; }
-  .corner.tr { top:max(10px, env(safe-area-inset-top)); right:max(12px, env(safe-area-inset-right)); }
-  .corner.tl { top:max(10px, env(safe-area-inset-top)); left:max(12px, env(safe-area-inset-left)); }
-
-  /* 迷你播放条贴底、压缩高度 */
+  .corner.tr { top:10px; right:12px; }
+  .corner.tl { top:10px; left:12px; }
   .mini { height:44px; }
   .dock { width:min(600px, 90%); margin-bottom:2px; }
 }
-/* 极矮横屏 */
 @media (orientation:landscape) and (max-height:400px) {
   .clock { font-size:clamp(40px, 19vh, 88px); }
-  .date { display:none; }
   .center::before, .center::after { display:none; }
   .mini { height:40px; }
 }
@@ -347,23 +316,23 @@ body:fullscreen .sc-panel { top:70px; right:22px; }
 #scene {
   position:fixed; inset:0; z-index:1;
   display:block; pointer-events:none;
-  filter:blur(7px) saturate(1.18);
-  transform:scale(1.03);
+  filter:blur(1.5px) saturate(1.22);
+  transform:scale(1.01);
   opacity:0; transition:opacity 1.2s ease;
 }
 #scene.on { opacity:1; }
 /* 毛玻璃雾罩：压在场景上，让场景退成氛围而不是插画 */
 .frost {
   position:fixed; inset:0; z-index:2; pointer-events:none;
-  backdrop-filter:blur(12px) saturate(1.12);
-  -webkit-backdrop-filter:blur(12px) saturate(1.12);
-  background:rgba(8,12,20,.20);
+  backdrop-filter:blur(3px) saturate(1.08);
+  -webkit-backdrop-filter:blur(3px) saturate(1.08);
+  background:rgba(8,12,20,.10);
   transition:background 1.2s ease;
 }
-body.sc-fire  .frost { background:rgba(24,10,4,.30); }
-body.sc-waves .frost { background:rgba(4,16,26,.28); }
-body.sc-forest .frost { background:rgba(6,16,10,.28); }
-body.night .frost { background:rgba(3,5,10,.46); }
+body.sc-fire  .frost { background:rgba(24,10,4,.14); }
+body.sc-waves .frost { background:rgba(4,16,26,.12); }
+body.sc-forest .frost { background:rgba(6,16,10,.12); }
+body.night .frost { background:rgba(3,5,10,.30); }
 
 /* ================= 场景设置按钮 + 面板 ================= */
 .sc-btn { order:-1; }
@@ -844,9 +813,14 @@ var SCENE = (function () {
    雨夜 / 火堆 / 海浪 / 林间
    ============================================================ */
 var NOISE = (function () {
-  var ac = null, master = null, wet = null, conv = null;
-  var nodes = [], timers = [];
-  var cur = 'rain', on = false, vol = 0.55;
+  var ac = null, master = null, cur = 'rain', on = false, vol = 0.55;
+  var cache = {}, playing = null, playingName = null, fadeTimer = null;
+  var FILE = {
+    rain:   './sfx/rain.mp3',
+    fire:   './sfx/fire.mp3',
+    waves:  './sfx/waves.mp3',
+    forest: './sfx/forest.mp3'
+  };
 
   function ensure() {
     if (ac) return ac;
@@ -856,341 +830,77 @@ var NOISE = (function () {
     master = ac.createGain();
     master.gain.value = 0.0001;
     master.connect(ac.destination);
-    // 简易混响：用一段衰减噪声做脉冲响应，让声音有空间感
-    try {
-      conv = ac.createConvolver();
-      var len = Math.floor(ac.sampleRate * 2.2);
-      var ir = ac.createBuffer(2, len, ac.sampleRate);
-      for (var c = 0; c < 2; c++) {
-        var d = ir.getChannelData(c);
-        for (var i = 0; i < len; i++) {
-          d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.6);
-        }
-      }
-      conv.buffer = ir;
-      wet = ac.createGain();
-      wet.gain.value = 0.30;
-      conv.connect(wet);
-      wet.connect(master);
-    } catch (e) { conv = null; }
     return ac;
   }
 
-  /* ---------- 噪声缓冲 ---------- */
-  function noiseBuf(type, sec) {
-    sec = sec || 6;
-    var len = Math.floor(ac.sampleRate * sec);
-    var buf = ac.createBuffer(2, len, ac.sampleRate);
-    for (var c = 0; c < 2; c++) {
-      var d = buf.getChannelData(c);
-      var last = 0, b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
-      for (var i = 0; i < len; i++) {
-        var w = Math.random() * 2 - 1;
-        if (type === 'white') { d[i] = w * 0.5; continue; }
-        if (type === 'brown') {
-          last = (last + 0.02 * w) / 1.02;
-          d[i] = last * 3.2;
-          continue;
-        }
-        b0 = 0.99886*b0 + w*0.0555179;
-        b1 = 0.99332*b1 + w*0.0750759;
-        b2 = 0.96900*b2 + w*0.1538520;
-        b3 = 0.86650*b3 + w*0.3104856;
-        b4 = 0.55000*b4 + w*0.5329522;
-        b5 = -0.7616*b5 - w*0.0168980;
-        d[i] = (b0+b1+b2+b3+b4+b5+b6 + w*0.5362) * 0.09;
-        b6 = w * 0.115926;
-      }
-    }
-    return buf;
-  }
-
-  function src(type) {
-    var s = ac.createBufferSource();
-    s.buffer = noiseBuf(type, 7);
-    s.loop = true;
-    return s;
-  }
-  function bq(type, f, q) {
-    var x = ac.createBiquadFilter();
-    x.type = type; x.frequency.value = f;
-    if (q != null) x.Q.value = q;
-    return x;
-  }
-  function g(v) { var x = ac.createGain(); x.gain.value = v; return x; }
-  function route() {
-    for (var i = 0; i < arguments.length; i++) nodes.push(arguments[i]);
-  }
-  // 送到 master + 混响
-  function out(node, dry, wetAmt) {
-    var d = g(dry == null ? 1 : dry);
-    node.connect(d); d.connect(master);
-    route(d);
-    if (conv) {
-      var w = g(wetAmt == null ? 0.5 : wetAmt);
-      node.connect(w); w.connect(conv);
-      route(w);
-    }
-  }
-  function every(ms, fn) {
-    var id = setInterval(function () { if (on) fn(); }, ms);
-    timers.push(id);
-    return id;
-  }
-
-  function clear() {
-    for (var i = 0; i < timers.length; i++) clearInterval(timers[i]);
-    timers = [];
-    for (var k = 0; k < nodes.length; k++) {
-      try { if (nodes[k].stop) nodes[k].stop(); } catch (e) {}
-      try { nodes[k].disconnect(); } catch (e) {}
-    }
-    nodes = [];
-  }
-
-  /* ============================================================
-     雨夜：低频雨幕底 + 密集雨滴颗粒 + 远近不同 + 偶尔远雷
-     ============================================================ */
-  function buildRain() {
-    // 1. 雨幕底：粉红噪声，低通压暗，加轻微高通去轰头
-    var s = src('pink');
-    var hp = bq('highpass', 260, 0.4);
-    var lp = bq('lowpass', 4200, 0.5);
-    var lod = g(0.30);
-    s.connect(hp); hp.connect(lp); lp.connect(lod); out(lod, 1, 0.35);
-    s.start(); route(s, hp, lp);
-
-    // 2. 雨滴：随机短促带通脉冲，高频多，形成“沙沙颗粒”
-    every(38, function () {
-      var n = 1 + Math.floor(Math.random() * 3);
-      for (var i = 0; i < n; i++) {
-        var t = ac.currentTime + Math.random() * 0.05;
-        var b = ac.createBufferSource();
-        b.buffer = noiseBuf('white', 0.12);
-        var f = bq('bandpass', 1600 + Math.random() * 5200, 12 + Math.random() * 10);
-        var e = ac.createGain();
-        var pk = 0.05 + Math.random() * 0.10;
-        var dur = 0.025 + Math.random() * 0.045;
-        e.gain.setValueAtTime(0, t);
-        e.gain.linearRampToValueAtTime(pk, t + 0.004);
-        e.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-        b.connect(f); f.connect(e); e.connect(master);
-        b.start(t); b.stop(t + dur + 0.03);
-      }
-    });
-
-    // 3. 近处大水滴：低频“嗒”
-    every(700, function () {
-      if (Math.random() > 0.65) return;
-      var t = ac.currentTime;
-      var o = ac.createOscillator();
-      o.type = 'sine';
-      var f0 = 380 + Math.random() * 420;
-      o.frequency.setValueAtTime(f0, t);
-      o.frequency.exponentialRampToValueAtTime(f0 * 0.45, t + 0.09);
-      var e = ac.createGain();
-      e.gain.setValueAtTime(0.055, t);
-      e.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
-      o.connect(e); out(e, 1, 0.6);
-      o.start(t); o.stop(t + 0.15);
-    });
-
-    // 4. 远雷：极低频缓慢隆起，很久才一次
-    every(13000, function () {
-      if (Math.random() > 0.55) return;
-      var t = ac.currentTime;
-      var b = ac.createBufferSource();
-      b.buffer = noiseBuf('brown', 4);
-      var lp2 = bq('lowpass', 150, 0.7);
-      var e = ac.createGain();
-      e.gain.setValueAtTime(0.0001, t);
-      e.gain.linearRampToValueAtTime(0.22, t + 0.9);
-      e.gain.linearRampToValueAtTime(0.0001, t + 3.6);
-      b.connect(lp2); lp2.connect(e); out(e, 1, 0.9);
-      b.start(t); b.stop(t + 3.9);
-    });
-  }
-
-  /* ============================================================
-     火堆：低频轰鸣 + 不规则爆裂噼啪 + 空气嘶声
-     ============================================================ */
-  function buildFire() {
-    // 1. 火焰底部轰鸣：布朗噪声重低通
-    var s = src('brown');
-    var lp = bq('lowpass', 480, 0.9);
-    var gd = g(0.34);
-    s.connect(lp); lp.connect(gd); out(gd, 1, 0.3);
-    s.start(); route(s, lp);
-
-    // 2. 火焰抖动：用 LFO 调制音量，像火苗忽大忽小
-    var lfo = ac.createOscillator();
-    lfo.type = 'sine'; lfo.frequency.value = 0.42;
-    var lg = g(0.10);
-    lfo.connect(lg); lg.connect(gd.gain);
-    lfo.start(); route(lfo, lg);
-
-    // 3. 空气嘶声：粉红噪声带通，很轻
-    var s2 = src('pink');
-    var bp = bq('bandpass', 2600, 0.7);
-    var g2 = g(0.055);
-    s2.connect(bp); bp.connect(g2); out(g2, 1, 0.35);
-    s2.start(); route(s2, bp);
-
-    // 4. 爆裂：不规则，大小不均
-    every(120, function () {
-      var r = Math.random();
-      if (r > 0.62) return;
-      var burst = r < 0.10 ? 3 : 1;
-      for (var i = 0; i < burst; i++) {
-        var t = ac.currentTime + Math.random() * 0.06;
-        var b = ac.createBufferSource();
-        b.buffer = noiseBuf('white', 0.1);
-        var f = bq('bandpass', 900 + Math.random() * 3400, 5 + Math.random() * 9);
-        var e = ac.createGain();
-        var pk = 0.06 + Math.random() * 0.18;
-        var dur = 0.012 + Math.random() * 0.05;
-        e.gain.setValueAtTime(0, t);
-        e.gain.linearRampToValueAtTime(pk, t + 0.002);
-        e.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-        b.connect(f); f.connect(e); out(e, 1, 0.4);
-        b.start(t); b.stop(t + dur + 0.02);
-      }
-    });
-  }
-
-  /* ============================================================
-     海浪：周期性涨落 + 拍岸泡沫高频 + 浪与浪之间退回的细流
-     ============================================================ */
-  function buildWaves() {
-    // 1. 海水低频体感：布朗噪声
-    var s = src('brown');
-    var lp = bq('lowpass', 620, 0.7);
-    var gd = g(0.26);
-    s.connect(lp); lp.connect(gd); out(gd, 1, 0.4);
-    s.start(); route(s, lp);
-
-    // 2. 主涨落：非常慢的 LFO（一个浪约 11 秒）
-    var lfo = ac.createOscillator();
-    lfo.type = 'sine'; lfo.frequency.value = 0.088;
-    var lg = g(0.16);
-    lfo.connect(lg); lg.connect(gd.gain);
-    lfo.start(); route(lfo, lg);
-
-    // 3. 泡沫嘶嘶：粉红噪声带通，被同一个 LFO 反向调制（浪头时最响）
-    var s2 = src('pink');
-    var bp = bq('bandpass', 3600, 0.6);
-    var hp = bq('highpass', 1200, 0.5);
-    var g2 = g(0.12);
-    s2.connect(hp); hp.connect(bp); bp.connect(g2); out(g2, 1, 0.5);
-    s2.start(); route(s2, hp, bp);
-    var lfo2 = ac.createOscillator();
-    lfo2.type = 'sine'; lfo2.frequency.value = 0.088;
-    var lg2 = g(0.075);
-    lfo2.connect(lg2); lg2.connect(g2.gain);
-    lfo2.start(); route(lfo2, lg2);
-
-    // 4. 每道浪拍岸：一个宽频冲击，突出“哗”
-    (function waveLoop() {
-      var id = setTimeout(function () {
-        if (!on) { timers.push(id); return; }
-        var t = ac.currentTime;
-        var b = ac.createBufferSource();
-        b.buffer = noiseBuf('white', 4);
-        var f = bq('lowpass', 1400 + Math.random() * 1600, 0.6);
-        var e = ac.createGain();
-        e.gain.setValueAtTime(0.0001, t);
-        e.gain.linearRampToValueAtTime(0.16 + Math.random() * 0.08, t + 1.1);
-        e.gain.linearRampToValueAtTime(0.0001, t + 3.4);
-        b.connect(f); f.connect(e); out(e, 1, 0.8);
-        b.start(t); b.stop(t + 3.6);
-        waveLoop();
-      }, 9000 + Math.random() * 3000);
-      timers.push(id);
-    })();
-  }
-
-  /* ============================================================
-     林间：树叶风噪 + 远近鸟鸣 + 偶尔枝叶摩擦
-     ============================================================ */
-  function buildForest() {
-    // 1. 风穿过树叶：粉红噪声高频带通 + 慢速幅度起伏
-    var s = src('pink');
-    var bp = bq('bandpass', 3200, 0.45);
-    var hp = bq('highpass', 900, 0.5);
-    var gd = g(0.10);
-    s.connect(hp); hp.connect(bp); bp.connect(gd); out(gd, 1, 0.5);
-    s.start(); route(s, hp, bp);
-    var lfo = ac.createOscillator();
-    lfo.type = 'sine'; lfo.frequency.value = 0.07;
-    var lg = g(0.055);
-    lfo.connect(lg); lg.connect(gd.gain);
-    lfo.start(); route(lfo, lg);
-
-    // 2. 低频林间空间感
-    var s2 = src('brown');
-    var lp = bq('lowpass', 320, 0.7);
-    var g2 = g(0.09);
-    s2.connect(lp); lp.connect(g2); out(g2, 1, 0.5);
-    s2.start(); route(s2, lp);
-
-    // 3. 鸟鸣：真实鸟鸣是短促滑音+多次重复，远近不同
-    every(1400, function () {
-      if (Math.random() > 0.42) return;
-      var far = Math.random() < 0.45;
-      var reps = 2 + Math.floor(Math.random() * 4);
-      var base = far ? (2600 + Math.random() * 900) : (1700 + Math.random() * 900);
-      var amp = far ? 0.028 : 0.075;
-      var t0 = ac.currentTime + Math.random() * 0.3;
-      for (var i = 0; i < reps; i++) {
-        var t = t0 + i * (0.075 + Math.random() * 0.05);
-        var o = ac.createOscillator();
-        o.type = 'sine';
-        var f1 = base * (0.9 + Math.random() * 0.25);
-        var f2 = f1 * (1.25 + Math.random() * 0.55);
-        o.frequency.setValueAtTime(f1, t);
-        o.frequency.exponentialRampToValueAtTime(f2, t + 0.045);
-        o.frequency.exponentialRampToValueAtTime(f1 * 0.82, t + 0.085);
-        var e = ac.createGain();
-        e.gain.setValueAtTime(0, t);
-        e.gain.linearRampToValueAtTime(amp, t + 0.012);
-        e.gain.exponentialRampToValueAtTime(0.0001, t + 0.1);
-        o.connect(e); out(e, 1, far ? 0.85 : 0.35);
-        o.start(t); o.stop(t + 0.12);
-      }
-    });
-
-    // 4. 枝叶摩擦：偶尔的干脆沙沙
-    every(2600, function () {
-      if (Math.random() > 0.5) return;
-      var t = ac.currentTime;
-      var b = ac.createBufferSource();
-      b.buffer = noiseBuf('white', 0.4);
-      var f = bq('bandpass', 1800 + Math.random() * 2600, 2.2);
-      var e = ac.createGain();
-      e.gain.setValueAtTime(0, t);
-      e.gain.linearRampToValueAtTime(0.035, t + 0.05);
-      e.gain.exponentialRampToValueAtTime(0.0001, t + 0.28);
-      b.connect(f); f.connect(e); out(e, 1, 0.7);
-      b.start(t); b.stop(t + 0.3);
-    });
-  }
-
-  function build(name) {
-    clear();
+  function load(name, cb) {
+    if (cache[name]) { cb(cache[name]); return; }
+    ensure();
     if (!ac) return;
-    cur = name;
-    if (name === 'rain') buildRain();
-    else if (name === 'fire') buildFire();
-    else if (name === 'waves') buildWaves();
-    else if (name === 'forest') buildForest();
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', FILE[name], true);
+    xhr.responseType = 'arraybuffer';
+    xhr.onload = function () {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          ac.decodeAudioData(xhr.response, function (buf) {
+            cache[name] = buf;
+            cb(buf);
+          }, function () { cb(null); });
+        } catch (e) { cb(null); }
+      } else { cb(null); }
+    };
+    xhr.onerror = function () { cb(null); };
+    xhr.send();
+  }
+
+  function stopCurrent(fade) {
+    if (!playing) return;
+    var p = playing, g = playing.gainNode;
+    playing = null;
+    try {
+      var t = ac.currentTime;
+      g.gain.cancelScheduledValues(t);
+      g.gain.setValueAtTime(Math.max(g.gain.value, 0.0001), t);
+      g.gain.linearRampToValueAtTime(0.0001, t + fade);
+    } catch (e) {}
+    setTimeout(function () {
+      try { p.src.stop(); } catch (e) {}
+      try { p.src.disconnect(); } catch (e) {}
+      try { p.gainNode.disconnect(); } catch (e) {}
+    }, (fade + 0.15) * 1000);
+  }
+
+  function play(name) {
+    if (!ac || !on) return;
+    if (playingName === name && playing) return;
+    playingName = name;
+    load(name, function (buf) {
+      if (!buf) return;
+      if (!on || playingName !== name) return;
+      stopCurrent(1.0);
+      var src = ac.createBufferSource();
+      src.buffer = buf;
+      src.loop = true;
+      var g = ac.createGain();
+      g.gain.value = 0.0001;
+      src.connect(g); g.connect(master);
+      src.start(0);
+      playing = { src: src, gainNode: g };
+      var t = ac.currentTime;
+      g.gain.cancelScheduledValues(t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(1.0, t + 1.4);
+    });
   }
 
   return {
+    preload: function (name) { load(name, function () {}); },
     set: function (name) {
       cur = name;
       if (!on) return;
       ensure(); if (!ac) return;
-      build(name);
+      play(name);
     },
     on: function () { return on; },
     toggle: function (force) {
@@ -1201,17 +911,17 @@ var NOISE = (function () {
       on = want;
       if (on) {
         if (ac.state !== 'running') { try { ac.resume(); } catch (e) {} }
-        build(cur);
         var t = ac.currentTime;
         master.gain.cancelScheduledValues(t);
         master.gain.setValueAtTime(vol, t + 0.05);
-        master.gain.linearRampToValueAtTime(vol, t + 1.2);
+        master.gain.linearRampToValueAtTime(vol, t + 0.6);
+        play(cur);
       } else {
         var t2 = ac.currentTime;
         master.gain.cancelScheduledValues(t2);
         master.gain.setValueAtTime(master.gain.value, t2);
-        master.gain.linearRampToValueAtTime(0.0001, t2 + 0.7);
-        setTimeout(function () { if (!on) clear(); }, 800);
+        master.gain.linearRampToValueAtTime(0.0001, t2 + 0.6);
+        stopCurrent(0.7);
       }
       return on;
     },
