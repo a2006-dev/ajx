@@ -206,6 +206,51 @@
             opacity: .35;
             margin-top: 4px;
         }
+    
+        /* ===== 全站访客列表 ===== */
+        .visit-list {
+            margin-top: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            max-height: 320px;
+            overflow-y: auto;
+        }
+        .visit-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            transition: background .2s;
+        }
+        .visit-item:hover { background: rgba(255, 255, 255, .04); }
+        .visit-dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: rgba(255, 183, 197, .8);
+            flex-shrink: 0;
+        }
+        .visit-where {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            opacity: .82;
+        }
+        .visit-when {
+            opacity: .38;
+            font-size: 11px;
+            font-variant-numeric: tabular-nums;
+            flex-shrink: 0;
+        }
+        .visit-empty {
+            padding: 20px 10px;
+            text-align: center;
+            font-size: 12px;
+            opacity: .38;
+        }
     </style>
 </head>
 <body>
@@ -240,6 +285,19 @@
             </div>
 
             <div class="glass-card">
+                <div class="card-title"><span class="icon">🌐</span> 全站访客 <span class="tag">真实记录</span></div>
+                <div class="stat-row">
+                    <div class="stat"><div class="stat-num" id="site-total">—</div><div class="stat-cap">近 30 天访问</div></div>
+                    <div class="stat"><div class="stat-num" id="site-cities">—</div><div class="stat-cap">城市数</div></div>
+                    <div class="stat"><div class="stat-num" id="site-days">—</div><div class="stat-cap">有访问的天数</div></div>
+                </div>
+                <div class="visit-list" id="visit-list">
+                    <div class="visit-empty">读取中…</div>
+                </div>
+                <div class="hint-line">数据来自 Cloudflare Worker，记录真实 IP 归属地。IP 已脱敏存储。</div>
+            </div>
+
+            <div class="glass-card">
                 <div class="card-title"><span class="icon">💻</span> 设备信息 <span class="tag">本机读取</span></div>
                 <div class="info-row"><span class="label">浏览器</span><span class="value" id="device-browser">—</span></div>
                 <div class="info-row"><span class="label">操作系统</span><span class="value" id="device-os">—</span></div>
@@ -254,6 +312,7 @@
                 <div class="info-row"><span class="label">内存容量</span><span class="value" id="device-mem">—</span></div>
                 <div class="info-row"><span class="label">触屏支持</span><span class="value" id="device-touch">—</span></div>
                 <div class="info-row"><span class="label">网络类型</span><span class="value" id="device-net">—</span></div>
+                <div class="info-row"><span class="label">系统版本</span><span class="value" id="device-os2">—</span></div>
                 <div class="info-row"><span class="label">识别精度</span><span class="value" id="device-hints">—</span></div>
             </div>
 
@@ -675,6 +734,142 @@
                 setTxt('device-viewport', window.innerWidth + ' × ' + window.innerHeight + ' CSS 像素');
                 setTxt('device-orient', (window.innerHeight > window.innerWidth) ? '竖屏' : '横屏');
             });
+        })();
+
+        /* ============ Cloudflare Worker 接入 ============
+           解决两件纯静态页做不到的事：
+           1) 设备型号与系统真实版本——需要服务端下发 Accept-CH 才能读到
+           2) 全站访客记录——需要一个共享存储
+           注意：Accept-CH 是协商式的，第一次请求不带型号，
+           浏览器收到响应后，后续请求才会带。所以这里做两次调用。 */
+        (function worker() {
+            var API = 'https://ajx-stats.haiteluo.xyz';
+
+            function el(id) { return document.getElementById(id); }
+
+            /* ---------- 设备信息 ---------- */
+            function pullDevice(retry) {
+                fetch(API + '/whoami', { cache: 'no-store' })
+                    .then(function (r) { return r.json(); })
+                    .then(function (d) {
+                        if (!d || !d.ok) return;
+
+                        /* 型号：服务端拿到的可能是代号，走本地表翻译 */
+                        if (d.model) {
+                            var mEl = el('device-model');
+                            if (mEl) {
+                                if (typeof modelName === 'function') {
+                                    modelName(d.model, function (n) { if (mEl) mEl.textContent = n; });
+                                } else {
+                                    mEl.textContent = d.model;
+                                }
+                            }
+                        } else if (retry) {
+                            /* 第一次没带型号是正常的（Accept-CH 刚下发），
+                               浏览器下次请求才会带，所以再问一次 */
+                            setTimeout(function () { pullDevice(false); }, 600);
+                        }
+
+                        /* 系统真实版本 */
+                        if (d.platformVersion) {
+                            var o2 = el('device-os2');
+                            if (o2) {
+                                var pv = String(d.platformVersion);
+                                if (/Android/i.test(d.platform || '')) {
+                                    /* Android 的 platformVersion 是 "14.0.0" 形式 */
+                                    o2.textContent = 'Android ' + pv.split('.')[0];
+                                } else if (/Windows/i.test(d.platform || '')) {
+                                    o2.textContent = 'Windows ' + pv;
+                                } else {
+                                    o2.textContent = (d.platform || '') + ' ' + pv;
+                                }
+                            }
+                        }
+
+                        /* 前端没能拿到型号时，用服务端结果补上识别精度说明 */
+                        var hints = el('device-hints');
+                        if (hints && d.model) {
+                            hints.textContent = '高精度（服务端上报）';
+                        }
+                    })
+                    .catch(function () {});
+            }
+
+            /* ---------- 上报一次访问 ---------- */
+            function report() {
+                /* 同一会话只报一次，避免刷新重复计数 */
+                try {
+                    if (sessionStorage.getItem('ajx_hit')) return;
+                    sessionStorage.setItem('ajx_hit', '1');
+                } catch (e) {}
+                fetch(API + '/hit', { method: 'POST', cache: 'no-store' }).catch(function () {});
+            }
+
+            /* ---------- 读访客列表 ---------- */
+            function pullRecent() {
+                fetch(API + '/recent', { cache: 'no-store' })
+                    .then(function (r) { return r.json(); })
+                    .then(function (d) {
+                        if (!d || !d.ok) {
+                            var box0 = el('visit-list');
+                            if (box0) box0.innerHTML = '<div class="visit-empty">暂时无法读取（Worker 未就绪）</div>';
+                            return;
+                        }
+                        el('site-total').textContent = d.total || 0;
+                        el('site-cities').textContent = Object.keys(d.cities || {}).length;
+                        el('site-days').textContent = Object.keys(d.days || {}).length;
+
+                        var box = el('visit-list');
+                        if (!box) return;
+                        if (!d.recent || !d.recent.length) {
+                            box.innerHTML = '<div class="visit-empty">还没有访问记录</div>';
+                            return;
+                        }
+                        box.innerHTML = '';
+                        d.recent.forEach(function (r) {
+                            var row = document.createElement('div');
+                            row.className = 'visit-item';
+
+                            var dot = document.createElement('span');
+                            dot.className = 'visit-dot';
+
+                            var where = document.createElement('span');
+                            where.className = 'visit-where';
+                            var parts = [];
+                            if (r.city) parts.push(r.city);
+                            else if (r.region) parts.push(r.region);
+                            else if (r.country) parts.push(r.country);
+                            if (r.ip) parts.push(r.ip);
+                            where.textContent = parts.join(' · ') || '未知位置';
+
+                            var when = document.createElement('span');
+                            when.className = 'visit-when';
+                            var dt = new Date(r.t);
+                            var now = new Date();
+                            var sameDay = dt.toDateString() === now.toDateString();
+                            var pad = function (x) { return ('0' + x).slice(-2); };
+                            when.textContent = sameDay
+                                ? pad(dt.getHours()) + ':' + pad(dt.getMinutes())
+                                : (dt.getMonth() + 1) + '/' + dt.getDate() + ' ' + pad(dt.getHours()) + ':' + pad(dt.getMinutes());
+
+                            row.appendChild(dot);
+                            row.appendChild(where);
+                            row.appendChild(when);
+                            box.appendChild(row);
+                        });
+                    })
+                    .catch(function () {
+                        var box = el('visit-list');
+                        if (box) box.innerHTML = '<div class="visit-empty">暂时无法读取（Worker 未就绪）</div>';
+                    });
+            }
+
+            /* 首屏先问设备（触发 Accept-CH 下发），再等一拍补型号 */
+            pullDevice(true);
+            report();
+            pullRecent();
+            /* 过几秒再拉一次列表，把刚才这次访问也包含进来 */
+            setTimeout(pullRecent, 2500);
         })();
 
         (function locate() {
