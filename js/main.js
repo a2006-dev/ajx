@@ -55,9 +55,9 @@ $(document).ready(function () {
 					if (next) next();
 				});
 		}
-		// 主源 4 秒；失败换成同域备用路由再试 4 秒；再失败就保留静态占位文字
-		request(API, 4000, function () {
-			request('https://international.v1.hitokoto.cn/?encode=json', 4000, null);
+		// 主源 2 秒内没回来就并行开备源，谁先成功就显示谁；都失败则保留静态占位文字
+		request(API, 2000, function () {
+			request('https://international.v1.hitokoto.cn/?encode=json', 5000, null);
 		});
 	})();
 // var url = 'https://query.yahooapis.com/v1/public/yql' + 
