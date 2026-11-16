@@ -661,7 +661,8 @@ html,body{
 
 #home{
   position:fixed;z-index:8;
-  top:clamp(14px,2.6vh,26px);left:clamp(12px,3vw,26px);
+  top:calc(env(safe-area-inset-top,0px) + clamp(14px,2.6vh,26px));
+  left:calc(env(safe-area-inset-left,0px) + clamp(12px,3vw,26px));
   width:40px;height:40px;
   display:flex;align-items:center;justify-content:center;
   color:rgba(214,226,242,.4);
