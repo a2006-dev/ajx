@@ -29,14 +29,37 @@ var iUp = (function () {
 
 $(document).ready(function () {
 
-	// 获取一言数据
-	fetch('https://v1.hitokoto.cn').then(function (res) {
-		return res.json();
-	}).then(function (e) {
-		$('#description').html(e.hitokoto + "<br/> -「<strong>" + e.from + "</strong>」")
-	}).catch(function (err) {
-		console.error(err);
-	})
+	// 获取一言数据（带超时 + 备用源，避免接口卡住时页面一直显示占位文字）
+	(function loadHitokoto() {
+		var API = 'https://v1.hitokoto.cn/?encode=json';
+		var done = false;
+		function render(text, from) {
+			if (done || !text) return;
+			done = true;
+			$('#description').html(text + "<br/> -「<strong>" + (from || '一言') + "</strong>」");
+		}
+		function request(url, timeout, next) {
+			var ctrl = ('AbortController' in window) ? new AbortController() : null;
+			var timer = setTimeout(function () {
+				if (ctrl) { try { ctrl.abort(); } catch (e) {} }
+				if (next) next();
+			}, timeout);
+			fetch(url, ctrl ? { signal: ctrl.signal, cache: 'no-store' } : { cache: 'no-store' })
+				.then(function (res) { return res.json(); })
+				.then(function (e) {
+					clearTimeout(timer);
+					if (e && e.hitokoto) render(e.hitokoto, e.from);
+				})
+				.catch(function (err) {
+					clearTimeout(timer);
+					if (next) next();
+				});
+		}
+		// 主源 4 秒；失败换成同域备用路由再试 4 秒；再失败就保留静态占位文字
+		request(API, 4000, function () {
+			request('https://international.v1.hitokoto.cn/?encode=json', 4000, null);
+		});
+	})();
 // var url = 'https://query.yahooapis.com/v1/public/yql' + 
 	// '?q=' + encodeURIComponent('select * from json where url=@url') +
 	// '&url=' + encodeURIComponent('https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=8') +
