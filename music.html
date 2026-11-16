@@ -509,6 +509,499 @@ body.panelOpen.idle .corner { opacity:1; }
 </div>
 
 <script>
+/* ===== 氛围场景 + 白噪音 引擎 ===== */
+/* ============================================================
+   氛围场景引擎
+   雨夜 / 火堆 / 海浪 / 林间
+   每帧只画一层，压在毛玻璃后面，不抢时钟
+   ============================================================ */
+var SCENE = (function () {
+  var cv = null, ctx = null, dpr = 1, W = 0, H = 0;
+  var cur = 'rain';
+  var raf = null, alive = true, lastT = 0;
+  var pool = [];              // 各场景粒子池
+
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+
+  function resize() {
+    var w = window.innerWidth, h = window.innerHeight;
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cv.width = Math.floor(w * dpr);
+    cv.height = Math.floor(h * dpr);
+    cv.style.width = w + 'px';
+    cv.style.height = h + 'px';
+    W = cv.width; H = cv.height;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);   // 之后都用 CSS 像素坐标
+    build(cur, true);
+  }
+
+  /* ---------------- 雨 ---------------- */
+  function buildRain() {
+    var n = Math.round(W / dpr * H / dpr / 5200);
+    n = Math.max(70, Math.min(260, n));
+    var drops = [];
+    for (var i = 0; i < n; i++) {
+      var depth = Math.random();              // 0 远 1 近
+      drops.push({
+        x: rnd(-100, W / dpr + 100),
+        y: rnd(-H / dpr, H / dpr),
+        len: rnd(10, 26) * (0.5 + depth),
+        sp: rnd(680, 1150) * (0.45 + depth * 0.85),
+        w: 0.7 + depth * 1.4,
+        a: 0.10 + depth * 0.30
+      });
+    }
+    pool = drops;
+  }
+  function drawRain(dt) {
+    var w = W / dpr, h = H / dpr;
+    var slant = 0.30;
+    ctx.lineCap = 'round';
+    for (var i = 0; i < pool.length; i++) {
+      var d = pool[i];
+      d.y += d.sp * dt;
+      d.x += d.sp * dt * slant;
+      if (d.y > h + 40) { d.y = rnd(-120, -10); d.x = rnd(-120, w); }
+      if (d.x > w + 60) d.x = -60;
+      ctx.beginPath();
+      ctx.moveTo(d.x, d.y);
+      ctx.lineTo(d.x - d.len * slant, d.y - d.len);
+      ctx.strokeStyle = 'rgba(176,206,255,' + d.a.toFixed(3) + ')';
+      ctx.lineWidth = d.w;
+      ctx.stroke();
+    }
+  }
+
+  /* ---------------- 火 ---------------- */
+  function buildFire() {
+    pool = [];
+    var n = 90;
+    for (var i = 0; i < n; i++) {
+      pool.push({
+        x: rnd(-1, 1),                          // -1..1 相对中心
+        y: rnd(0, 1),                           // 0 底部 1 顶部
+        r: rnd(6, 26),
+        sp: rnd(0.10, 0.34),
+        sway: rnd(0.4, 1.6),
+        ph: Math.random() * 6.28,
+        life: Math.random()
+      });
+    }
+  }
+  function drawFire(dt, t) {
+    var w = W / dpr, h = H / dpr;
+    var baseY = h * 0.96;
+    var cx = w * 0.5;
+    var spread = Math.min(w * 0.45, 420);
+    /* 底部暖光 */
+    var g = ctx.createRadialGradient(cx, baseY, 10, cx, baseY, spread * 1.5);
+    g.addColorStop(0, 'rgba(255,150,60,0.30)');
+    g.addColorStop(0.45, 'rgba(220,90,30,0.10)');
+    g.addColorStop(1, 'rgba(120,40,10,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+
+    for (var i = 0; i < pool.length; i++) {
+      var p = pool[i];
+      p.life += dt * p.sp;
+      if (p.life > 1) {
+        p.life = 0;
+        p.x = rnd(-1, 1);
+        p.r = rnd(6, 26);
+        p.sp = rnd(0.10, 0.34);
+        p.ph = Math.random() * 6.28;
+      }
+      var k = p.life;
+      var px = cx + p.x * spread * (0.35 + k * 0.75) + Math.sin(t * 2.1 + p.ph) * 10 * k;
+      var py = baseY - k * h * 0.42;
+      var r = p.r * (1 - k * 0.55);
+      var a = (1 - k) * 0.55;
+      /* 颜色随高度由白黄转橙红 */
+      var cr = 255;
+      var cg = Math.round(240 - k * 130);
+      var cb = Math.round(170 - k * 150);
+      var gr = ctx.createRadialGradient(px, py, 0, px, py, r);
+      gr.addColorStop(0, 'rgba(' + cr + ',' + cg + ',' + cb + ',' + a.toFixed(3) + ')');
+      gr.addColorStop(1, 'rgba(' + cr + ',' + Math.max(0, cg - 60) + ',20,0)');
+      ctx.fillStyle = gr;
+      ctx.beginPath(); ctx.arc(px, py, r, 0, 6.2832); ctx.fill();
+    }
+  }
+
+  /* ---------------- 海浪 ---------------- */
+  function buildWaves() { pool = []; }
+  function drawWaves(dt, t) {
+    var w = W / dpr, h = H / dpr;
+    var bands = 5;
+    for (var i = 0; i < bands; i++) {
+      var k = i / (bands - 1);
+      var yBase = h * (0.52 + k * 0.42);
+      var amp = 14 + k * 34;
+      var speed = 0.35 + k * 0.5;
+      var alpha = 0.05 + k * 0.13;
+      ctx.beginPath();
+      ctx.moveTo(0, h);
+      for (var x = 0; x <= w; x += 8) {
+        var y = yBase
+          + Math.sin(x * 0.008 + t * speed + i) * amp
+          + Math.sin(x * 0.021 + t * speed * 1.7 + i * 2) * amp * 0.45;
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(w, h);
+      ctx.closePath();
+      var g = ctx.createLinearGradient(0, yBase - amp, 0, h);
+      g.addColorStop(0, 'rgba(90,150,235,' + (alpha * 1.7).toFixed(3) + ')');
+      g.addColorStop(1, 'rgba(20,50,110,0)');
+      ctx.fillStyle = g;
+      ctx.fill();
+    }
+  }
+
+  /* ---------------- 林间 ---------------- */
+  function buildForest() {
+    pool = [];
+    var n = 46;
+    for (var i = 0; i < n; i++) {
+      pool.push({
+        x: Math.random(), y: Math.random(),
+        r: rnd(20, 90), a: rnd(0.04, 0.13),
+        vx: rnd(-0.010, 0.010), vy: rnd(-0.006, 0.006),
+        hue: rnd(80, 150)
+      });
+    }
+  }
+  function drawForest(dt, t) {
+    var w = W / dpr, h = H / dpr;
+    for (var i = 0; i < pool.length; i++) {
+      var p = pool[i];
+      p.x += p.vx * dt; p.y += p.vy * dt;
+      if (p.x < -0.2) p.x = 1.2; if (p.x > 1.2) p.x = -0.2;
+      if (p.y < -0.2) p.y = 1.2; if (p.y > 1.2) p.y = -0.2;
+      var px = p.x * w, py = p.y * h;
+      var rr = p.r * (1 + 0.15 * Math.sin(t * 0.8 + i));
+      var g = ctx.createRadialGradient(px, py, 0, px, py, rr);
+      g.addColorStop(0, 'hsla(' + p.hue + ',60%,62%,' + p.a.toFixed(3) + ')');
+      g.addColorStop(1, 'hsla(' + p.hue + ',60%,50%,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(px, py, rr, 0, 6.2832); ctx.fill();
+    }
+  }
+
+  /* ---------------- 调度 ---------------- */
+  var builders = { rain: buildRain, fire: buildFire, waves: buildWaves, forest: buildForest };
+  function build(name, force) {
+    if (!force && name === cur && pool.length) return;
+    cur = name;
+    var b = builders[name] || buildRain;
+    b();
+  }
+
+  function frame(tms) {
+    if (!alive) return;
+    if (!lastT) lastT = tms;
+    var dt = Math.min((tms - lastT) / 1000, 0.05);
+    lastT = tms;
+    var t = tms / 1000;
+    var w = W / dpr, h = H / dpr;
+    ctx.clearRect(0, 0, w, h);
+
+    /* 每帧打底：该场景的主体色雾，模糊感由 CSS filter 提供 */
+    if (cur === 'rain') {
+      var g1 = ctx.createLinearGradient(0, 0, 0, h);
+      g1.addColorStop(0, 'rgba(22,34,58,0.95)');
+      g1.addColorStop(0.6, 'rgba(16,26,46,0.95)');
+      g1.addColorStop(1, 'rgba(10,18,34,0.95)');
+      ctx.fillStyle = g1; ctx.fillRect(0, 0, w, h);
+      drawRain(dt);
+    } else if (cur === 'fire') {
+      var g2 = ctx.createLinearGradient(0, 0, 0, h);
+      g2.addColorStop(0, 'rgba(26,14,10,0.96)');
+      g2.addColorStop(0.55, 'rgba(48,22,12,0.96)');
+      g2.addColorStop(1, 'rgba(92,38,14,0.96)');
+      ctx.fillStyle = g2; ctx.fillRect(0, 0, w, h);
+      drawFire(dt, t);
+    } else if (cur === 'waves') {
+      var g3 = ctx.createLinearGradient(0, 0, 0, h);
+      g3.addColorStop(0, 'rgba(10,24,44,0.96)');
+      g3.addColorStop(1, 'rgba(8,32,66,0.96)');
+      ctx.fillStyle = g3; ctx.fillRect(0, 0, w, h);
+      drawWaves(dt, t);
+    } else {
+      var g4 = ctx.createLinearGradient(0, 0, 0, h);
+      g4.addColorStop(0, 'rgba(10,26,22,0.96)');
+      g4.addColorStop(1, 'rgba(14,36,26,0.96)');
+      ctx.fillStyle = g4; ctx.fillRect(0, 0, w, h);
+      drawForest(dt, t);
+    }
+    raf = requestAnimationFrame(frame);
+  }
+
+  return {
+    init: function (el) {
+      cv = el; if (!cv || !cv.getContext) return;
+      ctx = cv.getContext('2d');
+      resize();
+      build(cur, true);
+      window.addEventListener('resize', resize);
+      document.addEventListener('visibilitychange', function () {
+        if (document.hidden) { alive = false; if (raf) cancelAnimationFrame(raf); }
+        else if (!alive) { alive = true; lastT = 0; raf = requestAnimationFrame(frame); }
+      });
+      raf = requestAnimationFrame(frame);
+    },
+    set: function (name) {
+      if (!ctx) { cur = name; return; }   // 尚未 init，先记下场景名
+      build(name, true);
+      if (!pool.length) build(name, true);
+    },
+    resize: function () { if (ctx) { resize(); build(cur, true); } },
+    current: function () { return cur; }
+  };
+})();
+
+/* ============================================================
+   白噪音合成引擎（Web Audio 实时合成，不加载任何音频文件）
+   雨夜 / 火堆 / 海浪 / 林间
+   ============================================================ */
+var NOISE = (function () {
+  var ac = null, master = null, nodes = [], timer = null;
+  var cur = 'rain', on = false, vol = 0.35;
+
+  function ensure() {
+    if (ac) return ac;
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    ac = new AC();
+    master = ac.createGain();
+    master.gain.value = 0;
+    master.connect(ac.destination);
+    return ac;
+  }
+
+  // 生成一段噪声缓冲：type = pink | brown | white
+  function buffer(type, sec) {
+    sec = sec || 4;
+    var len = Math.floor(ac.sampleRate * sec);
+    var buf = ac.createBuffer(1, len, ac.sampleRate);
+    var d = buf.getChannelData(0);
+    var i, last = 0, b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+    for (i = 0; i < len; i++) {
+      var w = Math.random() * 2 - 1;
+      if (type === 'white') { d[i] = w; continue; }
+      if (type === 'brown') {
+        last = (last + 0.02 * w) / 1.02;
+        d[i] = last * 3.5;
+        continue;
+      }
+      // pink（Paul Kellet 滤波器）
+      b0 = 0.99886*b0 + w*0.0555179;
+      b1 = 0.99332*b1 + w*0.0750759;
+      b2 = 0.96900*b2 + w*0.1538520;
+      b3 = 0.86650*b3 + w*0.3104856;
+      b4 = 0.55000*b4 + w*0.5329522;
+      b5 = -0.7616*b5 - w*0.0168980;
+      d[i] = (b0+b1+b2+b3+b4+b5+b6 + w*0.5362) * 0.11;
+      b6 = w * 0.115926;
+    }
+    return buf;
+  }
+
+  function src(type) {
+    var s = ac.createBufferSource();
+    s.buffer = buffer(type, 5);
+    s.loop = true;
+    return s;
+  }
+
+  function filt(type, freq, q) {
+    var f = ac.createBiquadFilter();
+    f.type = type;
+    f.frequency.value = freq;
+    if (q != null) f.Q.value = q;
+    return f;
+  }
+
+  function gain(v) { var g = ac.createGain(); g.gain.value = v; return g; }
+
+  function push() { for (var i = 0; i < arguments.length; i++) nodes.push(arguments[i]); }
+
+  function clear() {
+    if (timer) { clearInterval(timer); clearTimeout(timer); timer = null; }
+    for (var i = 0; i < nodes.length; i++) {
+      try { if (nodes[i].stop) nodes[i].stop(); } catch (e) {}
+      try { if (nodes[i].disconnect) nodes[i].disconnect(); } catch (e) {}
+    }
+    nodes = [];
+  }
+
+  // ---------- 短促事件音：滴、爆、鸟 ----------
+  function tick(freq, dur, vol2, type) {
+    if (!ac || !on) return;
+    var o = ac.createOscillator();
+    o.type = type || 'sine';
+    o.frequency.value = freq;
+    var g = ac.createGain();
+    var t = ac.currentTime;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol2, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master);
+    o.start(t); o.stop(t + dur + 0.02);
+  }
+
+  function noiseBurst(center, q, dur, vol2) {
+    if (!ac || !on) return;
+    var s = ac.createBufferSource();
+    s.buffer = buffer('white', 0.35);
+    var f = filt('bandpass', center, q);
+    var g = ac.createGain();
+    var t = ac.currentTime;
+    g.gain.setValueAtTime(vol2, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(f); f.connect(g); g.connect(master);
+    s.start(t); s.stop(t + dur + 0.02);
+  }
+
+  function bird() {
+    if (!ac || !on) return;
+    var o = ac.createOscillator();
+    o.type = 'sine';
+    var t = ac.currentTime;
+    var f0 = 2200 + Math.random() * 1400;
+    o.frequency.setValueAtTime(f0, t);
+    o.frequency.exponentialRampToValueAtTime(f0 * (1.4 + Math.random() * 0.5), t + 0.09);
+    o.frequency.exponentialRampToValueAtTime(f0 * 0.75, t + 0.2);
+    var g = ac.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.055, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.26);
+    o.connect(g); g.connect(master);
+    o.start(t); o.stop(t + 0.3);
+  }
+
+  // ---------- 各场景搭建 ----------
+  function buildRain() {
+    var s = src('pink');
+    var lp = filt('lowpass', 2600, 0.6);
+    var hp = filt('highpass', 420, 0.5);
+    var g = gain(0.5);
+    s.connect(hp); hp.connect(lp); lp.connect(g); g.connect(master);
+    s.start(); push(s, hp, lp, g);
+    timer = setInterval(function () {
+      if (!on) return;
+      if (Math.random() < 0.55) noiseBurst(1800 + Math.random() * 3200, 9, 0.05 + Math.random() * 0.06, 0.10);
+    }, 240);
+  }
+
+  function buildFire() {
+    var s = src('brown');
+    var lp = filt('lowpass', 900, 0.7);
+    var g = gain(0.62);
+    s.connect(lp); lp.connect(g); g.connect(master);
+    s.start(); push(s, lp, g);
+    var s2 = src('pink');
+    var bp = filt('bandpass', 320, 0.8);
+    var g2 = gain(0.22);
+    s2.connect(bp); bp.connect(g2); g2.connect(master);
+    s2.start(); push(s2, bp, g2);
+    timer = setInterval(function () {
+      if (!on) return;
+      if (Math.random() < 0.7) noiseBurst(700 + Math.random() * 2200, 5, 0.03 + Math.random() * 0.05, 0.13);
+    }, 190);
+  }
+
+  function buildWaves() {
+    var s = src('brown');
+    var lp = filt('lowpass', 700, 0.8);
+    var g = gain(0.45);
+    s.connect(lp); lp.connect(g); g.connect(master);
+    s.start(); push(s, lp, g);
+    var s2 = src('pink');
+    var bp = filt('bandpass', 1100, 0.7);
+    var g2 = gain(0.18);
+    s2.connect(bp); bp.connect(g2); g2.connect(master);
+    s2.start(); push(s2, bp, g2);
+    // 约 8.5 秒一次的涨落 LFO
+    var lfo = ac.createOscillator();
+    lfo.type = 'sine';
+    lfo.frequency.value = 0.118;
+    var lg = ac.createGain();
+    lg.gain.value = 0.26;
+    lfo.connect(lg); lg.connect(g.gain);
+    lfo.start(); push(lfo, lg);
+  }
+
+  function buildForest() {
+    var s = src('pink');
+    var bp = filt('bandpass', 2400, 0.5);
+    var g = gain(0.34);
+    s.connect(bp); bp.connect(g); g.connect(master);
+    s.start(); push(s, bp, g);
+    var s2 = src('brown');
+    var lp = filt('lowpass', 400, 0.7);
+    var g2 = gain(0.2);
+    s2.connect(lp); lp.connect(g2); g2.connect(master);
+    s2.start(); push(s2, lp, g2);
+    timer = setInterval(function () {
+      if (!on) return;
+      var r = Math.random();
+      if (r < 0.35) bird();
+      else if (r < 0.6) noiseBurst(3000 + Math.random() * 2500, 3, 0.08, 0.04);
+    }, 1700);
+  }
+
+  function build(name) {
+    clear();
+    if (!ac) return;
+    cur = name;
+    if (name === 'rain') buildRain();
+    else if (name === 'fire') buildFire();
+    else if (name === 'waves') buildWaves();
+    else if (name === 'forest') buildForest();
+  }
+
+  return {
+    set: function (name) {
+      cur = name;
+      if (!on) return;
+      ensure(); if (!ac) return;
+      build(name);
+    },
+    on: function () { return on; },
+    // 打开 / 关闭，返回当前状态
+    toggle: function (force) {
+      ensure();
+      if (!ac) return false;
+      var want = (force === undefined) ? !on : !!force;
+      if (want === on) return on;
+      on = want;
+      if (on) {
+        if (ac.state === 'suspended') ac.resume();
+        build(cur);
+        var t = ac.currentTime;
+        master.gain.cancelScheduledValues(t);
+        master.gain.setValueAtTime(master.gain.value || 0.0001, t);
+        master.gain.linearRampToValueAtTime(vol, t + 1.2);
+      } else {
+        var t2 = ac.currentTime;
+        master.gain.cancelScheduledValues(t2);
+        master.gain.setValueAtTime(master.gain.value, t2);
+        master.gain.linearRampToValueAtTime(0.0001, t2 + 0.7);
+        setTimeout(function () { if (!on) clear(); }, 800);
+      }
+      return on;
+    },
+    volume: function (v) {
+      if (v != null) {
+        vol = Math.max(0, Math.min(1, v));
+        if (ac && on) master.gain.setTargetAtTime(vol, ac.currentTime, 0.15);
+      }
+      return vol;
+    },
+    current: function () { return cur; }
+  };
+})();
+
 /* ============================================================
    地球：真球面投影 + 自转 + 明暗面 + 大气光晕
    —— 大陆轮廓来自 Natural Earth (world-atlas land-110m)
@@ -1465,496 +1958,3 @@ body.panelOpen.idle .corner { opacity:1; }
 </script>
 </body>
 </html>
-/* ===== 氛围场景 + 白噪音 引擎 ===== */
-/* ============================================================
-   氛围场景引擎
-   雨夜 / 火堆 / 海浪 / 林间
-   每帧只画一层，压在毛玻璃后面，不抢时钟
-   ============================================================ */
-var SCENE = (function () {
-  var cv = null, ctx = null, dpr = 1, W = 0, H = 0;
-  var cur = 'rain';
-  var raf = null, alive = true, lastT = 0;
-  var pool = [];              // 各场景粒子池
-
-  function rnd(a, b) { return a + Math.random() * (b - a); }
-
-  function resize() {
-    var w = window.innerWidth, h = window.innerHeight;
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
-    cv.width = Math.floor(w * dpr);
-    cv.height = Math.floor(h * dpr);
-    cv.style.width = w + 'px';
-    cv.style.height = h + 'px';
-    W = cv.width; H = cv.height;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);   // 之后都用 CSS 像素坐标
-    build(cur, true);
-  }
-
-  /* ---------------- 雨 ---------------- */
-  function buildRain() {
-    var n = Math.round(W / dpr * H / dpr / 5200);
-    n = Math.max(70, Math.min(260, n));
-    var drops = [];
-    for (var i = 0; i < n; i++) {
-      var depth = Math.random();              // 0 远 1 近
-      drops.push({
-        x: rnd(-100, W / dpr + 100),
-        y: rnd(-H / dpr, H / dpr),
-        len: rnd(10, 26) * (0.5 + depth),
-        sp: rnd(680, 1150) * (0.45 + depth * 0.85),
-        w: 0.7 + depth * 1.4,
-        a: 0.10 + depth * 0.30
-      });
-    }
-    pool = drops;
-  }
-  function drawRain(dt) {
-    var w = W / dpr, h = H / dpr;
-    var slant = 0.30;
-    ctx.lineCap = 'round';
-    for (var i = 0; i < pool.length; i++) {
-      var d = pool[i];
-      d.y += d.sp * dt;
-      d.x += d.sp * dt * slant;
-      if (d.y > h + 40) { d.y = rnd(-120, -10); d.x = rnd(-120, w); }
-      if (d.x > w + 60) d.x = -60;
-      ctx.beginPath();
-      ctx.moveTo(d.x, d.y);
-      ctx.lineTo(d.x - d.len * slant, d.y - d.len);
-      ctx.strokeStyle = 'rgba(176,206,255,' + d.a.toFixed(3) + ')';
-      ctx.lineWidth = d.w;
-      ctx.stroke();
-    }
-  }
-
-  /* ---------------- 火 ---------------- */
-  function buildFire() {
-    pool = [];
-    var n = 90;
-    for (var i = 0; i < n; i++) {
-      pool.push({
-        x: rnd(-1, 1),                          // -1..1 相对中心
-        y: rnd(0, 1),                           // 0 底部 1 顶部
-        r: rnd(6, 26),
-        sp: rnd(0.10, 0.34),
-        sway: rnd(0.4, 1.6),
-        ph: Math.random() * 6.28,
-        life: Math.random()
-      });
-    }
-  }
-  function drawFire(dt, t) {
-    var w = W / dpr, h = H / dpr;
-    var baseY = h * 0.96;
-    var cx = w * 0.5;
-    var spread = Math.min(w * 0.45, 420);
-    /* 底部暖光 */
-    var g = ctx.createRadialGradient(cx, baseY, 10, cx, baseY, spread * 1.5);
-    g.addColorStop(0, 'rgba(255,150,60,0.30)');
-    g.addColorStop(0.45, 'rgba(220,90,30,0.10)');
-    g.addColorStop(1, 'rgba(120,40,10,0)');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, w, h);
-
-    for (var i = 0; i < pool.length; i++) {
-      var p = pool[i];
-      p.life += dt * p.sp;
-      if (p.life > 1) {
-        p.life = 0;
-        p.x = rnd(-1, 1);
-        p.r = rnd(6, 26);
-        p.sp = rnd(0.10, 0.34);
-        p.ph = Math.random() * 6.28;
-      }
-      var k = p.life;
-      var px = cx + p.x * spread * (0.35 + k * 0.75) + Math.sin(t * 2.1 + p.ph) * 10 * k;
-      var py = baseY - k * h * 0.42;
-      var r = p.r * (1 - k * 0.55);
-      var a = (1 - k) * 0.55;
-      /* 颜色随高度由白黄转橙红 */
-      var cr = 255;
-      var cg = Math.round(240 - k * 130);
-      var cb = Math.round(170 - k * 150);
-      var gr = ctx.createRadialGradient(px, py, 0, px, py, r);
-      gr.addColorStop(0, 'rgba(' + cr + ',' + cg + ',' + cb + ',' + a.toFixed(3) + ')');
-      gr.addColorStop(1, 'rgba(' + cr + ',' + Math.max(0, cg - 60) + ',20,0)');
-      ctx.fillStyle = gr;
-      ctx.beginPath(); ctx.arc(px, py, r, 0, 6.2832); ctx.fill();
-    }
-  }
-
-  /* ---------------- 海浪 ---------------- */
-  function buildWaves() { pool = []; }
-  function drawWaves(dt, t) {
-    var w = W / dpr, h = H / dpr;
-    var bands = 5;
-    for (var i = 0; i < bands; i++) {
-      var k = i / (bands - 1);
-      var yBase = h * (0.52 + k * 0.42);
-      var amp = 14 + k * 34;
-      var speed = 0.35 + k * 0.5;
-      var alpha = 0.05 + k * 0.13;
-      ctx.beginPath();
-      ctx.moveTo(0, h);
-      for (var x = 0; x <= w; x += 8) {
-        var y = yBase
-          + Math.sin(x * 0.008 + t * speed + i) * amp
-          + Math.sin(x * 0.021 + t * speed * 1.7 + i * 2) * amp * 0.45;
-        ctx.lineTo(x, y);
-      }
-      ctx.lineTo(w, h);
-      ctx.closePath();
-      var g = ctx.createLinearGradient(0, yBase - amp, 0, h);
-      g.addColorStop(0, 'rgba(90,150,235,' + (alpha * 1.7).toFixed(3) + ')');
-      g.addColorStop(1, 'rgba(20,50,110,0)');
-      ctx.fillStyle = g;
-      ctx.fill();
-    }
-  }
-
-  /* ---------------- 林间 ---------------- */
-  function buildForest() {
-    pool = [];
-    var n = 46;
-    for (var i = 0; i < n; i++) {
-      pool.push({
-        x: Math.random(), y: Math.random(),
-        r: rnd(20, 90), a: rnd(0.04, 0.13),
-        vx: rnd(-0.010, 0.010), vy: rnd(-0.006, 0.006),
-        hue: rnd(80, 150)
-      });
-    }
-  }
-  function drawForest(dt, t) {
-    var w = W / dpr, h = H / dpr;
-    for (var i = 0; i < pool.length; i++) {
-      var p = pool[i];
-      p.x += p.vx * dt; p.y += p.vy * dt;
-      if (p.x < -0.2) p.x = 1.2; if (p.x > 1.2) p.x = -0.2;
-      if (p.y < -0.2) p.y = 1.2; if (p.y > 1.2) p.y = -0.2;
-      var px = p.x * w, py = p.y * h;
-      var rr = p.r * (1 + 0.15 * Math.sin(t * 0.8 + i));
-      var g = ctx.createRadialGradient(px, py, 0, px, py, rr);
-      g.addColorStop(0, 'hsla(' + p.hue + ',60%,62%,' + p.a.toFixed(3) + ')');
-      g.addColorStop(1, 'hsla(' + p.hue + ',60%,50%,0)');
-      ctx.fillStyle = g;
-      ctx.beginPath(); ctx.arc(px, py, rr, 0, 6.2832); ctx.fill();
-    }
-  }
-
-  /* ---------------- 调度 ---------------- */
-  var builders = { rain: buildRain, fire: buildFire, waves: buildWaves, forest: buildForest };
-  function build(name, force) {
-    if (!force && name === cur && pool.length) return;
-    cur = name;
-    var b = builders[name] || buildRain;
-    b();
-  }
-
-  function frame(tms) {
-    if (!alive) return;
-    if (!lastT) lastT = tms;
-    var dt = Math.min((tms - lastT) / 1000, 0.05);
-    lastT = tms;
-    var t = tms / 1000;
-    var w = W / dpr, h = H / dpr;
-    ctx.clearRect(0, 0, w, h);
-
-    /* 每帧打底：该场景的主体色雾，模糊感由 CSS filter 提供 */
-    if (cur === 'rain') {
-      var g1 = ctx.createLinearGradient(0, 0, 0, h);
-      g1.addColorStop(0, 'rgba(22,34,58,0.95)');
-      g1.addColorStop(0.6, 'rgba(16,26,46,0.95)');
-      g1.addColorStop(1, 'rgba(10,18,34,0.95)');
-      ctx.fillStyle = g1; ctx.fillRect(0, 0, w, h);
-      drawRain(dt);
-    } else if (cur === 'fire') {
-      var g2 = ctx.createLinearGradient(0, 0, 0, h);
-      g2.addColorStop(0, 'rgba(26,14,10,0.96)');
-      g2.addColorStop(0.55, 'rgba(48,22,12,0.96)');
-      g2.addColorStop(1, 'rgba(92,38,14,0.96)');
-      ctx.fillStyle = g2; ctx.fillRect(0, 0, w, h);
-      drawFire(dt, t);
-    } else if (cur === 'waves') {
-      var g3 = ctx.createLinearGradient(0, 0, 0, h);
-      g3.addColorStop(0, 'rgba(10,24,44,0.96)');
-      g3.addColorStop(1, 'rgba(8,32,66,0.96)');
-      ctx.fillStyle = g3; ctx.fillRect(0, 0, w, h);
-      drawWaves(dt, t);
-    } else {
-      var g4 = ctx.createLinearGradient(0, 0, 0, h);
-      g4.addColorStop(0, 'rgba(10,26,22,0.96)');
-      g4.addColorStop(1, 'rgba(14,36,26,0.96)');
-      ctx.fillStyle = g4; ctx.fillRect(0, 0, w, h);
-      drawForest(dt, t);
-    }
-    raf = requestAnimationFrame(frame);
-  }
-
-  return {
-    init: function (el) {
-      cv = el; if (!cv || !cv.getContext) return;
-      ctx = cv.getContext('2d');
-      resize();
-      build(cur, true);
-      window.addEventListener('resize', resize);
-      document.addEventListener('visibilitychange', function () {
-        if (document.hidden) { alive = false; if (raf) cancelAnimationFrame(raf); }
-        else if (!alive) { alive = true; lastT = 0; raf = requestAnimationFrame(frame); }
-      });
-      raf = requestAnimationFrame(frame);
-    },
-    set: function (name) {
-      if (!ctx) { cur = name; return; }   // 尚未 init，先记下场景名
-      build(name, true);
-      if (!pool.length) build(name, true);
-    },
-    resize: function () { if (ctx) { resize(); build(cur, true); } },
-    current: function () { return cur; }
-  };
-})();
-
-/* ============================================================
-   白噪音合成引擎（Web Audio 实时合成，不加载任何音频文件）
-   雨夜 / 火堆 / 海浪 / 林间
-   ============================================================ */
-var NOISE = (function () {
-  var ac = null, master = null, nodes = [], timer = null;
-  var cur = 'rain', on = false, vol = 0.35;
-
-  function ensure() {
-    if (ac) return ac;
-    var AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return null;
-    ac = new AC();
-    master = ac.createGain();
-    master.gain.value = 0;
-    master.connect(ac.destination);
-    return ac;
-  }
-
-  // 生成一段噪声缓冲：type = pink | brown | white
-  function buffer(type, sec) {
-    sec = sec || 4;
-    var len = Math.floor(ac.sampleRate * sec);
-    var buf = ac.createBuffer(1, len, ac.sampleRate);
-    var d = buf.getChannelData(0);
-    var i, last = 0, b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
-    for (i = 0; i < len; i++) {
-      var w = Math.random() * 2 - 1;
-      if (type === 'white') { d[i] = w; continue; }
-      if (type === 'brown') {
-        last = (last + 0.02 * w) / 1.02;
-        d[i] = last * 3.5;
-        continue;
-      }
-      // pink（Paul Kellet 滤波器）
-      b0 = 0.99886*b0 + w*0.0555179;
-      b1 = 0.99332*b1 + w*0.0750759;
-      b2 = 0.96900*b2 + w*0.1538520;
-      b3 = 0.86650*b3 + w*0.3104856;
-      b4 = 0.55000*b4 + w*0.5329522;
-      b5 = -0.7616*b5 - w*0.0168980;
-      d[i] = (b0+b1+b2+b3+b4+b5+b6 + w*0.5362) * 0.11;
-      b6 = w * 0.115926;
-    }
-    return buf;
-  }
-
-  function src(type) {
-    var s = ac.createBufferSource();
-    s.buffer = buffer(type, 5);
-    s.loop = true;
-    return s;
-  }
-
-  function filt(type, freq, q) {
-    var f = ac.createBiquadFilter();
-    f.type = type;
-    f.frequency.value = freq;
-    if (q != null) f.Q.value = q;
-    return f;
-  }
-
-  function gain(v) { var g = ac.createGain(); g.gain.value = v; return g; }
-
-  function push() { for (var i = 0; i < arguments.length; i++) nodes.push(arguments[i]); }
-
-  function clear() {
-    if (timer) { clearInterval(timer); clearTimeout(timer); timer = null; }
-    for (var i = 0; i < nodes.length; i++) {
-      try { if (nodes[i].stop) nodes[i].stop(); } catch (e) {}
-      try { if (nodes[i].disconnect) nodes[i].disconnect(); } catch (e) {}
-    }
-    nodes = [];
-  }
-
-  // ---------- 短促事件音：滴、爆、鸟 ----------
-  function tick(freq, dur, vol2, type) {
-    if (!ac || !on) return;
-    var o = ac.createOscillator();
-    o.type = type || 'sine';
-    o.frequency.value = freq;
-    var g = ac.createGain();
-    var t = ac.currentTime;
-    g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(vol2, t + 0.008);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g); g.connect(master);
-    o.start(t); o.stop(t + dur + 0.02);
-  }
-
-  function noiseBurst(center, q, dur, vol2) {
-    if (!ac || !on) return;
-    var s = ac.createBufferSource();
-    s.buffer = buffer('white', 0.35);
-    var f = filt('bandpass', center, q);
-    var g = ac.createGain();
-    var t = ac.currentTime;
-    g.gain.setValueAtTime(vol2, t);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    s.connect(f); f.connect(g); g.connect(master);
-    s.start(t); s.stop(t + dur + 0.02);
-  }
-
-  function bird() {
-    if (!ac || !on) return;
-    var o = ac.createOscillator();
-    o.type = 'sine';
-    var t = ac.currentTime;
-    var f0 = 2200 + Math.random() * 1400;
-    o.frequency.setValueAtTime(f0, t);
-    o.frequency.exponentialRampToValueAtTime(f0 * (1.4 + Math.random() * 0.5), t + 0.09);
-    o.frequency.exponentialRampToValueAtTime(f0 * 0.75, t + 0.2);
-    var g = ac.createGain();
-    g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(0.055, t + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.26);
-    o.connect(g); g.connect(master);
-    o.start(t); o.stop(t + 0.3);
-  }
-
-  // ---------- 各场景搭建 ----------
-  function buildRain() {
-    var s = src('pink');
-    var lp = filt('lowpass', 2600, 0.6);
-    var hp = filt('highpass', 420, 0.5);
-    var g = gain(0.5);
-    s.connect(hp); hp.connect(lp); lp.connect(g); g.connect(master);
-    s.start(); push(s, hp, lp, g);
-    timer = setInterval(function () {
-      if (!on) return;
-      if (Math.random() < 0.55) noiseBurst(1800 + Math.random() * 3200, 9, 0.05 + Math.random() * 0.06, 0.10);
-    }, 240);
-  }
-
-  function buildFire() {
-    var s = src('brown');
-    var lp = filt('lowpass', 900, 0.7);
-    var g = gain(0.62);
-    s.connect(lp); lp.connect(g); g.connect(master);
-    s.start(); push(s, lp, g);
-    var s2 = src('pink');
-    var bp = filt('bandpass', 320, 0.8);
-    var g2 = gain(0.22);
-    s2.connect(bp); bp.connect(g2); g2.connect(master);
-    s2.start(); push(s2, bp, g2);
-    timer = setInterval(function () {
-      if (!on) return;
-      if (Math.random() < 0.7) noiseBurst(700 + Math.random() * 2200, 5, 0.03 + Math.random() * 0.05, 0.13);
-    }, 190);
-  }
-
-  function buildWaves() {
-    var s = src('brown');
-    var lp = filt('lowpass', 700, 0.8);
-    var g = gain(0.45);
-    s.connect(lp); lp.connect(g); g.connect(master);
-    s.start(); push(s, lp, g);
-    var s2 = src('pink');
-    var bp = filt('bandpass', 1100, 0.7);
-    var g2 = gain(0.18);
-    s2.connect(bp); bp.connect(g2); g2.connect(master);
-    s2.start(); push(s2, bp, g2);
-    // 约 8.5 秒一次的涨落 LFO
-    var lfo = ac.createOscillator();
-    lfo.type = 'sine';
-    lfo.frequency.value = 0.118;
-    var lg = ac.createGain();
-    lg.gain.value = 0.26;
-    lfo.connect(lg); lg.connect(g.gain);
-    lfo.start(); push(lfo, lg);
-  }
-
-  function buildForest() {
-    var s = src('pink');
-    var bp = filt('bandpass', 2400, 0.5);
-    var g = gain(0.34);
-    s.connect(bp); bp.connect(g); g.connect(master);
-    s.start(); push(s, bp, g);
-    var s2 = src('brown');
-    var lp = filt('lowpass', 400, 0.7);
-    var g2 = gain(0.2);
-    s2.connect(lp); lp.connect(g2); g2.connect(master);
-    s2.start(); push(s2, lp, g2);
-    timer = setInterval(function () {
-      if (!on) return;
-      var r = Math.random();
-      if (r < 0.35) bird();
-      else if (r < 0.6) noiseBurst(3000 + Math.random() * 2500, 3, 0.08, 0.04);
-    }, 1700);
-  }
-
-  function build(name) {
-    clear();
-    if (!ac) return;
-    cur = name;
-    if (name === 'rain') buildRain();
-    else if (name === 'fire') buildFire();
-    else if (name === 'waves') buildWaves();
-    else if (name === 'forest') buildForest();
-  }
-
-  return {
-    set: function (name) {
-      cur = name;
-      if (!on) return;
-      ensure(); if (!ac) return;
-      build(name);
-    },
-    on: function () { return on; },
-    // 打开 / 关闭，返回当前状态
-    toggle: function (force) {
-      ensure();
-      if (!ac) return false;
-      var want = (force === undefined) ? !on : !!force;
-      if (want === on) return on;
-      on = want;
-      if (on) {
-        if (ac.state === 'suspended') ac.resume();
-        build(cur);
-        var t = ac.currentTime;
-        master.gain.cancelScheduledValues(t);
-        master.gain.setValueAtTime(master.gain.value || 0.0001, t);
-        master.gain.linearRampToValueAtTime(vol, t + 1.2);
-      } else {
-        var t2 = ac.currentTime;
-        master.gain.cancelScheduledValues(t2);
-        master.gain.setValueAtTime(master.gain.value, t2);
-        master.gain.linearRampToValueAtTime(0.0001, t2 + 0.7);
-        setTimeout(function () { if (!on) clear(); }, 800);
-      }
-      return on;
-    },
-    volume: function (v) {
-      if (v != null) {
-        vol = Math.max(0, Math.min(1, v));
-        if (ac && on) master.gain.setTargetAtTime(vol, ac.currentTime, 0.15);
-      }
-      return vol;
-    },
-    current: function () { return cur; }
-  };
-})();
-
