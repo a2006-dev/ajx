@@ -4,7 +4,7 @@
   "description": "霭霭停云，濛濛时雨。",
   "start_url": "./music.html",
   "scope": "./",
-  "display": "standalone",
+  "display": "fullscreen",
   "orientation": "any",
   "background_color": "#080b11",
   "theme_color": "#080b11",
