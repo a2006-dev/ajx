@@ -509,8 +509,13 @@
 
     <script>
 (function () {
-    // 入场动画：从下到上逐步浮现（仿主页 .iUp）
-    (function iUpAnim () {
+    'use strict';
+
+    var card3d = document.getElementById('card3d');
+    if (!card3d) return;
+
+    /* ---------- 入场动画（从下到上逐步浮现） ---------- */
+    (function iUpAnim() {
         var els = Array.prototype.slice.call(document.querySelectorAll('.iUp'));
         var t = 0, d = 150;
         els.forEach(function (e) {
@@ -518,231 +523,304 @@
             t += d;
         });
     })();
-    var card3d = document.getElementById('card3d');
+
+    /* ---------- 状态 ---------- */
     var rotY = 0;
     var SPEED = 0.15;
+    var ANGLE_STEP = 72;
+    var mode = 'auto';            // auto | drag | inertia | settle
+    var velocity = -SPEED;
+
+    var settleFrom = 0, settleTarget = 0, settleElapsed = 0, settleDur = 320;
+    var dragSeen = 0;              // 最后一次收到拖拽事件的时间，用于看门狗
+
     var prevBtn = document.getElementById('prevBtn');
     var nextBtn = document.getElementById('nextBtn');
-    var mode = 'auto';
-    var velocity = -SPEED;
-    var settleFrom = 0, settleTarget = 0, settleStart = 0, settleDur = 320;
+
     function apply() {
         card3d.style.transform = 'perspective(1200px) rotateY(' + rotY + 'deg)';
     }
+
     function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
-    var rafId = null;
+
+    /* 把角度吸附到最近的整格 */
+    function nearestSlot() {
+        return Math.round(rotY / ANGLE_STEP) * ANGLE_STEP;
+    }
+
+    function settleTo(target) {
+        mode = 'settle';
+        settleFrom = rotY;
+        settleTarget = target;
+        settleElapsed = 0;
+        settleDur = 360;
+    }
+
+    /* 任何中断都走这里：一定回到 settle，动画不会停 */
+    function recover() {
+        if (mode === 'settle') return;
+        settleTo(nearestSlot());
+    }
+
+    /* ---------- 动画循环 ---------- */
     var last = performance.now();
     function tick(now) {
         var dt = Math.min(now - last, 50) / 16.7;
         last = now;
         card3d.style.transition = 'none';
+
         if (mode === 'auto') {
             rotY -= SPEED * dt;
         } else if (mode === 'settle') {
-            settleStart = Math.min(settleStart + dt * 16.7, settleDur);
-            var t = easeOut(settleStart / settleDur);
-            rotY = settleFrom + (settleTarget - settleFrom) * t;
-            if (settleStart >= settleDur) {
+            settleElapsed = Math.min(settleElapsed + dt * 16.7, settleDur);
+            var p = easeOut(settleElapsed / settleDur);
+            rotY = settleFrom + (settleTarget - settleFrom) * p;
+            if (settleElapsed >= settleDur) {
                 rotY = settleTarget;
                 mode = 'auto';
                 velocity = -SPEED;
             }
         } else if (mode === 'inertia') {
-            velocity *= Math.pow(0.9, dt);
+            velocity *= Math.pow(0.92, dt);
             rotY += velocity * dt;
-            if (Math.abs(velocity) < 0.05) {
-                mode = 'settle';
-                settleFrom = rotY;
-                settleTarget = Math.round(rotY / 72) * 72;
-                settleStart = 0;
-                settleDur = 260;
+            if (Math.abs(velocity) < 0.06) {
+                velocity = -SPEED;
+                settleTo(nearestSlot());
             }
+        } else if (mode === 'drag') {
+            /* 拖拽中由 pointermove 直接改 rotY。
+               看门狗：若 1.2 秒内没有新的拖拽事件，说明 up/cancel 事件丢了
+               （常见于手指滑出窗口、切后台再回来），强制退出 drag 恢复旋转。 */
+            if (dragSeen && now - dragSeen > 1200) {
+                active = false;
+                activeKind = null;
+                downLink = null;
+                justDragged = true;
+                settleTo(nearestSlot());
+            }
+        } else {
+            /* 兜底：未知状态一律回到自动旋转，避免动画卡死 */
+            mode = 'auto';
+            velocity = -SPEED;
         }
+
         apply();
-        rafId = requestAnimationFrame(tick);
+        requestAnimationFrame(tick);
     }
-    rafId = requestAnimationFrame(tick);
-    function settleTo(target) {
-        mode = 'settle';
-        settleFrom = rotY;
-        settleTarget = target;
-        settleStart = 0;
-        settleDur = 360;
-    }
-    prevBtn.addEventListener('click', function () {
-        settleTo(Math.round(rotY / 72) * 72 + 72);
+
+    apply();
+    requestAnimationFrame(tick);
+
+    /* ---------- 按钮 ---------- */
+    if (prevBtn) prevBtn.addEventListener('click', function () {
+        settleTo(Math.round(rotY / ANGLE_STEP) * ANGLE_STEP + ANGLE_STEP);
     });
-    nextBtn.addEventListener('click', function () {
-        settleTo(Math.round(rotY / 72) * 72 - 72);
+    if (nextBtn) nextBtn.addEventListener('click', function () {
+        settleTo(Math.round(rotY / ANGLE_STEP) * ANGLE_STEP - ANGLE_STEP);
     });
 
-    var dragging = false;
-    var startX = 0, startRot = 0, lastX = 0, lastT = 0;
-    var moved = 0;              // 按下后累计移动距离，用于区分「点击」与「拖拽」
-    var CLICK_SLOP = 8;         // 小于该像素视为点击
-    var downLink = null;        // 按下时命中的卡片链接
+    /* ---------- 拖拽 + 点击 ---------- */
+    var CLICK_SLOP = 10;          // 位移小于此值判定为点击
+    var active = false;           // 是否正在拖拽
+    var activeKind = null;        // 'pointer' | 'touch'
+    var downLink = null;
+    var downX = 0, downY = 0;
+    var startRot = 0;
+    var lastX = 0, lastT = 0;
+    var moved = 0;
+    var justDragged = false;      // 用来压制拖拽后浏览器补发的 click
 
+    /* 从某元素向上找 <a href>；不限边界，因为卡片可能溢出容器 */
     function findLink(el) {
-        while (el && el !== card3d) {
+        var guard = 0;
+        while (el && guard++ < 40) {
             if (el.tagName === 'A' && el.getAttribute('href')) return el;
             el = el.parentNode;
         }
         return null;
     }
 
-    function onDown(x, target) {
-        dragging = true;
-        mode = 'drag';
-        startX = x;
+    /* 按坐标找卡片链接：优先 elementFromPoint，失败则用事件 target */
+    function linkAt(x, y, fallback) {
+        var el = null;
+        try { el = document.elementFromPoint(x, y); } catch (e) { el = null; }
+        var hit = findLink(el);
+        if (hit) return hit;
+        return findLink(fallback);
+    }
+
+    function startDrag(x, y, link) {
+        active = true;
+        downLink = link;
+        downX = x; downY = y;
         startRot = rotY;
         lastX = x;
         lastT = performance.now();
         moved = 0;
-        downLink = findLink(target);
+        justDragged = false;
+        mode = 'drag';
+        dragSeen = performance.now();
+        card3d.style.cursor = 'grabbing';
     }
 
-    function onMove(x) {
-        if (!dragging) return;
-        var dx = x - startX;
+    function moveDrag(x) {
+        if (!active) return;
+        var dx = x - downX;
         if (Math.abs(dx) > moved) moved = Math.abs(dx);
         rotY = startRot + dx * 0.5;
         apply();
         var now = performance.now();
         var dt = now - lastT;
-        if (dt > 0) { velocity = ((x - lastX) * 0.5) / (dt / 16.7); }
+        if (dt > 0) velocity = ((x - lastX) * 0.5) / (dt / 16.7);
         lastX = x;
         lastT = now;
+        last = now;
+        dragSeen = now;
     }
 
-    function onUp() {
-        if (!dragging) return;
-        dragging = false;
-        if (moved < CLICK_SLOP) {
-            // 位移足够小 → 认为是点击
-            var link = downLink;
-            downLink = null;
-            if (link) {
-                var href = link.getAttribute('href');
-                if (href) { window.location.href = href; return; }
-            }
-            // 点在了空白处：平滑吸附回最近正面，再恢复自动旋转
-            settleTo(Math.round(rotY / 72) * 72);
+    /* 结束：先决定是点击还是拖拽，然后无论哪条路都保证 mode 回到 auto */
+    function endDrag(x, y) {
+        if (!active) {
+            recover();
             return;
         }
-        downLink = null;
-        mode = 'inertia';
-    }
+        active = false;
+        activeKind = null;
+        card3d.style.cursor = 'grab';
 
-    // 命中判定：从按压点向上找 <a href>，不依赖事件冒泡经过容器
-    // （卡片在 3D 旋转后会溢出 .card-3d 的盒子，靠容器接事件会漏掉边缘的卡）
-    function linkAt(x, y, fallback) {
-        var el = null;
-        try { el = document.elementFromPoint(x, y); } catch (err) { el = null; }
-        var hit = el ? findLink(el) : null;
-        if (hit) return hit;
-        return findLink(fallback || (el || null));
-    }
-
-    var downX = 0, downY = 0;
-    var pointerActive = null;   // 'mouse' | 'touch'
-    var suppressClick = false;
-
-    function begin(x, y, target) {
-        downX = x; downY = y;
-        onDown(x, target);
-    }
-
-    function finishClick() {
-        if (!dragging) return;
-        dragging = false;
         var link = downLink;
         downLink = null;
-        if (link) {
+
+        var dist = Math.abs(x - downX) + Math.abs(y - downY);
+        if (moved < CLICK_SLOP && dist < CLICK_SLOP + 6 && link) {
             var href = link.getAttribute('href');
-            if (href) { window.location.href = href; return; }
+            if (href) {
+                mode = 'auto';           // 跳转前先复原，防止返回后卡住
+                velocity = -SPEED;
+                window.location.href = href;
+                return;
+            }
         }
-        settleTo(Math.round(rotY / 72) * 72);
+
+        if (moved >= CLICK_SLOP) {
+            justDragged = true;
+            if (Math.abs(velocity) > 0.08) {
+                mode = 'inertia';
+            } else {
+                settleTo(nearestSlot());
+            }
+        } else {
+            /* 点了空白处：吸附回最近正面 */
+            settleTo(nearestSlot());
+        }
     }
 
-    // —— 鼠标 ——
-    window.addEventListener('mousedown', function (e) {
-        if (e.button !== 0) return;
-        var link = linkAt(e.clientX, e.clientY, e.target);
-        if (!link) return;                       // 点空白处不接管
-        suppressClick = false;
-        begin(e.clientX, e.clientY, link);
-        pointerActive = 'mouse';
-    });
+    /* ---- Pointer Events（现代浏览器统一处理鼠标/触摸/笔） ---- */
+    if (window.PointerEvent) {
+        window.addEventListener('pointerdown', function (e) {
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            var link = linkAt(e.clientX, e.clientY, e.target);
+            if (!link) { recover(); return; }
+            activeKind = 'pointer';
+            startDrag(e.clientX, e.clientY, link);
+        }, true);
 
-    window.addEventListener('mousemove', function (e) {
-        if (!dragging || pointerActive !== 'mouse') return;
-        onMove(e.clientX);
-        if (Math.abs(e.clientX - downX) > 1 || Math.abs(e.clientY - downY) > 1) {
-            suppressClick = true;
-        }
-    });
+        window.addEventListener('pointermove', function (e) {
+            if (!active || activeKind !== 'pointer') return;
+            moveDrag(e.clientX);
+        }, true);
 
-    window.addEventListener('mouseup', function (e) {
-        if (!dragging || pointerActive !== 'mouse') return;
-        pointerActive = null;
-        onMove(e.clientX);
-        finishClick();
-    });
+        window.addEventListener('pointerup', function (e) {
+            if (!active || activeKind !== 'pointer') { recover(); return; }
+            endDrag(e.clientX, e.clientY);
+        }, true);
 
-    // —— 触摸 ——
+        window.addEventListener('pointercancel', function () {
+            if (!active) { recover(); return; }
+            active = false;
+            activeKind = null;
+            downLink = null;
+            card3d.style.cursor = 'grab';
+            recover();
+        }, true);
+    } else {
+        /* ---- 老浏览器兜底：鼠标 ---- */
+        window.addEventListener('mousedown', function (e) {
+            if (e.button !== 0) return;
+            var link = linkAt(e.clientX, e.clientY, e.target);
+            if (!link) { recover(); return; }
+            activeKind = 'pointer';
+            startDrag(e.clientX, e.clientY, link);
+        }, true);
+        window.addEventListener('mousemove', function (e) {
+            if (!active || activeKind !== 'pointer') return;
+            moveDrag(e.clientX);
+        }, true);
+        window.addEventListener('mouseup', function (e) {
+            if (!active) { recover(); return; }
+            endDrag(e.clientX, e.clientY);
+        }, true);
+    }
+
+    /* ---- 触摸兜底（部分安卓 WebView 的 pointer 事件不可靠） ---- */
     window.addEventListener('touchstart', function (e) {
+        if (active) return;                 // pointer 已处理
         if (e.touches.length !== 1) return;
         var t = e.touches[0];
         var link = linkAt(t.clientX, t.clientY, e.target);
-        if (!link) return;
-        suppressClick = false;
-        begin(t.clientX, t.clientY, link);
-        pointerActive = 'touch';
-    }, { passive: true });
+        if (!link) { recover(); return; }
+        activeKind = 'touch';
+        startDrag(t.clientX, t.clientY, link);
+    }, { passive: true, capture: true });
 
     window.addEventListener('touchmove', function (e) {
-        if (!dragging || pointerActive !== 'touch' || e.touches.length !== 1) return;
+        if (!active || activeKind !== 'touch' || e.touches.length !== 1) return;
         var t = e.touches[0];
-        onMove(t.clientX);
-        if (Math.abs(t.clientX - downX) > CLICK_SLOP || Math.abs(t.clientY - downY) > CLICK_SLOP) {
-            suppressClick = true;
+        moveDrag(t.clientX);
+        if (moved >= CLICK_SLOP) {
+            justDragged = true;
             if (e.cancelable) e.preventDefault();
         }
-    }, { passive: false });
+    }, { passive: false, capture: true });
 
     window.addEventListener('touchend', function (e) {
-        if (!dragging || pointerActive !== 'touch') return;
-        pointerActive = null;
-        finishClick();
-    });
+        if (!active || activeKind !== 'touch') { recover(); return; }
+        var t = (e.changedTouches && e.changedTouches[0]) || { clientX: lastX, clientY: downY };
+        endDrag(t.clientX, t.clientY);
+    }, { capture: true });
 
     window.addEventListener('touchcancel', function () {
-        if (!dragging) return;
-        dragging = false;
+        if (!active) { recover(); return; }
+        active = false;
+        activeKind = null;
         downLink = null;
-        pointerActive = null;
-        mode = 'settle';
-        settleFrom = rotY;
-        settleTarget = Math.round(rotY / 72) * 72;
-        settleStart = 0;
-        settleDur = 260;
-    });
+        card3d.style.cursor = 'grab';
+        recover();
+    }, { capture: true });
 
-    // 拖拽结束后浏览器可能补发 click，压掉它避免二次跳转
+    /* 拖拽后浏览器可能补发 click，压掉避免二次跳转 */
     window.addEventListener('click', function (e) {
-        if (suppressClick) {
+        if (justDragged) {
+            justDragged = false;
             e.preventDefault();
             e.stopPropagation();
-            suppressClick = false;
         }
     }, true);
 
+    /* 键盘 */
     window.addEventListener('keydown', function (e) {
-        if (e.key === 'ArrowLeft') { settleTo(Math.round(rotY / 72) * 72 + 72); }
-        else if (e.key === 'ArrowRight') { settleTo(Math.round(rotY / 72) * 72 - 72); }
+        if (e.key === 'ArrowLeft') settleTo(Math.round(rotY / ANGLE_STEP) * ANGLE_STEP + ANGLE_STEP);
+        else if (e.key === 'ArrowRight') settleTo(Math.round(rotY / ANGLE_STEP) * ANGLE_STEP - ANGLE_STEP);
+    });
+
+    /* 页面从后台返回时强制复位，避免回来发现不转了 */
+    document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) {
+            last = performance.now();
+            if (!active) recover();
+        }
     });
 })();
-
-    </script>
+</script>
 </body>
 </html>
