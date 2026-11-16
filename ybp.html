@@ -519,7 +519,10 @@
                         /* 型号 */
                         if (h && h.model) {
                             var mm = document.getElementById('device-model');
-                            if (mm) mm.textContent = h.model;
+                            /* 代号转商用名；查不到就显示原始代号，让用户能自己搜 */
+                            modelName(h.model, function (name) {
+                                if (mm) mm.textContent = name;
+                            });
                         } else if (modelFromUA === UNK) {
                             /* 桌面端 model 通常为空，用平台名兜底 */
                             var mm2 = document.getElementById('device-model');
@@ -822,6 +825,35 @@
                 if(ISP_CN[i][0].test(raw)) return ISP_CN[i][1];
             }
             return raw;
+        }
+
+        /* ===== 手机型号代号 -> 商用名 =====
+           完整表 8000+ 条、约 300KB，不内联，放 data/models.json 按需取。
+           取不到就显示原始代号，不编造，也不阻塞页面渲染。 */
+        var MODEL_MAP = null;
+        var modelWaiters = [];
+        var modelLoading = false;
+
+        function loadModelMap() {
+            if (MODEL_MAP || modelLoading) return;
+            modelLoading = true;
+            fetch('./data/models.json')
+                .then(function (r) { return r.json(); })
+                .then(function (mm) {
+                    MODEL_MAP = mm;
+                    for (var i = 0; i < modelWaiters.length; i++) modelWaiters[i](mm);
+                    modelWaiters = [];
+                })
+                .catch(function () { MODEL_MAP = {}; });
+        }
+
+        /* 回调式：表没到时先给代号，表到了再换成可读名称 */
+        function modelName(code, cb) {
+            if (!code) { cb(null); return; }
+            if (MODEL_MAP) { cb(MODEL_MAP[code] || code); return; }
+            cb(code);
+            modelWaiters.push(function (mm) { if (mm[code]) cb(mm[code]); });
+            loadModelMap();
         }
 
         function cnCity(n) { if (!n) return n; var k = String(n).replace(/ City$/i, '').trim(); k = k.charAt(0).toUpperCase() + k.slice(1).toLowerCase(); return CN_CITY[k] || CN_CITY[String(n)] || n; }
