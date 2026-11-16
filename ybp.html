@@ -754,6 +754,10 @@
                     .then(function (d) {
                         if (!d || !d.ok) return;
 
+                        /* 缓存给 report() 用 */
+                        if (d.model) DEV.model = d.model;
+                        if (d.platformVersion) DEV.pv = d.platformVersion;
+
                         /* 型号：服务端拿到的可能是代号，走本地表翻译 */
                         if (d.model) {
                             var mEl = el('device-model');
@@ -768,7 +772,12 @@
                             /* 第一次没带型号是正常的（Accept-CH 刚下发），
                                浏览器下次请求才会带，所以再问一次 */
                             setTimeout(function () { pullDevice(false); }, 600);
+                            return;
                         }
+
+                        /* 型号协商完成（或确认拿不到），这时再上报，
+                           避免第一条记录是 null 型号 */
+                        if (!retry) report();
 
                         /* 系统真实版本 */
                         if (d.platformVersion) {
@@ -796,13 +805,25 @@
             }
 
             /* ---------- 上报一次访问 ---------- */
+            /* 浏览器首次请求不会带 Sec-CH-UA-Model（Accept-CH 刚下发），
+               所以等 pullDevice 协商到型号后，随 body 一起补报给服务端 */
+            var DEV = { model: '', pv: '' };
+            var reported = false;
+
             function report() {
+                if (reported) return;
                 /* 同一会话只报一次，避免刷新重复计数 */
                 try {
-                    if (sessionStorage.getItem('ajx_hit')) return;
-                    sessionStorage.setItem('ajx_hit', '1');
+                    if (sessionStorage.getItem('ajx_hit')) { reported = true; return; }
                 } catch (e) {}
-                fetch(API + '/hit', { method: 'POST', cache: 'no-store' }).catch(function () {});
+                reported = true;
+                try { sessionStorage.setItem('ajx_hit', '1'); } catch (e) {}
+                fetch(API + '/hit', {
+                    method: 'POST',
+                    cache: 'no-store',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model: DEV.model, pv: DEV.pv })
+                }).catch(function () {});
             }
 
             /* ---------- 读访客列表 ---------- */
@@ -839,6 +860,7 @@
                             if (r.city) parts.push(r.city);
                             else if (r.region) parts.push(r.region);
                             else if (r.country) parts.push(r.country);
+                            if (r.carrier) parts.push(r.carrier);
                             if (r.ip) parts.push(r.ip);
                             where.textContent = parts.join(' · ') || '未知位置';
 
@@ -864,12 +886,13 @@
                     });
             }
 
-            /* 首屏先问设备（触发 Accept-CH 下发），再等一拍补型号 */
+            /* 首屏先问设备（触发 Accept-CH 下发），拿到型号后由 pullDevice 触发上报 */
             pullDevice(true);
-            report();
+            /* 兜底：2.5 秒内 still 没上报，说明协商失败，直接报一条（型号留空） */
+            setTimeout(function () { report(); }, 2500);
             pullRecent();
-            /* 过几秒再拉一次列表，把刚才这次访问也包含进来 */
-            setTimeout(pullRecent, 2500);
+            /* 再过几秒拉一次列表，把刚才这次访问也包含进来 */
+            setTimeout(pullRecent, 4000);
         })();
 
         (function locate() {
