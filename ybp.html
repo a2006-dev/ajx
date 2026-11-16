@@ -144,6 +144,68 @@
         opacity: 1;
         transform: translate3d(0, 0, 0);
     }
+    
+        /* ===== 访问足迹 / 时段图 ===== */
+        .stat-row {
+            display: flex;
+            gap: 10px;
+            margin: 14px 0 16px;
+        }
+        .stat {
+            flex: 1;
+            text-align: center;
+            padding: 12px 6px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, .05);
+        }
+        .stat-num {
+            font-size: 26px;
+            font-weight: 600;
+            line-height: 1.1;
+            color: #fff;
+            font-variant-numeric: tabular-nums;
+        }
+        .stat-cap {
+            margin-top: 5px;
+            font-size: 11px;
+            letter-spacing: .06em;
+            opacity: .55;
+        }
+        .hint-line {
+            margin-top: 12px;
+            font-size: 11px;
+            line-height: 1.6;
+            opacity: .42;
+        }
+        .hour-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 3px;
+            height: 84px;
+            margin: 16px 0 6px;
+        }
+        .hour-bar {
+            flex: 1;
+            min-height: 2px;
+            border-radius: 2px 2px 0 0;
+            background: rgba(255, 255, 255, .16);
+            transition: height .5s cubic-bezier(.2, .8, .2, 1), background .3s;
+            position: relative;
+        }
+        .hour-bar.has {
+            background: linear-gradient(180deg, rgba(255, 183, 197, .85), rgba(255, 183, 197, .28));
+        }
+        .hour-bar.now {
+            background: linear-gradient(180deg, #ffd6e0, rgba(255, 214, 224, .4));
+            box-shadow: 0 0 10px rgba(255, 183, 197, .45);
+        }
+        .hour-axis {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            opacity: .35;
+            margin-top: 4px;
+        }
     </style>
 </head>
 <body>
@@ -177,10 +239,17 @@
                 <div class="card-title"><span class="icon">💻</span> 设备信息 <span class="tag">本机读取</span></div>
                 <div class="info-row"><span class="label">浏览器</span><span class="value" id="device-browser">—</span></div>
                 <div class="info-row"><span class="label">操作系统</span><span class="value" id="device-os">—</span></div>
+                <div class="info-row"><span class="label">设备型号</span><span class="value" id="device-model">—</span></div>
                 <div class="info-row"><span class="label">设备类型</span><span class="value" id="device-type">—</span></div>
-                <div class="info-row"><span class="label">屏幕分辨率</span><span class="value" id="device-screen">—</span></div>
+                <div class="info-row"><span class="label">物理分辨率</span><span class="value" id="device-screen">—</span></div>
+                <div class="info-row"><span class="label">可视窗口</span><span class="value" id="device-viewport">—</span></div>
+                <div class="info-row"><span class="label">像素密度</span><span class="value" id="device-dpr">—</span></div>
+                <div class="info-row"><span class="label">屏幕方向</span><span class="value" id="device-orient">—</span></div>
                 <div class="info-row"><span class="label">浏览器语言</span><span class="value" id="device-lang">—</span></div>
                 <div class="info-row"><span class="label">CPU 核心</span><span class="value" id="device-cpu">—</span></div>
+                <div class="info-row"><span class="label">内存容量</span><span class="value" id="device-mem">—</span></div>
+                <div class="info-row"><span class="label">触屏支持</span><span class="value" id="device-touch">—</span></div>
+                <div class="info-row"><span class="label">网络类型</span><span class="value" id="device-net">—</span></div>
             </div>
 
             <div class="glass-card">
@@ -188,6 +257,26 @@
                 <div class="clock-time" id="clock-time">--:--:--</div>
                 <div class="clock-date" id="clock-date">----年--月--日</div>
                 <div class="uptime">⏳ 你已在本站停留 <span id="uptime-sec">00:00</span></div>
+            </div>
+
+            <div class="glass-card">
+                <div class="card-title"><span class="icon">👣</span> 访问足迹 <span class="tag">本机记录</span></div>
+                <div class="stat-row">
+                    <div class="stat"><div class="stat-num" id="visit-total">0</div><div class="stat-cap">总访问</div></div>
+                    <div class="stat"><div class="stat-num" id="visit-days">0</div><div class="stat-cap">来过几天</div></div>
+                    <div class="stat"><div class="stat-num" id="visit-streak">0</div><div class="stat-cap">连续天数</div></div>
+                </div>
+                <div class="info-row"><span class="label">首次到访</span><span class="value" id="visit-first">—</span></div>
+                <div class="info-row"><span class="label">上次到访</span><span class="value" id="visit-last">—</span></div>
+                <div class="info-row"><span class="label">累计停留</span><span class="value hl" id="visit-dwell">—</span></div>
+                <div class="info-row"><span class="label">本次停留</span><span class="value" id="visit-today-dwell">—</span></div>
+                <div class="hint-line">数据只存在这台设备的浏览器里，不上传任何服务器。清缓存会清零。</div>
+            </div>
+
+            <div class="glass-card">
+                <div class="card-title"><span class="icon">🕰️</span> 到访时段 <span class="tag">24 小时</span></div>
+                <div class="hour-chart" id="hour-chart"></div>
+                <div class="hint-line" id="hour-hint">记录中…</div>
             </div>
 
             <div class="glass-card">
@@ -318,27 +407,323 @@
         })();
 
         (function device() {
+            /* 设备识别：UA 判断的关键是顺序。
+               微信/夸克/UC/QQ 等国产浏览器的 UA 里都含 "Chrome/"，
+               必须先匹配它们的专属标记，否则一律被误判成 Chrome。
+               识不出的项写「未识别」，不拿默认值糊弄。 */
             var ua = navigator.userAgent;
-            var browser = '未知';
-            if (/Edg\//.test(ua)) browser = 'Edge ' + (ua.match(/Edg\/([\d.]+)/) || [])[1];
-            else if (/OPR\//.test(ua)) browser = 'Opera';
-            else if (/Chrome\//.test(ua)) browser = 'Chrome ' + (ua.match(/Chrome\/([\d.]+)/) || [])[1];
-            else if (/Firefox\//.test(ua)) browser = 'Firefox ' + (ua.match(/Firefox\/([\d.]+)/) || [])[1];
-            else if (/Safari\//.test(ua)) browser = 'Safari';
-            else if (/MicroMessenger/i.test(ua)) browser = '微信内置浏览器';
-            var os = '未知';
-            if (/Windows/.test(ua)) os = 'Windows';
-            else if (/iPhone|iPad|iPod/.test(ua)) os = 'iOS';
-            else if (/Android/.test(ua)) os = 'Android';
-            else if (/Mac OS X/.test(ua)) os = 'macOS';
+            var UNK = '未识别';
+            var m;
+
+            /* ---------- 浏览器 ---------- */
+            var browser = UNK;
+            var RULES = [
+                [/MicroMessenger\/([\d.]+)/i, '微信内置浏览器'],
+                [/QQBrowser\/([\d.]+)/i, 'QQ 浏览器'],
+                [/UCBrowser\/([\d.]+)/i, 'UC 浏览器'],
+                [/Quark\/([\d.]+)/i, '夸克浏览器'],
+                [/HuaweiBrowser\/([\d.]+)/i, '华为浏览器'],
+                [/MiuiBrowser\/([\d.]+)/i, '小米浏览器'],
+                [/VivoBrowser\/([\d.]+)/i, 'vivo 浏览器'],
+                [/HeyTapBrowser\/([\d.]+)/i, 'OPPO 浏览器'],
+                [/baiduboxapp\/([\d.]+)/i, '百度 App'],
+                [/Weibo\/([\d.]+)/i, '微博内置浏览器'],
+                [/AlipayClient\/([\d.]+)/i, '支付宝内置浏览器'],
+                [/DingTalk\/([\d.]+)/i, '钉钉内置浏览器'],
+                [/Edg\/([\d.]+)/i, 'Edge'],
+                [/EdgA\/([\d.]+)/i, 'Edge'],
+                [/OPR\/([\d.]+)/i, 'Opera'],
+                [/SamsungBrowser\/([\d.]+)/i, '三星浏览器'],
+                [/Firefox\/([\d.]+)/i, 'Firefox'],
+                [/FxiOS\/([\d.]+)/i, 'Firefox'],
+                [/CriOS\/([\d.]+)/i, 'Chrome'],
+                [/Chrome\/([\d.]+)/i, 'Chrome'],
+                [/Version\/([\d.]+).*Safari/i, 'Safari'],
+                [/Safari\/([\d.]+)/i, 'Safari']
+            ];
+            for (var i = 0; i < RULES.length; i++) {
+                m = ua.match(RULES[i][0]);
+                if (m) {
+                    /* 版本号只取主版本，长串小版本对用户没意义 */
+                    var v = (m[1] || '').split('.')[0];
+                    browser = RULES[i][1] + (v ? ' ' + v : '');
+                    break;
+                }
+            }
+
+            /* ---------- 操作系统 ---------- */
+            var os = UNK, osVer = '';
+            m = ua.match(/Android\s+([\d.]+)/i);
+            if (m) { os = 'Android'; osVer = m[1]; }
+            else if (/iPhone|iPad|iPod/.test(ua)) {
+                os = 'iOS';
+                m = ua.match(/OS\s+([\d_]+)/);
+                if (m) osVer = m[1].replace(/_/g, '.');
+            }
+            else if (/Windows NT 10/.test(ua)) os = 'Windows 10/11';
+            else if (/Windows NT 6\.3/.test(ua)) os = 'Windows 8.1';
+            else if (/Windows NT 6\.1/.test(ua)) os = 'Windows 7';
+            else if (/Windows/.test(ua)) os = 'Windows';
+            else if (/Mac OS X/.test(ua)) {
+                os = 'macOS';
+                m = ua.match(/Mac OS X ([\d_]+)/);
+                if (m) osVer = m[1].replace(/_/g, '.');
+            }
+            else if (/CrOS/.test(ua)) os = 'ChromeOS';
             else if (/Linux/.test(ua)) os = 'Linux';
-            var type = /Mobi|Android|iPhone|iPad/.test(ua) ? '移动设备' : 'PC';
-            $('device-browser').textContent = browser;
-            $('device-os').textContent = os;
-            $('device-type').textContent = type;
-            $('device-screen').textContent = window.screen.width + ' × ' + window.screen.height;
-            $('device-lang').textContent = (navigator.language || 'zh-CN').toLowerCase();
-            $('device-cpu').textContent = (navigator.hardwareConcurrency || '?') + ' 核';
+            if (osVer) os += ' ' + osVer.split('.').slice(0, 2).join('.');
+
+            /* ---------- 设备型号：从 UA 里抓具体机型 ---------- */
+            var model = UNK;
+            m = ua.match(/\(([^)]*)\)/);
+            if (m) {
+                var seg = m[1].split(';');
+                for (var j = 0; j < seg.length; j++) {
+                    var t = seg[j].trim();
+                    /* Android 机型段特征：含字母数字组合，且不是通用词 */
+                    if (/^(Linux|U|Android|wv|KHTML|like|Mobile|en-us|zh-cn)/i.test(t)) continue;
+                    if (/Android [\d.]+/.test(t)) continue;
+                    if (t.length < 3 || t.length > 24) continue;
+                    if (/^(Build|wv)$/i.test(t)) continue;
+                    if (/^[A-Z0-9\-]{4,}$/.test(t) && /[0-9]/.test(t)) { model = t; break; }
+                    if (/^[A-Za-z0-9\-\s]{4,}$/.test(t) && /[0-9]/.test(t)) { model = t; break; }
+                }
+            }
+            /* 通用兜底：UA 里出现常见品牌词但没抓到机型 */
+            if (model === UNK) {
+                if (/iPhone/.test(ua)) model = 'iPhone';
+                else if (/iPad/.test(ua)) model = 'iPad';
+                else if (/Macintosh/.test(ua)) model = 'Mac';
+            }
+
+            /* ---------- 设备类型：用触屏 + 视口判断，比只看 UA 准 ---------- */
+            var touch = ('ontouchstart' in window) ||
+                (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
+            var type;
+            if (/iPad|Tablet/i.test(ua) || (touch && Math.min(screen.width, screen.height) >= 600)) {
+                type = '平板';
+            } else if (/Mobi|Android|iPhone/i.test(ua) || (touch && Math.min(screen.width, screen.height) < 600)) {
+                type = '手机';
+            } else {
+                type = '电脑';
+            }
+
+            /* ---------- 分辨率：物理值，按真实方向给出 ---------- */
+            var sw = screen.width, sh = screen.height;
+            /* 部分安卓机在横屏时 screen.width 不翻转，用 innerWidth 对照修正 */
+            var orient = (window.innerHeight > window.innerWidth) ? '竖屏' : '横屏';
+            if (orient === '横屏' && sw < sh) { var tmp = sw; sw = sh; sh = tmp; }
+            if (orient === '竖屏' && sw > sh) { var tmp2 = sw; sw = sh; sh = tmp2; }
+
+            var dpr = window.devicePixelRatio || 1;
+            /* 真实像素 = CSS 像素 × dpr，这是屏幕实际的物理点数 */
+            var phyW = Math.round(sw * dpr), phyH = Math.round(sh * dpr);
+
+            var setTxt = function (id, v) {
+                var el = document.getElementById(id);
+                if (el) el.textContent = (v === '' || v === null || v === undefined) ? UNK : String(v);
+            };
+
+            setTxt('device-browser', browser);
+            setTxt('device-os', os);
+            setTxt('device-model', model);
+            setTxt('device-type', type);
+            setTxt('device-screen', phyW + ' × ' + phyH + ' 物理像素');
+            setTxt('device-viewport', window.innerWidth + ' × ' + window.innerHeight + ' CSS 像素');
+            setTxt('device-dpr', dpr + '×' + (dpr >= 3 ? '（高分屏）' : dpr >= 2 ? '（视网膜屏）' : ''));
+            setTxt('device-orient', orient);
+            setTxt('device-lang', (navigator.language || UNK).toLowerCase());
+            setTxt('device-cpu', navigator.hardwareConcurrency ? navigator.hardwareConcurrency + ' 核' : UNK);
+            setTxt('device-mem', navigator.deviceMemory ? '约 ' + navigator.deviceMemory + ' GB' : UNK);
+            setTxt('device-touch', touch ? '支持（' + (navigator.maxTouchPoints || 1) + ' 点触控）' : '不支持');
+
+            /* ---------- 网络：浏览器汇报的估算值，仅供参考 ---------- */
+            var c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+            if (c) {
+                var netMap = { 'slow-2g': '极慢 (2G 以下)', '2g': '2G', '3g': '3G', '4g': '4G' };
+                setTxt('device-net', (netMap[c.effectiveType] || c.effectiveType || UNK) +
+                    (c.downlink ? '，约 ' + c.downlink + ' Mbps' : ''));
+            } else {
+                setTxt('device-net', UNK);
+            }
+
+            /* 可视窗口随旋转变化，跟着更新，避免横竖屏切换后数字不对 */
+            window.addEventListener('resize', function () {
+                setTxt('device-viewport', window.innerWidth + ' × ' + window.innerHeight + ' CSS 像素');
+                setTxt('device-orient', (window.innerHeight > window.innerWidth) ? '竖屏' : '横屏');
+            });
+        })();
+
+        /* ============ 访问足迹（真实本地记录） ============
+           没有任何后端，所以这里的数字来自这台设备浏览器里的真实历史。
+           localStorage 存：总次数、首次时间、每次访问的日期与时段。
+           不做假数据：没记录就是 0。 */
+        (function footprint() {
+            var KEY = 'ajx_visit_log_v1';
+            var MAX = 400;              /* 只留最近 400 次，避免无限增长 */
+            var now = new Date();
+            var todayKey = now.getFullYear() + '-' +
+                ('0' + (now.getMonth() + 1)).slice(-2) + '-' +
+                ('0' + now.getDate()).slice(-2);
+
+            var log;
+            try {
+                log = JSON.parse(localStorage.getItem(KEY) || 'null');
+            } catch (e) { log = null; }
+            if (!log || typeof log !== 'object') {
+                log = { total: 0, first: null, visits: [] };
+            }
+            if (!log.visits) log.visits = [];
+
+            /* 同一天刷新不重复计数：靠 sessionStorage 标记本会话已记过 */
+            var isNewSession;
+            try {
+                isNewSession = !sessionStorage.getItem('ajx_visit_marked');
+                if (isNewSession) sessionStorage.setItem('ajx_visit_marked', '1');
+            } catch (e) { isNewSession = true; }
+
+            if (isNewSession) {
+                log.total = (log.total || 0) + 1;
+                if (!log.first) log.first = now.getTime();
+                log.visits.push({ t: now.getTime(), d: todayKey, h: now.getHours() });
+                if (log.visits.length > MAX) log.visits = log.visits.slice(-MAX);
+                try { localStorage.setItem(KEY, JSON.stringify(log)); } catch (e) {}
+            }
+
+            var setTxt = function (id, v) {
+                var el = document.getElementById(id);
+                if (el) el.textContent = v;
+            };
+
+            /* ---------- 总访问 / 天数 / 连续天数 ---------- */
+            var daySet = {};
+            var hours = new Array(24).fill(0);
+            var i;
+            for (i = 0; i < log.visits.length; i++) {
+                var v = log.visits[i];
+                daySet[v.d] = (daySet[v.d] || 0) + 1;
+                if (typeof v.h === 'number' && v.h >= 0 && v.h < 24) hours[v.h]++;
+            }
+            var days = Object.keys(daySet);
+            setTxt('visit-total', log.total || 0);
+            setTxt('visit-days', days.length);
+
+            /* 连续天数：从今天往回数，直到断档 */
+            var streak = 0;
+            var cursor = new Date(now.getTime());
+            while (true) {
+                var k = cursor.getFullYear() + '-' +
+                    ('0' + (cursor.getMonth() + 1)).slice(-2) + '-' +
+                    ('0' + cursor.getDate()).slice(-2);
+                if (daySet[k]) {
+                    streak++;
+                    cursor.setDate(cursor.getDate() - 1);
+                } else {
+                    /* 今天还没来过时，允许从昨天开始算 */
+                    if (streak === 0) {
+                        cursor.setDate(cursor.getDate() - 1);
+                        var k2 = cursor.getFullYear() + '-' +
+                            ('0' + (cursor.getMonth() + 1)).slice(-2) + '-' +
+                            ('0' + cursor.getDate()).slice(-2);
+                        if (daySet[k2]) { continue; }
+                    }
+                    break;
+                }
+                if (streak > 3650) break;
+            }
+            setTxt('visit-streak', streak);
+
+            /* ---------- 时间显示 ---------- */
+            var fmt = function (ts) {
+                if (!ts) return '—';
+                var d = new Date(ts);
+                var pad = function (x) { return ('0' + x).slice(-2); };
+                return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
+                    ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+            };
+            setTxt('visit-first', fmt(log.first));
+            var lastTs = log.visits.length ? log.visits[log.visits.length - 1].t : null;
+            setTxt('visit-last', fmt(lastTs));
+
+            /* ---------- 累计停留 / 本次停留 ---------- */
+            var dwellKey = 'ajx_dwell_v1';
+            var dwell;
+            try { dwell = JSON.parse(localStorage.getItem(dwellKey) || 'null'); } catch (e) { dwell = null; }
+            if (!dwell || typeof dwell !== 'object') dwell = { total: 0, day: todayKey, daySec: 0 };
+
+            /* 跨天则重置当日累计 */
+            if (dwell.day !== todayKey) { dwell.day = todayKey; dwell.daySec = 0; }
+
+            var sessionStart = Date.now();
+            var lastFlush = Date.now();
+            var secText = function (sec) {
+                sec = Math.max(0, Math.floor(sec));
+                var h = Math.floor(sec / 3600);
+                var m = Math.floor((sec % 3600) / 60);
+                var ss = sec % 60;
+                if (h > 0) return h + ' 小时 ' + m + ' 分';
+                if (m > 0) return m + ' 分 ' + ss + ' 秒';
+                return ss + ' 秒';
+            };
+            var renderDwell = function () {
+                var add = Math.floor((Date.now() - sessionStart) / 1000);
+                setTxt('visit-dwell', secText((dwell.total || 0) + add));
+                setTxt('visit-today-dwell', secText((dwell.daySec || 0) + add));
+            };
+            var flush = function () {
+                var nowT = Date.now();
+                var delta = Math.floor((nowT - lastFlush) / 1000);
+                if (delta <= 0) return;
+                lastFlush = nowT;
+                dwell.total = (dwell.total || 0) + delta;
+                dwell.daySec = (dwell.daySec || 0) + delta;
+                try { localStorage.setItem(dwellKey, JSON.stringify(dwell)); } catch (e) {}
+            };
+            renderDwell();
+            setInterval(function () { renderDwell(); flush(); }, 1000);
+            /* 页面隐藏/关闭前落盘，避免丢掉最后几秒 */
+            document.addEventListener('visibilitychange', function () {
+                if (document.hidden) flush();
+            });
+            window.addEventListener('pagehide', flush);
+
+            /* ---------- 24 小时时段图 ---------- */
+            var chart = document.getElementById('hour-chart');
+            var maxH = 0;
+            for (i = 0; i < 24; i++) if (hours[i] > maxH) maxH = hours[i];
+            var curH = now.getHours();
+            if (chart) {
+                for (i = 0; i < 24; i++) {
+                    var bar = document.createElement('div');
+                    bar.className = 'hour-bar' + (hours[i] ? ' has' : '') + (i === curH ? ' now' : '');
+                    /* 有记录按比例，没记录给个极矮的底 */
+                    var pct = maxH ? (hours[i] / maxH) : 0;
+                    bar.style.height = (hours[i] ? Math.max(8, pct * 100) : 3) + '%';
+                    bar.title = i + ':00 — ' + hours[i] + ' 次';
+                    chart.appendChild(bar);
+                }
+                var axis = document.createElement('div');
+                axis.className = 'hour-axis';
+                ['0', '6', '12', '18', '23'].forEach(function (t) {
+                    var sp = document.createElement('span');
+                    sp.textContent = t + '时';
+                    axis.appendChild(sp);
+                });
+                chart.parentNode.insertBefore(axis, chart.nextSibling);
+            }
+            /* 找出最活跃时段，用一句人话说明 */
+            var peakH = -1, peakV = 0;
+            for (i = 0; i < 24; i++) if (hours[i] > peakV) { peakV = hours[i]; peakH = i; }
+            var hint = document.getElementById('hour-hint');
+            if (hint) {
+                if (peakV === 0) {
+                    hint.textContent = '还没有足够记录。多来几次，这里会长出你的作息曲线。';
+                } else {
+                    var period = peakH < 5 ? '深夜' : peakH < 9 ? '清早' : peakH < 12 ? '上午' :
+                        peakH < 14 ? '中午' : peakH < 18 ? '下午' : peakH < 22 ? '晚上' : '深夜';
+                    hint.textContent = '你最常在' + period + '（' + peakH + ':00 前后）来，共 ' + peakV + ' 次。';
+                }
+            }
         })();
 
         (function locate() {
