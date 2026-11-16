@@ -79,7 +79,7 @@ body{
   content:'';position:absolute;inset:0;
   background:radial-gradient(90% 58% at 50% 12%,var(--haze) 0%,transparent 64%);
 }
-#rain{position:fixed;inset:0;z-index:1;display:block}
+#rain{position:fixed;inset:0;z-index:1;display:block;width:100%;height:100%}
 #veil{
   position:fixed;inset:0;z-index:2;pointer-events:none;
   background:
@@ -1056,8 +1056,10 @@ var lyricSavoir = [    { t: 0.2, l: 'Will you hold my hand?' , c: '你会握住�
 
   function resize() {
     if (!cv) return;
-    W = cv.clientWidth || window.innerWidth;
-    H = cv.clientHeight || window.innerHeight;
+    /* 读视口尺寸，不用 cv.clientWidth：
+       写 cv.width 会重置画布的 CSS 尺寸，读它会形成循环，导致越算越小 */
+    W = window.innerWidth || document.documentElement.clientWidth || 360;
+    H = window.innerHeight || document.documentElement.clientHeight || 640;
 
     /* 像素预算：全屏时若按 3x 绘制会变成 9 倍开销，这里封顶 1.6M 像素 */
     var raw = window.devicePixelRatio || 1;
