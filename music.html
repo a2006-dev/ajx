@@ -5,6 +5,10 @@
     <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0a0e14">
+<link rel="manifest" href="./manifest-music.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>停云 · TIME LOUNGE</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -316,8 +320,8 @@ body:fullscreen .sc-panel { top:70px; right:22px; }
 #scene {
   position:fixed; inset:0; z-index:1;
   display:block; pointer-events:none;
-  filter:blur(1.5px) saturate(1.22);
-  transform:scale(1.01);
+  filter:saturate(1.16);
+  transform:none;
   opacity:0; transition:opacity .9s ease;
 }
 #scene.on { opacity:1; }
@@ -331,9 +335,7 @@ body:fullscreen .sc-panel { top:70px; right:22px; }
 /* 毛玻璃雾罩：压在场景上，让场景退成氛围而不是插画 */
 .frost {
   position:fixed; inset:0; z-index:2; pointer-events:none;
-  backdrop-filter:blur(3px) saturate(1.08);
-  -webkit-backdrop-filter:blur(3px) saturate(1.08);
-  background:rgba(8,12,20,.10);
+  background:rgba(10,14,22,.20);
   transition:background 1.2s ease;
 }
 body.sc-fire  .frost { background:rgba(24,10,4,.14); }
@@ -432,6 +434,17 @@ body.panelOpen.idle .corner { opacity:1; }
 
 /* ================= 强制横屏（不依赖 API） ================= */
 #rotWrap { position:fixed; inset:0; z-index:auto; }
+/* UI 层永远在雾罩之上，且不被任何 backdrop-filter 影响 */
+#rotWrap .corner, #rotWrap .dock, #rotWrap .sheet, #rotWrap .clock, #rotWrap .player {
+  isolation:isolate;
+}
+/* 横屏时雨丝画布也跟着转，否则背景还是竖的 */
+body.forceLand #scene, body.forceLand #dust {
+  top:50%; left:50%; right:auto; bottom:auto;
+  width:100vh; height:100vw;
+  transform:translate(-50%,-50%) rotate(90deg);
+  transform-origin:center center;
+}
 body.forceLand #rotWrap {
   top:50%; left:50%; right:auto; bottom:auto;
   width:100vh; height:100vw;
@@ -954,20 +967,18 @@ var NOISE = (function () {
       /* 雨夜：叠一层"玻璃质感"链，把录普雨声修成打在窗面的听感 */
       if (name === 'rain') {
         try {
-          /* ① 高通 220Hz：刮掉残余低频轰鸣（就是之前的"引擎声"） */
+          /* 新音源本身已是雨打玻璃质感，只做极轻修饰 */
+          /* ① 高通 110Hz：只清掉次低频，不动雨声主体 */
           var hp = ac.createBiquadFilter();
-          hp.type = 'highpass'; hp.frequency.value = 220; hp.Q.value = 0.7;
-          /* ② 低通 7200Hz：削掉刺耳嘶声，只留雨滴颗粒 */
-          var lp = ac.createBiquadFilter();
-          lp.type = 'lowpass'; lp.frequency.value = 7200; lp.Q.value = 0.5;
-          /* ③ 2.6kHz 峰起：玻璃表面反射的中高频特点 */
+          hp.type = 'highpass'; hp.frequency.value = 110; hp.Q.value = 0.6;
+          /* ② 4.5kHz 轻微峰起：强化雨点敲击的清脆感 */
           var pk = ac.createBiquadFilter();
-          pk.type = 'peaking'; pk.frequency.value = 2600; pk.Q.value = 1.1; pk.gain.value = 4.5;
-          src.connect(hp); hp.connect(lp); lp.connect(pk); pk.connect(g);
-          /* ④ 短混响：模拟雨点敲窗的反射尾音 */
-          var wet = ac.createGain(); wet.gain.value = 0.22;
+          pk.type = 'peaking'; pk.frequency.value = 4500; pk.Q.value = 0.9; pk.gain.value = 2.2;
+          src.connect(hp); hp.connect(pk); pk.connect(g);
+          /* ③ 很淡的短混响，只是让声音有一点"室内感" */
+          var wet = ac.createGain(); wet.gain.value = 0.12;
           var conv = ac.createConvolver();
-          conv.buffer = makeGlassIR(ac, 0.42);
+          conv.buffer = makeGlassIR(ac, 0.3);
           pk.connect(conv); conv.connect(wet); wet.connect(g);
           tail = g;
         } catch (e) {
