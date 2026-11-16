@@ -318,9 +318,16 @@ body:fullscreen .sc-panel { top:70px; right:22px; }
   display:block; pointer-events:none;
   filter:blur(1.5px) saturate(1.22);
   transform:scale(1.01);
-  opacity:0; transition:opacity 1.2s ease;
+  opacity:0; transition:opacity .9s ease;
 }
 #scene.on { opacity:1; }
+/* 场景切换过渡遮罩 */
+#scFade {
+  position:fixed; inset:0; z-index:2; pointer-events:none;
+  background:#070a10;
+  opacity:0; transition:opacity .5s ease;
+}
+#scFade.on { opacity:1; }
 /* 毛玻璃雾罩：压在场景上，让场景退成氛围而不是插画 */
 .frost {
   position:fixed; inset:0; z-index:2; pointer-events:none;
@@ -422,13 +429,54 @@ body.panelOpen.idle .corner { opacity:1; }
 }
 #scDot.live { background:#6ee7a8; box-shadow:0 0 8px rgba(110,231,168,.9); }
 #scDot.warn { background:#f5a623; box-shadow:0 0 8px rgba(245,166,35,.9); }
+
+/* ================= 强制横屏（不依赖 API） ================= */
+#rotWrap { position:fixed; inset:0; z-index:auto; }
+body.forceLand #rotWrap {
+  top:50%; left:50%; right:auto; bottom:auto;
+  width:100vh; height:100vw;
+  transform:translate(-50%,-50%) rotate(90deg);
+  transform-origin:center center;
+  overflow:hidden;
+}
+body.forceLand { overflow:hidden; }
+/* 旋转后内部元素按新的宽高重排 */
+body.forceLand .corner.tr { top:14px; right:14px; }
+body.forceLand .corner.tl { top:14px; left:14px; }
+body.forceLand .player {
+  width:min(560px, 54vh);
+  max-height:88vw;
+}
+body.forceLand .dock { bottom:10px; }
+/* 强制横屏时把 UI 抬到雾罩之上 */
+body.forceLand .corner { z-index:60; }
+body.forceLand .player { z-index:55; }
+body.forceLand .foldBar { z-index:56; }
+body.forceLand #rotWrap { z-index:5; }
+body.forceLand #scFade { z-index:4; }
+body.forceLand .frost, body.forceLand .vignette { z-index:3; }
+/* 横屏提示（不支持旋转锁定时） */
+body.rotHint::after {
+  content:'请手动旋转手机'; position:fixed; z-index:99;
+  left:50%; bottom:14%; transform:translateX(-50%);
+  padding:8px 18px; border-radius:999px;
+  background:rgba(10,14,22,.82); color:#e8eef8;
+  font-size:13px; letter-spacing:.05em;
+  border:1px solid rgba(255,255,255,.14);
+  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+  animation:rhIn .3s ease both;
+}
+@keyframes rhIn { from{opacity:0;transform:translate(-50%,8px)} to{opacity:1;transform:translate(-50%,0)} }
+body.forceLand .lbRow { }
 </style>
 </head>
 <body>
 <canvas id="dust"></canvas>
 <canvas id="scene"></canvas>
+<div id="scFade"></div>
 <div class="frost"></div>
 <div class="vignette"></div>
+<div id="rotWrap">
 
 <div class="corner tl">
   <a class="ico-btn" href="./3d.html" title="返回入口">
@@ -555,6 +603,7 @@ body.panelOpen.idle .corner { opacity:1; }
   <input type="file" id="fileLocal" accept="audio/*" style="display:none">
 </div>
 
+</div><!-- /rotWrap -->
 <script>
 /* ===== 氛围场景 + 白噪音 引擎 ===== */
 /* ============================================================
@@ -871,6 +920,23 @@ var NOISE = (function () {
     }, (fade + 0.15) * 1000);
   }
 
+  /* 生成一段短冲激响应，用于制造玻璃反射般的混响 */
+  function makeGlassIR(ctx, sec) {
+    var rate = ctx.sampleRate, n = Math.floor(rate * sec);
+    var b = ctx.createBuffer(2, n, rate);
+    for (var ch = 0; ch < 2; ch++) {
+      var d = b.getChannelData(ch);
+      for (var i = 0; i < n; i++) {
+        var t = i / n;
+        /* 指数衰减 + 稀疏反射脉冲，听感比均匀噪声更像硬表面 */
+        var env = Math.pow(1 - t, 3.2);
+        var spike = (Math.random() < 0.0016) ? (Math.random() * 2 - 1) * 3.2 : 0;
+        d[i] = ((Math.random() * 2 - 1) * 0.34 + spike) * env;
+      }
+    }
+    return b;
+  }
+
   function play(name) {
     if (!ac || !on) return;
     if (playingName === name && playing) return;
@@ -884,7 +950,33 @@ var NOISE = (function () {
       src.loop = true;
       var g = ac.createGain();
       g.gain.value = 0.0001;
-      src.connect(g); g.connect(master);
+      var tail = g;
+      /* 雨夜：叠一层"玻璃质感"链，把录普雨声修成打在窗面的听感 */
+      if (name === 'rain') {
+        try {
+          /* ① 高通 220Hz：刮掉残余低频轰鸣（就是之前的"引擎声"） */
+          var hp = ac.createBiquadFilter();
+          hp.type = 'highpass'; hp.frequency.value = 220; hp.Q.value = 0.7;
+          /* ② 低通 7200Hz：削掉刺耳嘶声，只留雨滴颗粒 */
+          var lp = ac.createBiquadFilter();
+          lp.type = 'lowpass'; lp.frequency.value = 7200; lp.Q.value = 0.5;
+          /* ③ 2.6kHz 峰起：玻璃表面反射的中高频特点 */
+          var pk = ac.createBiquadFilter();
+          pk.type = 'peaking'; pk.frequency.value = 2600; pk.Q.value = 1.1; pk.gain.value = 4.5;
+          src.connect(hp); hp.connect(lp); lp.connect(pk); pk.connect(g);
+          /* ④ 短混响：模拟雨点敲窗的反射尾音 */
+          var wet = ac.createGain(); wet.gain.value = 0.22;
+          var conv = ac.createConvolver();
+          conv.buffer = makeGlassIR(ac, 0.42);
+          pk.connect(conv); conv.connect(wet); wet.connect(g);
+          tail = g;
+        } catch (e) {
+          src.connect(g);
+        }
+      } else {
+        src.connect(g);
+      }
+      g.connect(master);
       src.start(0);
       playing = { src: src, gainNode: g };
       var t = ac.currentTime;
@@ -1685,18 +1777,28 @@ var NOISE = (function () {
 
   /* ---- 横屏按钮 ---- */
   var btnLand = document.getElementById('btnLand');
+  function setLand(on) {
+    body.classList.toggle('forceLand', !!on);
+    try { localStorage.setItem('tl_land', on ? '1' : '0'); } catch (e) { }
+    if (btnLand) btnLand.classList.toggle('act', !!on);
+    setTimeout(function () { if (window.SCENE && SCENE.resize) SCENE.resize(); }, 340);
+  }
+  function isLandOn() { return body.classList.contains('forceLand'); }
   if (btnLand) btnLand.addEventListener('click', function () {
-    if (!isFs()) toggleFs();
+    var want = !isLandOn();
+    /* 先尝试系统旋转锁定（Android Chrome 有效） */
     var so = screen.orientation;
-    if (so && so.lock) {
+    if (want && so && so.lock) {
       so.lock('landscape').catch(function () { });
-    } else {
-      /* 不支持旋转锁定时，提示手动横屏 */
-      body.classList.add('rotHint');
-      setTimeout(function () { body.classList.remove('rotHint'); }, 1600);
     }
+    /* 无论锁定是否成功，都用 CSS 强制翻转兜底 */
+    setLand(want);
+    if (want && !isFs()) toggleFs();
+    if (!want && so && so.unlock) { try { so.unlock(); } catch (e) { } }
     wake();
   });
+  /* 记住上次横屏状态 */
+  try { if (localStorage.getItem('tl_land') === '1') setLand(true); } catch (e) { }
 
   /* ---- 全屏 ---- */
   function isFs() { return !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement); }
@@ -1712,7 +1814,20 @@ var NOISE = (function () {
       var fn = el.requestFullscreen || el.webkitRequestFullscreen || el.webkitRequestFullScreen || el.mozRequestFullScreen || el.msRequestFullscreen;
       if (!fn) { toastFs('该浏览器不支持全屏'); return; }
       var r = fn.call(el);
-      if (r && r.catch) r.catch(function () { toastFs('全屏被拒绝，请手动添加主屏幕'); });
+      if (r && r.then) {
+        r.then(function () {
+          body.classList.add('fs');
+          setTimeout(function () {
+            if (typeof SCENE !== 'undefined' && SCENE.resize) SCENE.resize();
+            if (typeof wake === 'function') wake();
+          }, 120);
+        }).catch(function () {
+          // 常见原因：iOS Safari 不支持；或浏览器要求全屏元素必须是视频
+          toastFs('此浏览器不支持全屏（iOS 需“添加到主屏幕”）');
+        });
+      } else if (r && r.catch) {
+        r.catch(function () { toastFs('全屏被拒绝，请“添加到主屏幕”后打开'); });
+      }
     } catch (e) { toastFs('全屏不可用'); }
   }
   function toastFs(msg) {
@@ -1723,9 +1838,20 @@ var NOISE = (function () {
     clearTimeout(d._t);
     d._t = setTimeout(function () { d.classList.remove('show'); }, 2400);
   }
-  window.addEventListener('resize', function () {
+  ['fullscreenchange','webkitfullscreenchange','mozfullscreenchange','MSFullscreenChange'].forEach(function (ev) {
+    document.addEventListener(ev, function () {
+      body.classList.toggle('fs', isFs());
+      if (typeof SCENE !== 'undefined' && SCENE.resize) SCENE.resize();
+      if (typeof wake === 'function') wake();
+    });
+  });
+  function onResize() {
     body.classList.toggle('fs', isFs());
-    if (typeof SCENE !== 'undefined') SCENE.resize && SCENE.resize();
+    if (typeof SCENE !== 'undefined' && SCENE.resize) SCENE.resize();
+  }
+  window.addEventListener('resize', onResize);
+  window.addEventListener('orientationchange', function () {
+    setTimeout(onResize, 260);
   });
   var btnFs = document.getElementById('btnFs');
   if (btnFs) btnFs.addEventListener('click', function () { toggleFs(); wake(); });
@@ -1823,16 +1949,34 @@ var NOISE = (function () {
       if (volEl) volEl.value = Math.round(st.vol * 100);
     }
 
+    var fadeEl = document.getElementById('scFade');
+    var switching = false;
     function applyScene(name) {
-      if (!name) return;
-      st.scene = name;
-      if (typeof SCENE !== 'undefined') {
-        if (!cv._inited) { SCENE.init(cv); cv._inited = true; }
-        SCENE.set(name);
+      if (!name || name === st.scene) return;
+      if (switching) return;
+      switching = true;
+      var go = function () {
+        st.scene = name;
+        if (typeof SCENE !== 'undefined') {
+          if (!cv._inited) { SCENE.init(cv); cv._inited = true; }
+          SCENE.set(name);
+        }
+        if (cv) cv.classList.add('on');
+        if (typeof NOISE !== 'undefined' && NOISE.on()) NOISE.set(name);
+        paint(); save();
+        // 新场景就位后淡入
+        setTimeout(function () {
+          if (fadeEl) fadeEl.classList.remove('on');
+          setTimeout(function () { switching = false; }, 520);
+        }, 60);
+      };
+      if (fadeEl) {
+        fadeEl.classList.add('on');
+        setTimeout(go, 460);
+      } else {
+        go();
+        switching = false;
       }
-      if (cv) cv.classList.add('on');
-      if (typeof NOISE !== 'undefined' && NOISE.on()) NOISE.set(name);
-      paint(); save();
     }
 
     if (typeof SCENE !== 'undefined' && cv) {
