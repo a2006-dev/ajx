@@ -823,7 +823,54 @@
                     cache: 'no-store',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ model: DEV.model, pv: DEV.pv })
-                }).catch(function () {});
+                })
+                    .then(function (r) { return r.json(); })
+                    .then(function (d) {
+                        /* KV 是最终一致的，刚写入的记录 /recent 可能还读不到，
+                           所以把服务端回传的这条直接插到列表最前面 */
+                        if (!d || !d.ok || !d.record) return;
+                        var box = el('visit-list');
+                        if (!box) return;
+                        var empty = box.querySelector('.visit-empty');
+                        if (empty) box.innerHTML = '';
+                        box.insertBefore(buildRow(d.record), box.firstChild);
+                    })
+                    .catch(function () {});
+            }
+
+            /* ---------- 单条记录 DOM ---------- */
+            function buildRow(r) {
+                var row = document.createElement('div');
+                row.className = 'visit-item';
+
+                var dot = document.createElement('span');
+                dot.className = 'visit-dot';
+
+                var where = document.createElement('span');
+                where.className = 'visit-where';
+                var parts = [];
+                if (r.city) parts.push(r.city);
+                else if (r.region) parts.push(r.region);
+                else if (r.country) parts.push(r.country);
+                if (r.carrier) parts.push(r.carrier);
+                if (r.model) parts.push(r.model);
+                if (r.ip) parts.push(r.ip);
+                where.textContent = parts.join(' · ') || '未知位置';
+
+                var when = document.createElement('span');
+                when.className = 'visit-when';
+                var dt = new Date(r.t);
+                var now = new Date();
+                var sameDay = dt.toDateString() === now.toDateString();
+                var pad = function (x) { return ('0' + x).slice(-2); };
+                when.textContent = sameDay
+                    ? pad(dt.getHours()) + ':' + pad(dt.getMinutes())
+                    : (dt.getMonth() + 1) + '/' + dt.getDate() + ' ' + pad(dt.getHours()) + ':' + pad(dt.getMinutes());
+
+                row.appendChild(dot);
+                row.appendChild(where);
+                row.appendChild(when);
+                return row;
             }
 
             /* ---------- 读访客列表 ---------- */
@@ -848,36 +895,7 @@
                         }
                         box.innerHTML = '';
                         d.recent.forEach(function (r) {
-                            var row = document.createElement('div');
-                            row.className = 'visit-item';
-
-                            var dot = document.createElement('span');
-                            dot.className = 'visit-dot';
-
-                            var where = document.createElement('span');
-                            where.className = 'visit-where';
-                            var parts = [];
-                            if (r.city) parts.push(r.city);
-                            else if (r.region) parts.push(r.region);
-                            else if (r.country) parts.push(r.country);
-                            if (r.carrier) parts.push(r.carrier);
-                            if (r.ip) parts.push(r.ip);
-                            where.textContent = parts.join(' · ') || '未知位置';
-
-                            var when = document.createElement('span');
-                            when.className = 'visit-when';
-                            var dt = new Date(r.t);
-                            var now = new Date();
-                            var sameDay = dt.toDateString() === now.toDateString();
-                            var pad = function (x) { return ('0' + x).slice(-2); };
-                            when.textContent = sameDay
-                                ? pad(dt.getHours()) + ':' + pad(dt.getMinutes())
-                                : (dt.getMonth() + 1) + '/' + dt.getDate() + ' ' + pad(dt.getHours()) + ':' + pad(dt.getMinutes());
-
-                            row.appendChild(dot);
-                            row.appendChild(where);
-                            row.appendChild(when);
-                            box.appendChild(row);
+                            box.appendChild(buildRow(r));
                         });
                     })
                     .catch(function () {
