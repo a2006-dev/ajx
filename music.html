@@ -640,6 +640,39 @@ html,body{
   contain:layout style;
 }
 
+/* ============ 顶栏常驻按钮 / 返回小站 ============ */
+.ico.top{
+  width:34px;height:34px;flex:none;
+  display:inline-flex;align-items:center;justify-content:center;
+  background:transparent;border:0;cursor:pointer;
+  color:rgba(219,230,245,.5);
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+  transition:color .24s ease;
+}
+.ico.top:hover{color:rgba(238,244,252,.9)}
+.ico.top svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+
+#home{
+  position:fixed;z-index:8;
+  top:clamp(14px,2.6vh,26px);left:clamp(12px,3vw,26px);
+  width:40px;height:40px;
+  display:flex;align-items:center;justify-content:center;
+  color:rgba(214,226,242,.4);
+  text-decoration:none;
+  -webkit-tap-highlight-color:transparent;
+  transition:color .3s var(--ease),opacity .9s var(--ease);
+}
+#home:hover{color:rgba(238,244,252,.88)}
+#home svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+body.quiet #home{opacity:.4}
+
+@media (min-width:900px){
+  .ico.top{width:30px;height:30px}
+  .ico.top svg{width:15px;height:15px}
+  #home{top:clamp(18px,3vh,32px);left:clamp(22px,3vw,44px)}
+}
+
 </style>
 </head>
 <body>
@@ -650,6 +683,9 @@ html,body{
 <div id="veil"></div>
 <div id="glass"></div>
 
+<a id="home" href="./3d.html" aria-label="返回小站">
+  <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+</a>
 <div id="verse">霭霭停云　濛濛时雨</div>
 <div id="verseEn"><span>clouds at rest</span><span>timely rain</span></div>
 
@@ -680,6 +716,12 @@ html,body{
     </button>
     <button class="ico" id="bNext" type="button" aria-label="下一首">
       <svg viewBox="0 0 24 24"><path d="M5.5 5.5v13L16 12 5.5 5.5z"/><path d="M18.5 5v14"/></svg>
+    </button>
+    <button class="ico top" id="bFull2" type="button" aria-label="全屏">
+      <svg viewBox="0 0 24 24"><path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/></svg>
+    </button>
+    <button class="ico top" id="bRot2" type="button" aria-label="横屏">
+      <svg viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="1.6"/><path d="M10.5 18.5h3"/></svg>
     </button>
     <button id="more" type="button">更多</button>
   </div>
@@ -1917,6 +1959,10 @@ var lyricSavoir = [    { t: 0.2, l: 'Will you hold my hand?' , c: '你会握住�
   bFile.addEventListener('click', function () { picker.click(); wake(); });
   bList.addEventListener('click', function () { openList(); wake(); });
   bFull.addEventListener('click', function () { toggleFs(); wake(); });
+  var bFull2 = document.getElementById('bFull2');
+  if (bFull2) bFull2.addEventListener('click', function () { toggleFs(); wake(); });
+  var bRot2 = document.getElementById('bRot2');
+  if (bRot2) bRot2.addEventListener('click', function () { setRot(!rotated); });
   lClose.addEventListener('click', function () { closeList(); wake(); });
 
   picker.addEventListener('change', function () {
