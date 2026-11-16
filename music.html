@@ -38,10 +38,10 @@ body {
 #dust { position:fixed; inset:0; z-index:0; display:block; }
 .vignette {
   position:fixed; inset:0; z-index:2; pointer-events:none;
-  background:radial-gradient(ellipse at 50% 46%, transparent 30%, rgba(4,7,12,.34) 66%, rgba(3,5,9,.82) 100%);
+  background:radial-gradient(ellipse at 50% 46%, transparent 46%, rgba(4,7,12,.16) 74%, rgba(3,5,9,.46) 100%);
 }
-.night .vignette { background:radial-gradient(ellipse at 50% 46%, transparent 22%, rgba(2,4,8,.60) 62%, rgba(1,2,5,.94) 100%); }
-.night .clock { opacity:.72; }
+.night .vignette { background:radial-gradient(ellipse at 50% 46%, transparent 40%, rgba(2,4,8,.28) 70%, rgba(1,2,5,.58) 100%); }
+.night .clock { opacity:.92; }
 
 .stage {
   position:fixed; inset:0; z-index:3;
@@ -66,7 +66,7 @@ body {
   font-family:'Didot','Bodoni MT','Georgia','Songti SC','STSong','STZhongsong','Noto Serif SC',serif;
   font-variant-numeric:tabular-nums;
   letter-spacing:.02em; line-height:.94; color:#f6f9ff;
-  text-shadow:0 2px 40px rgba(6,12,26,.85), 0 0 70px rgba(8,16,34,.7), 0 0 130px rgba(110,160,255,.16);
+  text-shadow:0 1px 8px rgba(6,12,26,.6);
   transition:opacity 1.2s ease;
 }
 .clock .colon { animation:colonPulse 2s ease-in-out infinite; display:inline-block; }
@@ -335,7 +335,7 @@ body:fullscreen .sc-panel { top:70px; right:22px; }
 /* 毛玻璃雾罩：压在场景上，让场景退成氛围而不是插画 */
 .frost {
   position:fixed; inset:0; z-index:2; pointer-events:none;
-  background:rgba(10,14,22,.20);
+  background:rgba(10,14,22,.10);
   transition:background 1.2s ease;
 }
 body.sc-fire  .frost { background:rgba(24,10,4,.14); }
