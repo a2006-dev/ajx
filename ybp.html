@@ -254,6 +254,7 @@
                 <div class="info-row"><span class="label">内存容量</span><span class="value" id="device-mem">—</span></div>
                 <div class="info-row"><span class="label">触屏支持</span><span class="value" id="device-touch">—</span></div>
                 <div class="info-row"><span class="label">网络类型</span><span class="value" id="device-net">—</span></div>
+                <div class="info-row"><span class="label">识别精度</span><span class="value" id="device-hints">—</span></div>
             </div>
 
             <div class="glass-card">
@@ -559,7 +560,28 @@
                             }
                         }
                     })
-                    .catch(function () { /* 不支持就算了，保留 UA 结果 */ });
+                    .catch(function (err) {
+                        /* Client Hints 被拒绝或出错。不能假装拿到了数据，
+                           明确告诉用户为什么没识别出来。 */
+                        var mm3 = document.getElementById('device-model');
+                        if (mm3 && (mm3.textContent === '未识别' || mm3.textContent === '—')) {
+                            mm3.textContent = '浏览器未提供（Client Hints 不可用）';
+                        }
+                        var elO = document.getElementById('device-os');
+                        if (elO) {
+                            var cur = elO.textContent || '';
+                            /* UA 报 Android 10 且没有 Client Hints，说明这是冻结值 */
+                            if (/Android 10/.test(cur) && !/冻结/.test(cur)) {
+                                elO.textContent = cur + '（UA 冻结值，客户端拒绝提供真实版本）';
+                            }
+                        }
+                    });
+            } else {
+                /* 连 userAgentData 都没有：老浏览器或非 Chromium 内核 */
+                var mm4 = document.getElementById('device-model');
+                if (mm4 && (mm4.textContent === '未识别' || mm4.textContent === '—')) {
+                    mm4.textContent = '浏览器不支持 Client Hints';
+                }
             }
 
             /* ---------- 设备类型：用触屏 + 视口判断，比只看 UA 准 ---------- */
@@ -589,6 +611,20 @@
                 var el = document.getElementById(id);
                 if (el) el.textContent = (v === '' || v === null || v === undefined) ? UNK : String(v);
             };
+
+            /* 诊断：Client Hints 是否可用。型号和系统版本都靠它，
+               不可用时这两项只能退回 UA 的粗略/冻结值。 */
+            (function hintStatus() {
+                var el = document.getElementById('device-hints');
+                if (!el) return;
+                if (!navigator.userAgentData) {
+                    el.textContent = '基础（浏览器不支持 Client Hints，型号与系统版本仅供参考）';
+                } else if (typeof navigator.userAgentData.getHighEntropyValues === 'function') {
+                    el.textContent = '高精度（Client Hints 可用）';
+                } else {
+                    el.textContent = '基础（仅品牌，无详细型号）';
+                }
+            })();
 
             setTxt('device-browser', browser);
             setTxt('device-os', os);
