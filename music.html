@@ -532,9 +532,9 @@ body.rot #glass{
 }
 
 /* ============ 全屏手势条：尽量压暗 ============ */
-html,body{
-  padding-bottom:env(safe-area-inset-bottom,0px);
-}
+/* 注意：绝不能给 html 加 padding。html 的 padding 会撑高视口，
+   fixed 层（#bg/#rain/#vbg）跟随视口定位，整体下移就会让顶部空出一条黑带。
+   底部安全区由 #deck 自己用 padding 处理。 */
 #deck{
   padding-bottom:calc(clamp(12px,2.4vh,20px) + env(safe-area-inset-bottom,0px));
 }
