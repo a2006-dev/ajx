@@ -600,13 +600,17 @@
         })();
 
         (function hitokoto() {
-            fetch('https://v1.hitokoto.cn')
+            var ctrl = window.AbortController ? new AbortController() : null;
+            var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 3500);
+            fetch('https://v1.hitokoto.cn', ctrl ? { signal: ctrl.signal } : undefined)
                 .then(function (r) { return r.json(); })
                 .then(function (j) {
+                    clearTimeout(timer);
                     $('hitokoto-text').textContent = j.hitokoto || '愿你今天也有好心情～';
                     $('hitokoto-from').textContent = '—— ' + (j.from || '佚名');
                 })
                 .catch(function () {
+                    clearTimeout(timer);
                     $('hitokoto-text').textContent = '愿你今天也有好心情，欢迎常来玩呀～';
                     $('hitokoto-from').textContent = '—— AJX';
                 });
