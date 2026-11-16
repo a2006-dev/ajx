@@ -1708,6 +1708,91 @@ var lyricSavoir = [
     elList.classList.remove('on');
   }
 
+  /* ============ 顶部取色：让系统黑边与画面同色 ============ */
+  /* 做法：把当前画面顶部一条缩到 1x1 采样，取平均色，
+     写入 <meta name=theme-color>，并同步一条顶部渐变垫层。
+     全屏时系统在应用窗口四周留的黑边不在网页控制范围内，
+     但把它染成接近画面的颜色，接缝就不再突兀。 */
+  var tcMeta = document.querySelector('meta[name="theme-color"]');
+  var topVeil = null;
+  var lastTop = '';
+
+  function ensureTopVeil() {
+    if (topVeil) return topVeil;
+    topVeil = document.createElement('div');
+    topVeil.id = 'topveil';
+    topVeil.style.cssText = 'position:fixed;left:0;right:0;top:0;height:96px;' +
+      'z-index:2;pointer-events:none;opacity:0;' +
+      'transition:opacity .9s cubic-bezier(.22,1,.36,1);';
+    document.body.appendChild(topVeil);
+    return topVeil;
+  }
+
+  /* 从给定源取顶部平均色，源可以是 video 或 canvas */
+  function sampleTop(src, sw, sh) {
+    if (!sw || !sh) return null;
+    try {
+      var c = document.createElement('canvas');
+      c.width = 1; c.height = 1;
+      var g = c.getContext('2d', { willReadFrequently: true });
+      /* 只取顶部 6% 的高度带，横向取中间 80% 避开圆角压暗 */
+      var bh = Math.max(1, Math.round(sh * 0.06));
+      g.drawImage(src, Math.round(sw * 0.1), 0, Math.round(sw * 0.8), bh, 0, 0, 1, 1);
+      var d = g.getImageData(0, 0, 1, 1).data;
+      return [d[0], d[1], d[2]];
+    } catch (e) {
+      return null;   /* 跨域或无帧就放弃，不打断主流程 */
+    }
+  }
+
+  function applyTopColor(rgb) {
+    if (!rgb) return;
+    /* 略压暗一点，和画面下方的深色衔接更自然 */
+    var r = Math.round(rgb[0] * 0.72),
+        g = Math.round(rgb[1] * 0.72),
+        b = Math.round(rgb[2] * 0.72);
+    var hex = '#' +
+      ('0' + r.toString(16)).slice(-2) +
+      ('0' + g.toString(16)).slice(-2) +
+      ('0' + b.toString(16)).slice(-2);
+    if (hex === lastTop) return;
+    lastTop = hex;
+
+    if (tcMeta) tcMeta.setAttribute('content', hex);
+
+    var v = ensureTopVeil();
+    v.style.background = 'linear-gradient(180deg,' +
+      'rgb(' + r + ',' + g + ',' + b + ') 0%,' +
+      'rgba(' + r + ',' + g + ',' + b + ',.55) 42%,' +
+      'rgba(' + r + ',' + g + ',' + b + ',0) 100%)';
+    v.style.opacity = '.92';
+  }
+
+  /* 视频在播时按节流频率取色，避免每帧都绘制 */
+  var topTimer = null;
+  function watchVideoTop(v) {
+    if (!v || !v.videoWidth) return;
+    applyTopColor(sampleTop(v, v.videoWidth, v.videoHeight));
+  }
+  function startTopWatch(v) {
+    stopTopWatch();
+    var tick = function () {
+      if (v && !v.paused && v.videoWidth) watchVideoTop(v);
+    };
+    topTimer = setInterval(tick, 3200);   /* 3.2 秒一次，够用且几乎不耗性能 */
+    tick();
+  }
+  function stopTopWatch() {
+    if (topTimer) { clearInterval(topTimer); topTimer = null; }
+  }
+
+  /* 手绘场景：直接从主 canvas 顶部取色 */
+  function watchCanvasTop() {
+    var cv = document.getElementById('rain');
+    if (!cv || !cv.width) return;
+    applyTopColor(sampleTop(cv, cv.width, cv.height));
+  }
+
   /* ============ 白噪音 ============ */
   var SCENES = {
     rain:   { c1: '#080b11', c2: '#121a26', c3: '#070a0f', glow: 'rgba(140,175,220,.10)', haze: 'rgba(150,180,215,.055)' },
@@ -1757,6 +1842,8 @@ var lyricSavoir = [
     r.setProperty('--glow', st.glow);
     r.setProperty('--haze', st.haze);
     if (window.RAIN) window.RAIN.setScene(s);
+    /* 场景配色已变，等一帧让 canvas 重绘后重新取顶部色 */
+    setTimeout(watchCanvasTop, 260);
     var btns = document.querySelectorAll('.amb');
     for (var i = 0; i < btns.length; i++) {
       btns[i].classList.toggle('on', btns[i].getAttribute('data-s') === s);
@@ -1877,6 +1964,8 @@ var lyricSavoir = [
 
     if (k === 'none' || !VID[k]) {
       vidStop();
+      stopTopWatch();
+      setTimeout(watchCanvasTop, 320);   /* 手绘雨景重新成为画面，按它取色 */
       return;
     }
 
@@ -1893,6 +1982,7 @@ var lyricSavoir = [
         done = true;
         vbg.classList.add('on');
         document.body.classList.add('vid');
+        startTopWatch(vbg);          /* 视频显示后开始跟随取色 */
       }
 
       function fail() {
@@ -2128,6 +2218,9 @@ var lyricSavoir = [
 
     paintPlay(false);
     wake();
+    /* 首屏也取一次顶部色，让系统那条黑边一开始就与画面接近 */
+    setTimeout(watchCanvasTop, 900);
+    setTimeout(watchCanvasTop, 2400);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
