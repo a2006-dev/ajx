@@ -227,12 +227,16 @@
         <div class="stats-grid">
             <div class="glass-card">
                 <div class="card-title"><span class="icon">🧭</span> 访客定位 <span class="tag">IP 实时</span></div>
-                <div class="info-row"><span class="label">IP 地址</span><span class="value" id="visitor-ip">识别中…</span></div>
-                <div class="info-row"><span class="label">所在城市</span><span class="value hl" id="visitor-city">—</span></div>
+                <div class="info-row"><span class="label">你的 IP</span><span class="value hl" id="visitor-ip">识别中…</span></div>
+                <div class="info-row"><span class="label">IP 版本</span><span class="value" id="visitor-ipver">—</span></div>
+                <div class="info-row"><span class="label">所在地</span><span class="value hl" id="visitor-city">—</span></div>
+                <div class="info-row"><span class="label">区县</span><span class="value" id="visitor-district">—</span></div>
+                <div class="info-row"><span class="label">省份</span><span class="value" id="visitor-province">—</span></div>
                 <div class="info-row"><span class="label">国家 / 地区</span><span class="value" id="visitor-country">—</span></div>
-                <div class="info-row"><span class="label">详细区域</span><span class="value" id="visitor-region">—</span></div>
+                <div class="info-row"><span class="label">运营商</span><span class="value" id="visitor-isp">—</span></div>
                 <div class="info-row"><span class="label">时区</span><span class="value" id="visitor-tz">—</span></div>
                 <div class="info-row"><span class="label">经纬度</span><span class="value" id="visitor-latlng">—</span></div>
+                <div class="hint-line">以上是你这台设备的真实位置信息，只有你自己能看到，不上传任何服务器。</div>
             </div>
 
             <div class="glass-card">
@@ -257,26 +261,6 @@
                 <div class="clock-time" id="clock-time">--:--:--</div>
                 <div class="clock-date" id="clock-date">----年--月--日</div>
                 <div class="uptime">⏳ 你已在本站停留 <span id="uptime-sec">00:00</span></div>
-            </div>
-
-            <div class="glass-card">
-                <div class="card-title"><span class="icon">👣</span> 访问足迹 <span class="tag">本机记录</span></div>
-                <div class="stat-row">
-                    <div class="stat"><div class="stat-num" id="visit-total">0</div><div class="stat-cap">总访问</div></div>
-                    <div class="stat"><div class="stat-num" id="visit-days">0</div><div class="stat-cap">来过几天</div></div>
-                    <div class="stat"><div class="stat-num" id="visit-streak">0</div><div class="stat-cap">连续天数</div></div>
-                </div>
-                <div class="info-row"><span class="label">首次到访</span><span class="value" id="visit-first">—</span></div>
-                <div class="info-row"><span class="label">上次到访</span><span class="value" id="visit-last">—</span></div>
-                <div class="info-row"><span class="label">累计停留</span><span class="value hl" id="visit-dwell">—</span></div>
-                <div class="info-row"><span class="label">本次停留</span><span class="value" id="visit-today-dwell">—</span></div>
-                <div class="hint-line">数据只存在这台设备的浏览器里，不上传任何服务器。清缓存会清零。</div>
-            </div>
-
-            <div class="glass-card">
-                <div class="card-title"><span class="icon">🕰️</span> 到访时段 <span class="tag">24 小时</span></div>
-                <div class="hour-chart" id="hour-chart"></div>
-                <div class="hint-line" id="hour-hint">记录中…</div>
             </div>
 
             <div class="glass-card">
@@ -554,178 +538,6 @@
             });
         })();
 
-        /* ============ 访问足迹（真实本地记录） ============
-           没有任何后端，所以这里的数字来自这台设备浏览器里的真实历史。
-           localStorage 存：总次数、首次时间、每次访问的日期与时段。
-           不做假数据：没记录就是 0。 */
-        (function footprint() {
-            var KEY = 'ajx_visit_log_v1';
-            var MAX = 400;              /* 只留最近 400 次，避免无限增长 */
-            var now = new Date();
-            var todayKey = now.getFullYear() + '-' +
-                ('0' + (now.getMonth() + 1)).slice(-2) + '-' +
-                ('0' + now.getDate()).slice(-2);
-
-            var log;
-            try {
-                log = JSON.parse(localStorage.getItem(KEY) || 'null');
-            } catch (e) { log = null; }
-            if (!log || typeof log !== 'object') {
-                log = { total: 0, first: null, visits: [] };
-            }
-            if (!log.visits) log.visits = [];
-
-            /* 同一天刷新不重复计数：靠 sessionStorage 标记本会话已记过 */
-            var isNewSession;
-            try {
-                isNewSession = !sessionStorage.getItem('ajx_visit_marked');
-                if (isNewSession) sessionStorage.setItem('ajx_visit_marked', '1');
-            } catch (e) { isNewSession = true; }
-
-            if (isNewSession) {
-                log.total = (log.total || 0) + 1;
-                if (!log.first) log.first = now.getTime();
-                log.visits.push({ t: now.getTime(), d: todayKey, h: now.getHours() });
-                if (log.visits.length > MAX) log.visits = log.visits.slice(-MAX);
-                try { localStorage.setItem(KEY, JSON.stringify(log)); } catch (e) {}
-            }
-
-            var setTxt = function (id, v) {
-                var el = document.getElementById(id);
-                if (el) el.textContent = v;
-            };
-
-            /* ---------- 总访问 / 天数 / 连续天数 ---------- */
-            var daySet = {};
-            var hours = new Array(24).fill(0);
-            var i;
-            for (i = 0; i < log.visits.length; i++) {
-                var v = log.visits[i];
-                daySet[v.d] = (daySet[v.d] || 0) + 1;
-                if (typeof v.h === 'number' && v.h >= 0 && v.h < 24) hours[v.h]++;
-            }
-            var days = Object.keys(daySet);
-            setTxt('visit-total', log.total || 0);
-            setTxt('visit-days', days.length);
-
-            /* 连续天数：从今天往回数，直到断档 */
-            var streak = 0;
-            var cursor = new Date(now.getTime());
-            while (true) {
-                var k = cursor.getFullYear() + '-' +
-                    ('0' + (cursor.getMonth() + 1)).slice(-2) + '-' +
-                    ('0' + cursor.getDate()).slice(-2);
-                if (daySet[k]) {
-                    streak++;
-                    cursor.setDate(cursor.getDate() - 1);
-                } else {
-                    /* 今天还没来过时，允许从昨天开始算 */
-                    if (streak === 0) {
-                        cursor.setDate(cursor.getDate() - 1);
-                        var k2 = cursor.getFullYear() + '-' +
-                            ('0' + (cursor.getMonth() + 1)).slice(-2) + '-' +
-                            ('0' + cursor.getDate()).slice(-2);
-                        if (daySet[k2]) { continue; }
-                    }
-                    break;
-                }
-                if (streak > 3650) break;
-            }
-            setTxt('visit-streak', streak);
-
-            /* ---------- 时间显示 ---------- */
-            var fmt = function (ts) {
-                if (!ts) return '—';
-                var d = new Date(ts);
-                var pad = function (x) { return ('0' + x).slice(-2); };
-                return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
-                    ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
-            };
-            setTxt('visit-first', fmt(log.first));
-            var lastTs = log.visits.length ? log.visits[log.visits.length - 1].t : null;
-            setTxt('visit-last', fmt(lastTs));
-
-            /* ---------- 累计停留 / 本次停留 ---------- */
-            var dwellKey = 'ajx_dwell_v1';
-            var dwell;
-            try { dwell = JSON.parse(localStorage.getItem(dwellKey) || 'null'); } catch (e) { dwell = null; }
-            if (!dwell || typeof dwell !== 'object') dwell = { total: 0, day: todayKey, daySec: 0 };
-
-            /* 跨天则重置当日累计 */
-            if (dwell.day !== todayKey) { dwell.day = todayKey; dwell.daySec = 0; }
-
-            var sessionStart = Date.now();
-            var lastFlush = Date.now();
-            var secText = function (sec) {
-                sec = Math.max(0, Math.floor(sec));
-                var h = Math.floor(sec / 3600);
-                var m = Math.floor((sec % 3600) / 60);
-                var ss = sec % 60;
-                if (h > 0) return h + ' 小时 ' + m + ' 分';
-                if (m > 0) return m + ' 分 ' + ss + ' 秒';
-                return ss + ' 秒';
-            };
-            var renderDwell = function () {
-                var add = Math.floor((Date.now() - sessionStart) / 1000);
-                setTxt('visit-dwell', secText((dwell.total || 0) + add));
-                setTxt('visit-today-dwell', secText((dwell.daySec || 0) + add));
-            };
-            var flush = function () {
-                var nowT = Date.now();
-                var delta = Math.floor((nowT - lastFlush) / 1000);
-                if (delta <= 0) return;
-                lastFlush = nowT;
-                dwell.total = (dwell.total || 0) + delta;
-                dwell.daySec = (dwell.daySec || 0) + delta;
-                try { localStorage.setItem(dwellKey, JSON.stringify(dwell)); } catch (e) {}
-            };
-            renderDwell();
-            setInterval(function () { renderDwell(); flush(); }, 1000);
-            /* 页面隐藏/关闭前落盘，避免丢掉最后几秒 */
-            document.addEventListener('visibilitychange', function () {
-                if (document.hidden) flush();
-            });
-            window.addEventListener('pagehide', flush);
-
-            /* ---------- 24 小时时段图 ---------- */
-            var chart = document.getElementById('hour-chart');
-            var maxH = 0;
-            for (i = 0; i < 24; i++) if (hours[i] > maxH) maxH = hours[i];
-            var curH = now.getHours();
-            if (chart) {
-                for (i = 0; i < 24; i++) {
-                    var bar = document.createElement('div');
-                    bar.className = 'hour-bar' + (hours[i] ? ' has' : '') + (i === curH ? ' now' : '');
-                    /* 有记录按比例，没记录给个极矮的底 */
-                    var pct = maxH ? (hours[i] / maxH) : 0;
-                    bar.style.height = (hours[i] ? Math.max(8, pct * 100) : 3) + '%';
-                    bar.title = i + ':00 — ' + hours[i] + ' 次';
-                    chart.appendChild(bar);
-                }
-                var axis = document.createElement('div');
-                axis.className = 'hour-axis';
-                ['0', '6', '12', '18', '23'].forEach(function (t) {
-                    var sp = document.createElement('span');
-                    sp.textContent = t + '时';
-                    axis.appendChild(sp);
-                });
-                chart.parentNode.insertBefore(axis, chart.nextSibling);
-            }
-            /* 找出最活跃时段，用一句人话说明 */
-            var peakH = -1, peakV = 0;
-            for (i = 0; i < 24; i++) if (hours[i] > peakV) { peakV = hours[i]; peakH = i; }
-            var hint = document.getElementById('hour-hint');
-            if (hint) {
-                if (peakV === 0) {
-                    hint.textContent = '还没有足够记录。多来几次，这里会长出你的作息曲线。';
-                } else {
-                    var period = peakH < 5 ? '深夜' : peakH < 9 ? '清早' : peakH < 12 ? '上午' :
-                        peakH < 14 ? '中午' : peakH < 18 ? '下午' : peakH < 22 ? '晚上' : '深夜';
-                    hint.textContent = '你最常在' + period + '（' + peakH + ':00 前后）来，共 ' + peakV + ' 次。';
-                }
-            }
-        })();
-
         (function locate() {
             // ===== 中国城市英文拼音 -> 中文映射（覆盖全国地级市及港澳台） =====
             var CN_CITY = {
@@ -882,7 +694,37 @@
                 "Taitung": "台东", "Yunlin": "云林", "Changhua": "彰化", "Nantou": "南投",
                 "Miaoli": "苗栗", "Kinmen": "金门", "Penghu": "澎湖", "Lienchiang": "连江"
             };
-            function cnCity(n) { if (!n) return n; var k = String(n).replace(/ City$/i, '').trim(); k = k.charAt(0).toUpperCase() + k.slice(1).toLowerCase(); return CN_CITY[k] || CN_CITY[String(n)] || n; }
+                    /* 运营商英文名 -> 中文。ipwho.is 返回的是全称，读起来太长。 */
+        var ISP_CN = [
+            [/China\s*Mobile|CMCC/i, '中国移动'],
+            [/China\s*Unicom|CUCC/i, '中国联通'],
+            [/China\s*Telecom|CTCC/i, '中国电信'],
+            [/China\s*Tietong|CRC/i, '中国铁通'],
+            [/China\s*Broadnet|CBN/i, '中国广电'],
+            [/CERNET|Education/i, '教育网'],
+            [/Alibaba|Aliyun/i, '阿里云'],
+            [/Tencent/i, '腾讯云'],
+            [/Huawei\s*Cloud/i, '华为云'],
+            [/Amazon|AWS/i, '亚马逊云'],
+            [/Google/i, '谷歌云'],
+            [/Cloudflare/i, 'Cloudflare'],
+            [/Microsoft|Azure/i, '微软云'],
+            [/DigitalOcean/i, 'DigitalOcean'],
+            [/Vultr/i, 'Vultr'],
+            [/Linode|Akamai/i, 'Akamai'],
+            [/Contabo/i, 'Contabo'],
+            [/Hetzner/i, 'Hetzner'],
+            [/OVH/i, 'OVH']
+        ];
+        function ispName(raw){
+            if(!raw) return null;
+            for(var i=0;i<ISP_CN.length;i++){
+                if(ISP_CN[i][0].test(raw)) return ISP_CN[i][1];
+            }
+            return raw;
+        }
+
+        function cnCity(n) { if (!n) return n; var k = String(n).replace(/ City$/i, '').trim(); k = k.charAt(0).toUpperCase() + k.slice(1).toLowerCase(); return CN_CITY[k] || CN_CITY[String(n)] || n; }
             // ===== 腾讯位置服务 IP 定位（优先，无感精确到市级） =====
             var QQ_KEY = '2OOBZ-BSY6M-SS362-6AT56-32XZE-KHFXZ';
             var QQ_SK  = 'ozFKOpSc3b078f0qQEdjlKZyPoObVca5';
@@ -941,24 +783,104 @@
                 var mac=hmacSha1(sk,qs);
                 return {qs:qs, sig:b64(mac).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')};
             }
-            function finish(ip,city,region,nation,lat,lng){
-                if(used) return; used=true;
-                $('visitor-ip').textContent=ip||'—';
-                $('visitor-city').textContent=city||'未知';
-                $('visitor-country').textContent=nation||'—';
-                $('visitor-region').textContent=region||'—';
-                try{ $('visitor-tz').textContent=Intl.DateTimeFormat().resolvedOptions().timeZone||'—'; }catch(e){ $('visitor-tz').textContent='—'; }
-                $('visitor-latlng').textContent=(lat&&lng)?lat.toFixed(2)+', '+lng.toFixed(2):'—';
+            /* 统一的渲染入口。字段缺就写「未识别」，不用占位符冒充数据。 */
+            function put(id, v){
+                var el=$(id); if(el) el.textContent=(v==null||v==='')?'未识别':v;
             }
+            function finish(o){
+                if(used) return; used=true;
+                o = o || {};
+                put('visitor-ip', o.ip);
+                put('visitor-ipver', o.ipver);
+                put('visitor-city', o.city);
+                put('visitor-district', o.district);
+                put('visitor-province', o.province);
+                put('visitor-country', o.nation);
+                put('visitor-isp', o.isp);
+                try{
+                    put('visitor-tz', Intl.DateTimeFormat().resolvedOptions().timeZone);
+                }catch(e){ put('visitor-tz', null); }
+                put('visitor-latlng', (o.lat&&o.lng) ? o.lat.toFixed(4)+', '+o.lng.toFixed(4) : null);
+
+                /* 拿到 IP 之后，再用腾讯接口对这个 IP 精查一次区县。
+                   腾讯的 /ws/location/v1/ip 支持 ip= 参数，比不带参数更细。 */
+                if(o.ip && !o.geoDone) refineByIp(o.ip, o);
+
+                /* 腾讯定位接口不含运营商，缺就补查一次。
+                   ipwho.is 的 connection.isp 能给出运营商全称。 */
+                if(o.ip && !o.isp) {
+                    fetch('https://ipwho.is/' + encodeURIComponent(o.ip))
+                        .then(function(r){ return r.json(); })
+                        .then(function(j){
+                            if(j && j.success && j.connection){
+                                put('visitor-isp', ispName(j.connection.isp || j.connection.org));
+                                /* 顺带补国家旗帜，腾讯只给中文国名 */
+                                if(j.country && !o.nation){
+                                    put('visitor-country', j.country + (j.flag && j.flag.emoji ? ' ' + j.flag.emoji : ''));
+                                }
+                            }
+                        })
+                        .catch(function(){});
+                }
+            }
+
+            /* 用指定 IP 精查，补全区县与坐标 */
+            function refineByIp(ip, base){
+                var name='qqref'+Date.now()+Math.floor(Math.random()*1000);
+                var sc=null, done=false;
+                function clean(){ try{ delete window[name]; if(sc&&sc.parentNode) sc.parentNode.removeChild(sc); }catch(e){} }
+                window[name]=function(res){
+                    if(done) return; done=true;
+                    if(res && res.status===0 && res.result){
+                        var r=res.result, ad=r.ad_info||{};
+                        put('visitor-province', cnCity(ad.province)||null);
+                        put('visitor-city', cnCity(ad.city)||ad.city||null);
+                        put('visitor-district', cnCity(ad.district)||ad.district||null);
+                        if(r.location && r.location.lat!=null){
+                            put('visitor-latlng', r.location.lat.toFixed(4)+', '+r.location.lng.toFixed(4));
+                        }
+                    }
+                    clean();
+                };
+                var params={key:QQ_KEY, output:'jsonp', callback:name, ip:ip};
+                var sig=qqSig(params,QQ_SK);
+                try{
+                    sc=document.createElement('script');
+                    sc.src='https://apis.map.qq.com/ws/location/v1/ip?'+sig.qs+'&sig='+sig.sig;
+                    sc.onerror=clean;
+                    document.head.appendChild(sc);
+                }catch(e){ clean(); }
+                setTimeout(function(){ if(!done){ done=true; clean(); } },7000);
+            }
+            /* 兜底：ipwho.is 能直接给出 IP、运营商、国家、城市、坐标，
+               拿到 IP 后再交给腾讯精查到区县。 */
             function fallback(){
                 if(used) return;
                 fetch('https://ipwho.is/')
                     .then(function(r){return r.json();})
                     .then(function(j){
-                        if(!j||!j.success){$('visitor-ip').textContent='获取失败';return;}
-                        finish(j.ip, cnCity(j.city)||'未知', j.region||'—', (j.country||'—')+(j.flag&&j.flag.emoji?' '+j.flag.emoji:''), j.latitude, j.longitude);
+                        if(!j || !j.success){
+                            put('visitor-ip', null);
+                            put('visitor-city', null);
+                            return;
+                        }
+                        var conn = j.connection || {};
+                        finish({
+                            ip: j.ip,
+                            ipver: j.type || (j.ip && j.ip.indexOf(':')>=0 ? 'IPv6' : 'IPv4'),
+                            city: cnCity(j.city) || null,
+                            province: cnCity(j.region) || j.region || null,
+                            district: cnCity(j.district) || null,
+                            nation: (j.country || null) + (j.flag && j.flag.emoji ? ' ' + j.flag.emoji : ''),
+                            isp: ispName(conn.isp || conn.org || conn.asn_label),
+                            lat: j.latitude,
+                            lng: j.longitude,
+                            geoDone: false
+                        });
                     })
-                    .catch(function(){ $('visitor-ip').textContent='获取失败'; $('visitor-city').textContent='未知'; });
+                    .catch(function(){
+                        put('visitor-ip', null);
+                    });
             }
             function cleanup(){ try{ delete window[cbName]; if(s&&s.parentNode) s.parentNode.removeChild(s); }catch(e){} }
             var cbName='qqloc'+Date.now();
@@ -966,9 +888,19 @@
             window[cbName]=function(res){
                 if(res&&res.status===0&&res.result){
                     var r=res.result, ad=r.ad_info||{};
-                    var cityName=cnCity(ad.city||ad.province)||'未知';
-                    var region=(ad.province?cnCity(ad.province)+' ':'')+(ad.city?cnCity(ad.city):'');
-                    finish(r.ip, cityName, region, ad.nation||'中国', r.location&&r.location.lat, r.location&&r.location.lng);
+                    var ip = r.ip || null;
+                    finish({
+                        ip: ip,
+                        ipver: ip ? (ip.indexOf(':')>=0 ? 'IPv6' : 'IPv4') : null,
+                        city: cnCity(ad.city) || null,
+                        province: cnCity(ad.province) || null,
+                        district: cnCity(ad.district) || null,
+                        nation: ad.nation || null,
+                        isp: null,          /* 腾讯定位接口不含运营商 */
+                        lat: r.location && r.location.lat,
+                        lng: r.location && r.location.lng,
+                        geoDone: true
+                    });
                     cleanup();
                 }else{ cleanup(); fallback(); }
             };
