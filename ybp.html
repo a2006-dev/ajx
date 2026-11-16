@@ -435,27 +435,56 @@
                 }
             }
 
-            /* ---------- 操作系统 ---------- */
-            var os = UNK, osVer = '';
-            m = ua.match(/Android\s+([\d.]+)/i);
-            if (m) { os = 'Android'; osVer = m[1]; }
+            /* ---------- 操作系统 ----------
+               坑：Chrome 从 2021 年起做 UA 缩减（User-Agent Reduction），
+               Android 的 UA 版本号被冻结在 "Android 10"。实际系统是 12/13/14
+               也照样报 10，所以 UA 里的版本不能直接采信。
+               真实版本要走 Client Hints：navigator.userAgentData.platformVersion。 */
+            var os = UNK, osVer = '', osGuess = false;
+
+            var uaData = navigator.userAgentData || null;
+            var chPlatform = (uaData && uaData.platform) ? uaData.platform : '';
+            var chVer = (uaData && uaData.platformVersion) ? String(uaData.platformVersion) : '';
+
+            if (/Android/i.test(chPlatform) || /Android/i.test(ua)) {
+                os = 'Android';
+                if (chVer) {
+                    osVer = chVer.split('.')[0];
+                } else {
+                    m = ua.match(/Android\s+([\d.]+)/i);
+                    if (m) {
+                        osVer = m[1];
+                        if (osVer === '10') osGuess = true;
+                    }
+                }
+            }
             else if (/iPhone|iPad|iPod/.test(ua)) {
                 os = 'iOS';
                 m = ua.match(/OS\s+([\d_]+)/);
                 if (m) osVer = m[1].replace(/_/g, '.');
             }
-            else if (/Windows NT 10/.test(ua)) os = 'Windows 10/11';
-            else if (/Windows NT 6\.3/.test(ua)) os = 'Windows 8.1';
-            else if (/Windows NT 6\.1/.test(ua)) os = 'Windows 7';
-            else if (/Windows/.test(ua)) os = 'Windows';
-            else if (/Mac OS X/.test(ua)) {
-                os = 'macOS';
-                m = ua.match(/Mac OS X ([\d_]+)/);
-                if (m) osVer = m[1].replace(/_/g, '.');
+            else if (/Windows/i.test(chPlatform) || /Windows NT/.test(ua)) {
+                if (/Windows NT 10/.test(ua)) os = 'Windows 10/11';
+                else if (/Windows NT 6\.3/.test(ua)) os = 'Windows 8.1';
+                else if (/Windows NT 6\.1/.test(ua)) os = 'Windows 7';
+                else os = 'Windows';
             }
-            else if (/CrOS/.test(ua)) os = 'ChromeOS';
-            else if (/Linux/.test(ua)) os = 'Linux';
-            if (osVer) os += ' ' + osVer.split('.').slice(0, 2).join('.');
+            else if (/macOS|Mac OS/i.test(chPlatform) || /Mac OS X/.test(ua)) {
+                os = 'macOS';
+                if (chVer) {
+                    osVer = chVer.split('.').slice(0, 2).join('.');
+                } else {
+                    m = ua.match(/Mac OS X (\d+)_(\d+)/);
+                    if (m) osVer = m[1] + '.' + m[2];
+                }
+            }
+            else if (/Chrome OS|CrOS/i.test(chPlatform) || /CrOS/.test(ua)) os = 'ChromeOS';
+            else if (/Linux/i.test(chPlatform) || /Linux/.test(ua)) os = 'Linux';
+
+            if (osVer) {
+                os += ' ' + osVer.split('.').slice(0, 2).join('.');
+                if (osGuess) os += '（UA 冻结值，实际可能更高）';
+            }
 
             /* ---------- 设备型号：从 UA 里抓具体机型 ---------- */
             var model = UNK;
@@ -521,14 +550,37 @@
             setTxt('device-mem', navigator.deviceMemory ? '约 ' + navigator.deviceMemory + ' GB' : UNK);
             setTxt('device-touch', touch ? '支持（' + (navigator.maxTouchPoints || 1) + ' 点触控）' : '不支持');
 
-            /* ---------- 网络：浏览器汇报的估算值，仅供参考 ---------- */
+            /* ---------- 网络 ----------
+               坑：effectiveType 是按「往返延迟估算」的，不是实测值。
+               延迟稍高就报 3g，Wi-Fi 下也会被误判成蜂窝网。
+               先看 type（连接种类，wifi/cellular 这类是准的），
+               effectiveType 只在蜂窝网时作为细化，且明确标注估算。 */
             var c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
             if (c) {
-                var netMap = { 'slow-2g': '极慢 (2G 以下)', '2g': '2G', '3g': '3G', '4g': '4G' };
-                setTxt('device-net', (netMap[c.effectiveType] || c.effectiveType || UNK) +
-                    (c.downlink ? '，约 ' + c.downlink + ' Mbps' : ''));
+                var typeMap = {
+                    'wifi': 'Wi-Fi', 'ethernet': '有线', 'cellular': '蜂窝移动',
+                    'bluetooth': '蓝牙', 'wimax': 'WiMax', 'none': '无连接', 'other': '其他'
+                };
+                var parts = [];
+                if (c.type && typeMap[c.type]) parts.push(typeMap[c.type]);
+                var est = c.effectiveType || '';
+                if (c.type === 'cellular' && est) {
+                    var netMap = { 'slow-2g': '2G 以下', '2g': '2G', '3g': '3G', '4g': '4G' };
+                    parts.push(netMap[est] || est);
+                }
+                if (c.downlink) parts.push('约 ' + c.downlink + ' Mbps');
+                if (c.rtt) parts.push('延迟 ' + c.rtt + 'ms');
+
+                if (parts.length) {
+                    setTxt('device-net', parts.join('，'));
+                } else if (est) {
+                    var netMap2 = { 'slow-2g': '2G 以下', '2g': '2G', '3g': '3G', '4g': '4G' };
+                    setTxt('device-net', (netMap2[est] || est) + '（浏览器估算，仅供参考）');
+                } else {
+                    setTxt('device-net', '在线（无法识别类型）');
+                }
             } else {
-                setTxt('device-net', UNK);
+                setTxt('device-net', navigator.onLine ? '在线（无法识别类型）' : '离线');
             }
 
             /* 可视窗口随旋转变化，跟着更新，避免横竖屏切换后数字不对 */
