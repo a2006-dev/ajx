@@ -277,23 +277,23 @@ body.idle .corner { opacity:0; pointer-events:none; }
 #scene {
   position:fixed; inset:0; z-index:1;
   display:block; pointer-events:none;
-  filter:blur(26px) saturate(1.05);
-  transform:scale(1.08);
+  filter:blur(7px) saturate(1.18);
+  transform:scale(1.03);
   opacity:0; transition:opacity 1.2s ease;
 }
 #scene.on { opacity:1; }
 /* 毛玻璃雾罩：压在场景上，让场景退成氛围而不是插画 */
 .frost {
   position:fixed; inset:0; z-index:2; pointer-events:none;
-  backdrop-filter:blur(30px) saturate(1.15);
-  -webkit-backdrop-filter:blur(30px) saturate(1.15);
-  background:rgba(8,12,20,.34);
+  backdrop-filter:blur(12px) saturate(1.12);
+  -webkit-backdrop-filter:blur(12px) saturate(1.12);
+  background:rgba(8,12,20,.20);
   transition:background 1.2s ease;
 }
-body.sc-fire  .frost { background:rgba(24,10,4,.46); }
-body.sc-waves .frost { background:rgba(4,16,26,.44); }
-body.sc-forest .frost { background:rgba(6,16,10,.44); }
-body.night .frost { background:rgba(3,5,10,.62); }
+body.sc-fire  .frost { background:rgba(24,10,4,.30); }
+body.sc-waves .frost { background:rgba(4,16,26,.28); }
+body.sc-forest .frost { background:rgba(6,16,10,.28); }
+body.night .frost { background:rgba(3,5,10,.46); }
 
 /* ================= 场景设置按钮 + 面板 ================= */
 .sc-btn { order:-1; }
@@ -375,6 +375,14 @@ body.night .frost { background:rgba(3,5,10,.62); }
 #fsTip.show { opacity:1; transform:translate(-50%, 0); }
 /* 面板打开时不要自动隐藏控制层 */
 body.panelOpen.idle .corner { opacity:1; }
+
+#scDot {
+  width:6px; height:6px; border-radius:50%;
+  background:rgba(255,255,255,.25); margin-left:2px;
+  transition:.3s; flex:0 0 auto;
+}
+#scDot.live { background:#6ee7a8; box-shadow:0 0 8px rgba(110,231,168,.9); }
+#scDot.warn { background:#f5a623; box-shadow:0 0 8px rgba(245,166,35,.9); }
 </style>
 </head>
 <body>
@@ -463,9 +471,9 @@ body.panelOpen.idle .corner { opacity:1; }
   <div class="sc-row">
     <button class="sc-snd" id="scSnd">
       <svg viewBox="0 0 24 24"><path d="M11 5L6 9H3v6h3l5 4z"/><path d="M16 9.5a3.5 3.5 0 0 1 0 5"/><path d="M19 6.5a7.5 7.5 0 0 1 0 11"/></svg>
-      <span id="scSndTxt">白噪音</span>
+      <span id="scSndTxt">白噪音</span><i id="scDot"></i>
     </button>
-    <input class="sc-vol" id="scVol" type="range" min="0" max="100" value="35" aria-label="白噪音音量">
+    <input class="sc-vol" id="scVol" type="range" min="0" max="100" value="55" aria-label="白噪音音量">
   </div>
 </div>
 
@@ -755,7 +763,9 @@ var SCENE = (function () {
       if (!pool.length) build(name, true);
     },
     resize: function () { if (ctx) { resize(); build(cur, true); } },
-    current: function () { return cur; }
+    current: function () { return cur; },
+    level: function () { return (master && ac) ? master.gain.value : 0; },
+    state: function () { return ac ? ac.state : 'none'; }
   };
 })();
 
@@ -765,7 +775,7 @@ var SCENE = (function () {
    ============================================================ */
 var NOISE = (function () {
   var ac = null, master = null, nodes = [], timer = null;
-  var cur = 'rain', on = false, vol = 0.35;
+  var cur = 'rain', on = false, vol = 0.55;
 
   function ensure() {
     if (ac) return ac;
@@ -773,7 +783,7 @@ var NOISE = (function () {
     if (!AC) return null;
     ac = new AC();
     master = ac.createGain();
-    master.gain.value = 0;
+    master.gain.value = 0.0001;
     master.connect(ac.destination);
     return ac;
   }
@@ -976,12 +986,13 @@ var NOISE = (function () {
       if (want === on) return on;
       on = want;
       if (on) {
-        if (ac.state === 'suspended') ac.resume();
+        // resume 必须在用户手势中同步调用
+        if (ac.state !== 'running') { try { ac.resume(); } catch (e) {} }
         build(cur);
         var t = ac.currentTime;
         master.gain.cancelScheduledValues(t);
-        master.gain.setValueAtTime(master.gain.value || 0.0001, t);
-        master.gain.linearRampToValueAtTime(vol, t + 1.2);
+        master.gain.setValueAtTime(vol, t + 0.05);
+        master.gain.linearRampToValueAtTime(vol, t + 1.0);
       } else {
         var t2 = ac.currentTime;
         master.gain.cancelScheduledValues(t2);
@@ -1867,7 +1878,7 @@ var NOISE = (function () {
     var items = panel ? panel.querySelectorAll('.sc-item') : [];
     var KEY = 'tl_scene_v1';
 
-    var st = { scene: 'rain', snd: false, vol: 0.35 };
+    var st = { scene: 'rain', snd: false, vol: 0.55 };
     try {
       var raw = localStorage.getItem(KEY);
       if (raw) { var o = JSON.parse(raw); if (o && o.scene) st.scene = o.scene; if (o.vol != null) st.vol = o.vol; }
@@ -1937,11 +1948,26 @@ var NOISE = (function () {
     }
 
     // 白噪音开关
+    var dot = document.getElementById('scDot');
+    function paintDot() {
+      if (!dot || typeof NOISE === 'undefined') return;
+      dot.className = '';
+      if (!st.snd) return;
+      var stt = NOISE.state ? NOISE.state() : 'running';
+      var lv = NOISE.level ? NOISE.level() : 1;
+      if (stt === 'running' && lv > 0.01) dot.classList.add('live');
+      else dot.classList.add('warn');
+    }
+    setInterval(paintDot, 700);
+
     if (snd) snd.addEventListener('click', function (e) {
       e.stopPropagation();
       if (typeof NOISE === 'undefined') return;
       st.snd = NOISE.toggle();
       paint();
+      paintDot();
+      setTimeout(paintDot, 400);
+      setTimeout(paintDot, 1300);
     });
 
     // 音量
