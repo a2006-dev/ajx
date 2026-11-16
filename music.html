@@ -9,11 +9,15 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="./manifest.json">
+<link rel="stylesheet" href="./fonts/lxgw-wenkai.css">
 <title>停云</title>
 <style>
+/* 字体：霞鹜文楷（LXGW WenKai），开源楷体，SIL OFL 授权。
+   完整字重放在 ./fonts/lxgw-wenkai.css，按 unicode-range 分片，
+   浏览器只下载页面实际用到的字片，不会一次拉全量。 */
 @font-face{
   font-family:'TingYun';
-  src:url('./fonts/wqy-zenhei-subset.woff2') format('woff2');
+  src:local('LXGW WenKai'),local('LXGW WenKai Regular');
   font-weight:400;
   font-style:normal;
   font-display:swap;
@@ -56,7 +60,7 @@ body{height:100%;width:100%;overflow:hidden;overscroll-behavior:none;
 body{
   background:#06090e;
   color:var(--ink);
-  font-family:'TingYun','WenQuanYi Zen Hei','文泉驿正黑','PingFang SC','Hiragino Sans GB','Noto Sans CJK SC','Microsoft YaHei',sans-serif;
+  font-family:'LXGW WenKai','TingYun',KaiTi,STKaiti,'Kaiti SC','PingFang SC','Hiragino Sans GB','Noto Sans CJK SC','Microsoft YaHei',sans-serif;
   -webkit-font-smoothing:antialiased;
   text-rendering:optimizeLegibility;
   user-select:none;-webkit-user-select:none;
