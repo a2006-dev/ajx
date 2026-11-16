@@ -1,0 +1,27 @@
+{
+  "name": "停云",
+  "short_name": "停云",
+  "description": "霭霭停云，濛濛时雨。",
+  "start_url": "./music.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "any",
+  "background_color": "#080b11",
+  "theme_color": "#080b11",
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "./images/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./images/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
