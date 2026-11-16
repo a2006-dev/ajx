@@ -508,6 +508,56 @@
                 else if (/iPad/.test(ua)) model = 'iPad';
                 else if (/Macintosh/.test(ua)) model = 'Mac';
             }
+            /* UA 缩减会把 Android 的机型段抹成单个字母（如 "K"），
+               所以上面的解析经常失败。真正的型号要从
+               getHighEntropyValues(['model']) 取，这是 Chrome 唯一可靠的来源。
+               它是异步的，拿到后回填。 */
+            var modelFromUA = model;
+            if (uaData && uaData.getHighEntropyValues) {
+                uaData.getHighEntropyValues(['model', 'platformVersion', 'fullVersionList'])
+                    .then(function (h) {
+                        /* 型号 */
+                        if (h && h.model) {
+                            var mm = document.getElementById('device-model');
+                            if (mm) mm.textContent = h.model;
+                        } else if (modelFromUA === UNK) {
+                            /* 桌面端 model 通常为空，用平台名兜底 */
+                            var mm2 = document.getElementById('device-model');
+                            if (mm2) {
+                                if (/iOS|iPadOS/i.test(chPlatform)) mm2.textContent = 'iPhone / iPad';
+                                else if (/Windows/i.test(chPlatform)) mm2.textContent = 'Windows 设备';
+                                else if (/macOS/i.test(chPlatform)) mm2.textContent = 'Mac';
+                                else if (/Linux/i.test(chPlatform)) mm2.textContent = 'Linux 设备';
+                                else if (/Android/i.test(chPlatform)) mm2.textContent = 'Android 设备（型号未公开）';
+                            }
+                        }
+                        /* 系统版本：Client Hints 的更准，覆盖之前的值 */
+                        if (h && h.platformVersion) {
+                            var elOs = document.getElementById('device-os');
+                            if (elOs) {
+                                var pv = String(h.platformVersion);
+                                if (/Android/i.test(chPlatform) || /Android/.test(ua)) {
+                                    elOs.textContent = 'Android ' + pv.split('.')[0];
+                                } else if (/macOS/i.test(chPlatform)) {
+                                    elOs.textContent = 'macOS ' + pv.split('.').slice(0, 2).join('.');
+                                }
+                            }
+                        }
+                        /* 浏览器完整版本 */
+                        if (h && h.fullVersionList && h.fullVersionList.length) {
+                            var brand = h.fullVersionList.filter(function (b) {
+                                return !/Not.A.Brand|Chromium/i.test(b.brand);
+                            })[0];
+                            if (brand && /Chrome/i.test(browser)) {
+                                var elB = document.getElementById('device-browser');
+                                if (elB && brand.brand) {
+                                    elB.textContent = brand.brand + ' ' + String(brand.version).split('.')[0];
+                                }
+                            }
+                        }
+                    })
+                    .catch(function () { /* 不支持就算了，保留 UA 结果 */ });
+            }
 
             /* ---------- 设备类型：用触屏 + 视口判断，比只看 UA 准 ---------- */
             var touch = ('ontouchstart' in window) ||
@@ -555,33 +605,31 @@
                延迟稍高就报 3g，Wi-Fi 下也会被误判成蜂窝网。
                先看 type（连接种类，wifi/cellular 这类是准的），
                effectiveType 只在蜂窝网时作为细化，且明确标注估算。 */
+            /* 网络：只报能确认的事实。
+               effectiveType 是按延迟「估算」的，Wi-Fi 下也会报 3g，
+               所以它不能当结论用。有 type 就报 type，
+               没有 type 就只说在线状态，绝不把估算值写成结果。 */
             var c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+            var netText = '';
             if (c) {
                 var typeMap = {
                     'wifi': 'Wi-Fi', 'ethernet': '有线', 'cellular': '蜂窝移动',
                     'bluetooth': '蓝牙', 'wimax': 'WiMax', 'none': '无连接', 'other': '其他'
                 };
                 var parts = [];
-                if (c.type && typeMap[c.type]) parts.push(typeMap[c.type]);
-                var est = c.effectiveType || '';
-                if (c.type === 'cellular' && est) {
-                    var netMap = { 'slow-2g': '2G 以下', '2g': '2G', '3g': '3G', '4g': '4G' };
-                    parts.push(netMap[est] || est);
+                if (c.type && typeMap[c.type]) {
+                    parts.push(typeMap[c.type]);
+                    /* 仅当确定是蜂窝网时，才带出制式 */
+                    if (c.type === 'cellular' && c.effectiveType) {
+                        var netMap = { 'slow-2g': '2G 以下', '2g': '2G', '3g': '3G', '4g': '4G', '5g': '5G' };
+                        if (netMap[c.effectiveType]) parts.push(netMap[c.effectiveType] + '（估算）');
+                    }
+                    if (c.downlink) parts.push('约 ' + c.downlink + ' Mbps');
                 }
-                if (c.downlink) parts.push('约 ' + c.downlink + ' Mbps');
-                if (c.rtt) parts.push('延迟 ' + c.rtt + 'ms');
-
-                if (parts.length) {
-                    setTxt('device-net', parts.join('，'));
-                } else if (est) {
-                    var netMap2 = { 'slow-2g': '2G 以下', '2g': '2G', '3g': '3G', '4g': '4G' };
-                    setTxt('device-net', (netMap2[est] || est) + '（浏览器估算，仅供参考）');
-                } else {
-                    setTxt('device-net', '在线（无法识别类型）');
-                }
-            } else {
-                setTxt('device-net', navigator.onLine ? '在线（无法识别类型）' : '离线');
+                netText = parts.length ? parts.join('，') : '';
             }
+            /* 拿不到确定信息时，不猜 */
+            setTxt('device-net', netText || (navigator.onLine ? '在线（浏览器未提供连接类型）' : '离线'));
 
             /* 可视窗口随旋转变化，跟着更新，避免横竖屏切换后数字不对 */
             window.addEventListener('resize', function () {
