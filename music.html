@@ -112,6 +112,21 @@ body.quiet #glass{
   background:rgba(10,15,23,.13);
 }
 
+
+/* ============ 雨景视频层 ============ */
+#vbg{
+  position:fixed;inset:0;z-index:1;
+  width:100%;height:100%;
+  object-fit:cover;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity 1.2s var(--ease);
+  background:#070a0f;
+}
+#vbg.on{opacity:1}
+/* 视频播放时让出手绘雨，避免两层雨叠在一起 */
+body.vid #rain{opacity:0}
+#rain{transition:opacity .9s var(--ease)}
 /* ============ 诗句（最顶） ============ */
 #verse{
   position:fixed;top:clamp(38px,7.4vh,72px);left:0;right:0;z-index:6;
@@ -151,13 +166,12 @@ body.quiet #verseEn{
 /* 时间块：唯一的毛玻璃 */
 #core{
   position:relative;
-  padding:clamp(22px,4.2vh,36px) clamp(24px,6.4vw,52px);
-  border-radius:3px;
-  background:rgba(14,20,30,.14);
-  box-shadow:0 18px 54px rgba(0,0,0,.22);
+  padding:clamp(22px,4.2vh,36px) clamp(8px,2.4vw,20px);
+  background:transparent;
+  box-shadow:none;
   text-align:center;
   max-width:min(660px,92vw);
-  transition:background 1.1s var(--ease),box-shadow 1.1s var(--ease),opacity .9s var(--ease);
+  transition:opacity .9s var(--ease);
 }
 #date{
   font-size:clamp(10.5px,2.3vw,12.5px);
@@ -222,8 +236,8 @@ body.quiet #lyric{
   transform:translateY(-7px);
 }
 body.quiet #core{
-  background:rgba(14,20,30,.07);
-  box-shadow:0 10px 30px rgba(0,0,0,.14);
+  background:transparent;
+  box-shadow:none;
 }
 body.quiet #deck{opacity:.56}
 
@@ -335,8 +349,21 @@ body.quiet #deck{opacity:.56}
   margin-top:clamp(15px,2.8vh,21px);
   padding-top:clamp(12px,2.2vh,16px);
   border-top:1px solid rgba(200,222,248,.05);
-  display:flex;align-items:center;gap:clamp(14px,4vw,26px);
-  flex-wrap:wrap;
+  display:flex;flex-direction:column;gap:clamp(9px,1.7vh,13px);
+}
+#ambTop,#ambVol,#bgPick{
+  display:flex;align-items:center;
+  gap:clamp(12px,3.4vw,22px);
+  width:100%;
+}
+#ambVol{gap:10px}
+/* 触控热区：行内小字按钮在手机上太难点，撑到 44px 高 */
+#ambTop .amb,#ambTop #ambOff{
+  min-height:44px;min-width:30px;
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:0 4px;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
 }
 #ambLabel{
   font-size:clamp(9px,2.1vw,10.5px);
@@ -362,7 +389,9 @@ body.quiet #deck{opacity:.56}
 /* 音量滑条：一条线一个点 */
 #volRange{
   -webkit-appearance:none;appearance:none;
-  flex:1;min-width:0;height:14px;
+  flex:1 1 auto;min-width:0;width:100%;height:34px;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
   background:transparent;cursor:pointer;
   outline:none;
 }
@@ -373,7 +402,7 @@ body.quiet #deck{opacity:.56}
 }
 #volRange::-webkit-slider-thumb{
   -webkit-appearance:none;appearance:none;
-  width:8px;height:8px;margin-top:-3.5px;
+  width:14px;height:14px;margin-top:-6.5px;
   border-radius:50%;
   background:rgba(226,238,252,.82);
   box-shadow:0 0 6px rgba(200,222,248,.34);
@@ -385,7 +414,7 @@ body.quiet #deck{opacity:.56}
   border-radius:1px;
 }
 #volRange::-moz-range-thumb{
-  width:8px;height:8px;border:0;
+  width:14px;height:14px;border:0;
   border-radius:50%;
   background:rgba(226,238,252,.82);
   cursor:pointer;
@@ -539,6 +568,7 @@ html,body{
 <body>
 <div id="app">
 <div id="bg"></div>
+<video id="vbg" muted loop playsinline preload="none" aria-hidden="true"></video>
 <canvas id="rain"></canvas>
 <div id="veil"></div>
 <div id="glass"></div>
@@ -598,6 +628,13 @@ html,body{
         <span id="volIcon">音量</span>
         <input id="volRange" type="range" min="0" max="100" value="34" step="1" aria-label="白噪音音量">
         <span id="volNum">34</span>
+      </div>
+      <div id="bgPick">
+        <span id="bgLabel">雨景</span>
+        <button class="bgp" data-v="garden" type="button">花田</button>
+        <button class="bgp" data-v="store" type="button">便利店</button>
+        <button class="bgp" data-v="station" type="button">车站</button>
+        <button class="bgp" data-v="none" type="button">纯画面</button>
       </div>
     </div>
   </div>
@@ -1598,6 +1635,7 @@ var lyricSavoir = [    { t: 0.2, l: 'Will you hold my hand?' , c: '你会握住�
 
 
   /* ============ 白噪音：开关与音量 ============ */
+  var ambManualOff = false;   /* 用户主动关过，不再自动重播 */
   function ambStop() {
     if (!ambEl || !ambOn) return;
     ambFadeTo(0, 700);
@@ -1609,9 +1647,11 @@ var lyricSavoir = [    { t: 0.2, l: 'Will you hold my hand?' , c: '你会握住�
   function bindAmb() {
     var off = document.getElementById('ambOff');
     if (off) {
-      off.addEventListener('click', function () {
+      off.addEventListener('click', function (e) {
+        e.stopPropagation();
+        ambManualOff = true;
         ambStop();
-        off.classList.remove('on');
+        off.classList.add('on');
         wake();
       });
     }
@@ -1632,8 +1672,110 @@ var lyricSavoir = [    { t: 0.2, l: 'Will you hold my hand?' , c: '你会握住�
       /* 触摸滑条不要触发静默隐藏 */
       vr.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
     }
+
+    /* 四个场景按钮：此时 DOM 一定已就绪 */
+    var btns = document.querySelectorAll('.amb');
+    for (var bi = 0; bi < btns.length; bi++) {
+      btns[bi].addEventListener('click', function (e) {
+        e.stopPropagation();
+        var sv = this.getAttribute('data-s');
+        if (!ambOn) {
+          ambScene = sv;
+          applyScene(sv);
+          ambStart();
+        } else {
+          switchScene(sv);
+        }
+        ambManualOff = false;
+        var o = document.getElementById('ambOff');
+        if (o) o.classList.remove('on');
+        wake();
+      });
+    }
   }
 
+
+  /* ============ 雨景视频背景 ============ */
+  var VID = {
+    garden:  './video/rain-garden.mp4',
+    store:   './video/rain-store.mp4',
+    station: './video/rain-station.mp4'
+  };
+  var vbg = null, vidCur = 'none';
+
+  function vidStop() {
+    if (!vbg) return;
+    vbg.pause();
+    vbg.classList.remove('on');
+    document.body.classList.remove('vid');
+  }
+
+  function setVid(k) {
+    vbg = vbg || document.getElementById('vbg');
+    if (!vbg) return;
+
+    /* 同一个就别重来 */
+    if (k === vidCur) {
+      if (k !== 'none' && vbg.paused) { var p2 = vbg.play(); if (p2 && p2.catch) p2.catch(function(){}); }
+      return;
+    }
+    vidCur = k;
+
+    var btns = document.querySelectorAll('.bgp');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].classList.toggle('on', btns[i].getAttribute('data-v') === k);
+    }
+
+    if (k === 'none' || !VID[k]) {
+      vidStop();
+      return;
+    }
+
+    /* 换源并淡入 */
+    vbg.src = VID[k];
+    var pr = vbg.play();
+    if (pr && pr.then) {
+      pr.then(function () {
+        vbg.classList.add('on');
+        document.body.classList.add('vid');
+      }).catch(function () {
+        /* 自动播放被拦或加载失败：退回手绘 */
+        vidStop();
+        vidCur = 'none';
+        var nb = document.querySelectorAll('.bgp');
+        for (var j = 0; j < nb.length; j++) {
+          nb[j].classList.toggle('on', nb[j].getAttribute('data-v') === 'none');
+        }
+      });
+    } else {
+      vbg.classList.add('on');
+      document.body.classList.add('vid');
+    }
+    wake();
+  }
+
+  function bindVid() {
+    vbg = document.getElementById('vbg');
+    if (vbg) {
+      vbg.addEventListener('error', function () { vidStop(); vidCur = 'none'; });
+      /* 播完一轮不要停：loop 已处理，这里只防 iOS 偶发暂停 */
+      vbg.addEventListener('pause', function () {
+        if (vidCur !== 'none' && !document.hidden) {
+          var pp = vbg.play();
+          if (pp && pp.catch) pp.catch(function(){});
+        }
+      });
+    }
+    var btns = document.querySelectorAll('.bgp');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].addEventListener('click', function (e) {
+        e.stopPropagation();
+        setVid(this.getAttribute('data-v'));
+      });
+    }
+    /* 默认不播，保持手绘；用户点了才加载 */
+    setVid('none');
+  }
   /* ============ 横屏：整页旋转 90° ============ */
   var rotated = false;
   function setRot(on) {
@@ -1739,20 +1881,6 @@ var lyricSavoir = [    { t: 0.2, l: 'Will you hold my hand?' , c: '你会握住�
   elSeek.addEventListener('pointerup', function () { seekDrag = false; });
   elSeek.addEventListener('pointercancel', function () { seekDrag = false; });
 
-  var ambBtns = document.querySelectorAll('.amb');
-  for (var bi = 0; bi < ambBtns.length; bi++) {
-    ambBtns[bi].addEventListener('click', function () {
-      var s = this.getAttribute('data-s');
-      if (!ambOn) {
-        ambScene = s;
-        applyScene(s);
-        ambStart();
-      } else {
-        switchScene(s);
-      }
-      wake();
-    });
-  }
 
   /* 点空白：收列表 / 收面板 */
   document.addEventListener('pointerdown', function (e) {
@@ -1776,6 +1904,7 @@ var lyricSavoir = [    { t: 0.2, l: 'Will you hold my hand?' , c: '你会握住�
     var t = e.target;
     if (t && t.closest && t.closest('.amb')) { unlocked = true; return; }
     unlocked = true;
+    if (ambManualOff) return;   /* 用户关过，尊重这个选择 */
     ambStart();
   }, true);
 
@@ -1789,7 +1918,15 @@ var lyricSavoir = [    { t: 0.2, l: 'Will you hold my hand?' , c: '你会握住�
     setTimeout(function () { if (window.RAIN) window.RAIN.resize(); }, 340);
   });
   document.addEventListener('visibilitychange', function () {
-    if (!document.hidden) { clock(); if (window.RAIN) window.RAIN.resize(); }
+    if (!document.hidden) {
+      clock();
+      if (window.RAIN) window.RAIN.resize();
+      var vb = document.getElementById('vbg');
+      if (vb && vidCur !== 'none') { var pp = vb.play(); if (pp && pp.catch) pp.catch(function(){}); }
+    } else {
+      var vb2 = document.getElementById('vbg');
+      if (vb2) vb2.pause();
+    }
   });
 
   /* ============ 启动 ============ */
@@ -1803,6 +1940,7 @@ var lyricSavoir = [    { t: 0.2, l: 'Will you hold my hand?' , c: '你会握住�
     /* 预置音频源，等用户第一次触摸再播 */
     ambInit();
     bindAmb();
+    bindVid();
     ambEl.src = ambSrc.rain;
 
     if (SITE.length) load(0, false);
