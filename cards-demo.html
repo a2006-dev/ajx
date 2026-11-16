@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>方案对比</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;
+  background:radial-gradient(ellipse 60% 50% at 18% 18%,rgba(3,169,244,.16),transparent 60%),
+             radial-gradient(ellipse 55% 45% at 82% 26%,rgba(244,65,165,.14),transparent 60%),
+             linear-gradient(165deg,#0b0e14,#131c33 52%,#191a2b);
+  min-height:100vh;color:#fff;padding:26px 16px 60px;
+  -webkit-tap-highlight-color:transparent;
+}
+h1{font-size:17px;font-weight:600;letter-spacing:.06em;margin-bottom:6px}
+.sub{font-size:12px;color:rgba(255,255,255,.42);margin-bottom:26px;line-height:1.7}
+.sec{margin-bottom:44px}
+.tag{font-size:12px;letter-spacing:.18em;color:rgba(255,255,255,.5);margin-bottom:4px;text-transform:uppercase}
+.desc{font-size:11px;color:rgba(255,255,255,.32);margin-bottom:16px;line-height:1.7}
+.stage{position:relative;height:250px;display:flex;align-items:center;justify-content:center;perspective:900px}
+
+/* 卡片通用外观 */
+.card,.cd{
+  width:150px;height:200px;border-radius:20px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.16);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  text-decoration:none;color:#fff;position:relative;overflow:hidden;
+  cursor:pointer;
+  transition:transform .5s cubic-bezier(.22,.61,.36,1),opacity .5s,box-shadow .5s,border-color .5s;
+}
+.card .ico,.cd .ico{width:40px;height:40px}
+.card .ico svg,.cd .ico svg{width:100%;height:100%;display:block}
+.card .nm,.cd .nm{font-size:14px;font-weight:600;letter-spacing:.05em;white-space:nowrap}
+.card .ds,.cd .ds{font-size:10px;letter-spacing:.2em;color:rgba(255,255,255,.4);text-transform:uppercase}
+
+/* ========== 方案 A：指针光斑（Linear 风）========== */
+.A .pa{position:relative;border-radius:20px;padding:1px}
+.A .pa::before{
+  content:"";position:absolute;inset:0;border-radius:20px;
+  background:radial-gradient(220px circle at var(--x,50%) var(--y,50%),rgba(255,255,255,.55),transparent 62%);
+  opacity:0;transition:opacity .4s ease;pointer-events:none;
+}
+.A .pa:hover::before{opacity:1}
+.A .pa::after{
+  content:"";position:absolute;inset:0;border-radius:20px;
+  background:radial-gradient(340px circle at var(--x,50%) var(--y,50%),rgba(120,190,255,.22),transparent 60%);
+  opacity:0;transition:opacity .4s ease;pointer-events:none;z-index:3;
+}
+.A .pa:hover::after{opacity:1}
+.A .card{margin:0 6px}
+
+/* ========== 方案 B：扇形弧线（fanned）========== */
+.B .fan{position:relative;width:150px;height:200px}
+.B .fan .card{
+  --i:0;
+  position:absolute;inset:0;
+  transform-origin:50% 130%;
+  transform:rotate(calc((var(--i) - 2) * 9deg)) translateY(calc(var(--i) * 0px)) scale(.86);
+  opacity:.5;
+}
+.B .fan .card:hover{
+  transform:rotate(calc((var(--i) - 2) * 9deg)) translateY(-26px) scale(1);
+  opacity:1;z-index:9;
+  box-shadow:0 24px 60px rgba(0,0,0,.6),0 0 40px rgba(120,190,255,.22);
+  border-color:rgba(255,255,255,.55);
+}
+.B .fan .card[data-i="0"]{--i:0}
+.B .fan .card[data-i="1"]{--i:1}
+.B .fan .card[data-i="2"]{--i:2}
+.B .fan .card[data-i="3"]{--i:3}
+.B .fan .card[data-i="4"]{--i:4}
+
+/* ========== 方案 C：立体倾斜 3D（Nike 视差）========== */
+.C .tilt{transform-style:preserve-3d;margin:0 8px}
+.C .card{transform-style:preserve-3d}
+.C .card .ico{transform:translateZ(38px);transition:transform .5s}
+.C .card .nm{transform:translateZ(30px);transition:transform .5s}
+.C .card .ds{transform:translateZ(22px);transition:transform .5s}
+.C .card::before{
+  content:"";position:absolute;top:-46px;right:-46px;width:130px;height:130px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,.2),transparent 70%);pointer-events:none;
+}
+.C .card:hover .ico{transform:translateZ(66px)}
+.C .card:hover .nm{transform:translateZ(52px)}
+.C .card:hover{
+  box-shadow:0 30px 70px rgba(0,0,0,.65),0 0 40px rgba(120,190,255,.2);
+  border-color:rgba(255,255,255,.5);
+}
+
+/* ========== 方案 D：描边流光（conic 旋转）========== */
+@property --ang{syntax:'<angle>';inherits:false;initial-value:0deg}
+.D .card{margin:0 8px;border:none;background:rgba(255,255,255,.05)}
+.D .card::before{
+  content:"";position:absolute;inset:0;border-radius:20px;padding:1.4px;
+  background:conic-gradient(from var(--ang),transparent 0deg,var(--glow) 60deg,transparent 130deg,transparent 360deg);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;
+  animation:spin 3.4s linear infinite;pointer-events:none;
+}
+@keyframes spin{to{--ang:360deg}}
+.D .card::after{
+  content:"";position:absolute;inset:14%;border-radius:50%;
+  background:radial-gradient(circle,color-mix(in srgb,var(--glow) 16%,transparent),transparent 70%);
+  opacity:0;transition:opacity .5s;pointer-events:none;
+}
+.D .card:hover::after{opacity:1}
+.D .card[data-glow="fire"]{--glow:#ff5f6d}
+.D .card[data-glow="stats"]{--glow:#00c6ff}
+.D .card[data-glow="heart"]{--glow:#ff7da5}
+.D .card[data-glow="log"]{--glow:#3ddc84}
+.D .card[data-glow="music"]{--glow:#a78bfa}
+
+/* ========== 方案 E：叠卡展开（stack reveal）========== */
+.E .stack{position:relative;width:150px;height:200px}
+.E .stack .card{
+  position:absolute;inset:0;
+  --d:0;
+  transform:translateY(calc(var(--d) * -13px)) scale(calc(1 - var(--d) * .055));
+  opacity:calc(1 - var(--d) * .18);
+  z-index:calc(10 - var(--d));
+}
+.E .stack .card[data-d="0"]{--d:0}
+.E .stack .card[data-d="1"]{--d:1}
+.E .stack .card[data-d="2"]{--d:2}
+.E .stack .card[data-d="3"]{--d:3}
+.E .stack .card[data-d="4"]{--d:4}
+.E .stack:hover .card{
+  --d:0 !important;
+  transform:translateX(calc((var(--k) - 2) * 108px)) scale(.9);
+  opacity:1;
+}
+.E .stack:hover .card[data-k="0"]{transform:translateX(-208px) scale(.84) rotate(-6deg);opacity:.8}
+.E .stack:hover .card[data-k="1"]{transform:translateX(-104px) scale(.9) rotate(-3deg);opacity:.9}
+.E .stack:hover .card[data-k="3"]{transform:translateX(104px) scale(.9) rotate(3deg);opacity:.9}
+.E .stack:hover .card[data-k="4"]{transform:translateX(208px) scale(.84) rotate(6deg);opacity:.8}
+
+.foot{font-size:12px;color:rgba(255,255,255,.35);line-height:1.9;text-align:center}
+.foot b{color:rgba(255,255,255,.7);font-weight:500}
+</style>
+</head>
+<body>
+
+<h1>卡片方案对比</h1>
+<p class="sub">下面五种，都是我没有用现成模板、按你的 5 张卡片数据套的真实代码。<br>手指移到卡片上（手机就按住拖一下）看效果。</p>
+
+<!-- A -->
+<div class="sec A">
+  <p class="tag">A · 指针光斑</p>
+  <p class="desc">鼠标／手指所在位置亮起一团柔光，卡片边缘被照亮。最克制的一种，改动最小。</p>
+  <div class="stage">
+    <div class="pa">
+      <a class="card">
+      <span class="ico" style="color:#ff8a80">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="5"/>
+          <circle cx="12" cy="12" r="3.4"/>
+        </svg>
+      </span>
+      <span class="nm" style="color:#ff8a80">新年烟花</span>
+      <span class="ds">New Year</span>
+      </a>
+    </div>
+    <div class="pa">
+      <a class="card">
+      <span class="ico" style="color:#80d8ff">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="5"/>
+          <circle cx="12" cy="12" r="3.4"/>
+        </svg>
+      </span>
+      <span class="nm" style="color:#80d8ff">站点统计</span>
+      <span class="ds">Stats</span>
+      </a>
+    </div>
+    <div class="pa">
+      <a class="card">
+      <span class="ico" style="color:#ff9db9">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="5"/>
+          <circle cx="12" cy="12" r="3.4"/>
+        </svg>
+      </span>
+      <span class="nm" style="color:#ff9db9">心迹 Heart</span>
+      <span class="ds">Heart</span>
+      </a>
+    </div>
+    <div class="pa">
+      <a class="card">
+      <span class="ico" style="color:#8ef0b5">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="5"/>
+          <circle cx="12" cy="12" r="3.4"/>
+        </svg>
+      </span>
+      <span class="nm" style="color:#8ef0b5">LogCatcher</span>
+      <span class="ds">Log</span>
+      </a>
+    </div>
+    <div class="pa">
+      <a class="card">
+      <span class="ico" style="color:#c4b5fd">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="5"/>
+          <circle cx="12" cy="12" r="3.4"/>
+        </svg>
+      </span>
+      <span class="nm" style="color:#c4b5fd">停云</span>
+      <span class="ds">Lounge</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- B -->
+<div class="sec B">
+  <p class="tag">B · 扇形弧线</p>
+  <p class="desc">五张卡像扇子一样沿弧线排开，指到哪张哪张就弹起来。空间感强。</p>
+  <div class="stage">
+    <div class="fan">
+      <a class="card" data-i="0">
+      <span class="ico" style="color:#ff8a80">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="5"/>
+          <circle cx="12" cy="12" r="3.4"/>
+        </svg>
+      </span>
+      <span class="nm" style="color:#ff8a80">新年烟花</span>
+      <span class="ds">New Year</span>
+      </a>
+      <a class="card" data-i="1">
+      <span class="ico" style="color:#80d8ff">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="5"/>
+          <circle cx="12" cy="12" r="3.4"/>
+        </svg>
+      </span>
+      <span class="nm" style="color:#80d8ff">站点统计</span>
+      <span class="ds">Stats</span>
+      </a>
+      <a class="card" data-i="2">
+      <span class="ico" style="color:#ff9db9">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="5"/>
+          <circle cx="12" cy="12" r="3.4"/>
+        </svg>
+      </span>
+      <span class="nm" style="color:#ff9db9">心迹 Heart</span>
+      <span class="ds">Heart</span>
+      </a>
+      <a class="card" data-i="3">
+      <span class="ico" style="color:#8ef0b5">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="5"/>
+          <circle cx="12" cy="12" r="3.4"/>
+        </svg>
+      </span>
+      <span class="nm" style="color:#8ef0b5">LogCatcher</span>
+      <span class="ds">Log</span>
+      </a>
+      <a class="card" data-i="4">
+      <span class="ico" style="color:#c4b5fd">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="5"/>
+          <circle cx="12" cy="12" r="3.4"/>
+        </svg>
+      </span>
+      <span class="nm" style="color:#c4b5fd">停云</span>
+      <span class="ds">Lounge</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- C -->
+<div class="sec C">
+  <p class="tag">C · 立体倾斜</p>
+  <p class="desc">图标和文字浮在卡面上不同深度，鼠标移动时整张卡倾斜。最有体积感。</p>
+  <div class="stage" id="tiltStage">
+    <div class="tilt">
+      <a class="card">
+      <span class="ico" style="color:#ff8a80">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="5"/>
+          <circle cx="12" cy="12" r="3.4"/>
+        </svg>
+      </span>
+      <span class="nm" style="color:#ff8a80">新年烟花</span>
+      <span class="ds">New Year</span>
+      </a>
+    </div>
+    <div class="tilt">
+      <a class="card">
+      <span class="ico" style="color:#80d8ff">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="5"/>
+          <circle cx="12" cy="12" r="3.4"/>
+        </svg>
+      </span>
+      <span class="nm" style="color:#80d8ff">站点统计</span>
+      <span class="ds">Stats</span>
+      </a>
+    </div>
+    <div class="tilt">
+      <a class="card">
+      <span class="ico" style="color:#ff9db9">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="5"/>
+          <circle cx="12" cy="12" r="3.4"/>
+        </svg>
+      </span>
+      <span class="nm" style="color:#ff9db9">心迹 Heart</span>
+      <span class="ds">Heart</span>
+      </a>
+    </div>
+    <div class="tilt">
+      <a class="card">
+      <span class="ico" style="color:#8ef0b5">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="5"/>
+          <circle cx="12" cy="12" r="3.4"/>
+        </svg>
+      </span>
+      <span class="nm" style="color:#8ef0b5">LogCatcher</span>
+      <span class="ds">Log</span>
+      </a>
+    </div>
+    <div class="tilt">
+      <a class="card">
+      <span class="ico" style="color:#c4b5fd">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="5"/>
+          <circle cx="12" cy="12" r="3.4"/>
+        </svg>
+      </span>
+      <span class="nm" style="color:#c4b5fd">停云</span>
+      <span class="ds">Lounge</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- D -->
+<div class="sec D">
+  <p class="tag">D · 描边流光</p>
+  <p class="desc">卡片外框有一道光在转，每张卡用自己的主题色。最"贵"的一种。</p>
+  <div class="stage">
+    <a class="card" data-glow="fire">
+      <span class="ico" style="color:#ff8a80">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="5"/>
+          <circle cx="12" cy="12" r="3.4"/>
+        </svg>
+      </span>
+      <span class="nm" style="color:#ff8a80">新年烟花</span>
+      <span class="ds">New Year</span>
+    </a>
+    <a class="card" data-glow="stats">
+      <span class="ico" style="color:#80d8ff">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="5"/>
+          <circle cx="12" cy="12" r="3.4"/>
+        </svg>
+      </span>
+      <span class="nm" style="color:#80d8ff">站点统计</span>
+      <span class="ds">Stats</span>
+    </a>
+    <a class="card" data-glow="heart">
+      <span class="ico" style="color:#ff9db9">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="5"/>
+          <circle cx="12" cy="12" r="3.4"/>
+        </svg>
+      </span>
+      <span class="nm" style="color:#ff9db9">心迹 Heart</span>
+      <span class="ds">Heart</span>
+    </a>
+    <a class="card" data-glow="log">
+      <span class="ico" style="color:#8ef0b5">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="5"/>
+          <circle cx="12" cy="12" r="3.4"/>
+        </svg>
+      </span>
+      <span class="nm" style="color:#8ef0b5">LogCatcher</span>
+      <span class="ds">Log</span>
+    </a>
+    <a class="card" data-glow="music">
+      <span class="ico" style="color:#c4b5fd">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="5"/>
+          <circle cx="12" cy="12" r="3.4"/>
+        </svg>
+      </span>
+      <span class="nm" style="color:#c4b5fd">停云</span>
+      <span class="ds">Lounge</span>
+    </a>
+  </div>
+</div>
+
+<!-- E -->
+<div class="sec E">
+  <p class="tag">E · 叠卡展开</p>
+  <p class="desc">平时是一叠卡，点开就散成一排。入场感最强，但一屏放不下。</p>
+  <div class="stage">
+    <div class="stack">
+      <a class="card" data-d="0" data-k="0">
+      <span class="ico" style="color:#ff8a80">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="5"/>
+          <circle cx="12" cy="12" r="3.4"/>
+        </svg>
+      </span>
+      <span class="nm" style="color:#ff8a80">新年烟花</span>
+      <span class="ds">New Year</span>
+      </a>
+      <a class="card" data-d="1" data-k="1">
+      <span class="ico" style="color:#80d8ff">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="5"/>
+          <circle cx="12" cy="12" r="3.4"/>
+        </svg>
+      </span>
+      <span class="nm" style="color:#80d8ff">站点统计</span>
+      <span class="ds">Stats</span>
+      </a>
+      <a class="card" data-d="2" data-k="2">
+      <span class="ico" style="color:#ff9db9">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="5"/>
+          <circle cx="12" cy="12" r="3.4"/>
+        </svg>
+      </span>
+      <span class="nm" style="color:#ff9db9">心迹 Heart</span>
+      <span class="ds">Heart</span>
+      </a>
+      <a class="card" data-d="3" data-k="3">
+      <span class="ico" style="color:#8ef0b5">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="5"/>
+          <circle cx="12" cy="12" r="3.4"/>
+        </svg>
+      </span>
+      <span class="nm" style="color:#8ef0b5">LogCatcher</span>
+      <span class="ds">Log</span>
+      </a>
+      <a class="card" data-d="4" data-k="4">
+      <span class="ico" style="color:#c4b5fd">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="5"/>
+          <circle cx="12" cy="12" r="3.4"/>
+        </svg>
+      </span>
+      <span class="nm" style="color:#c4b5fd">停云</span>
+      <span class="ds">Lounge</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<p class="foot">看完告诉我要 <b>A / B / C / D / E</b> 哪个（或者"X 的骨架 + Y 的细节"这种组合），<br>我就把它移植进 3d.html，交互逻辑保持现在这套能点开的。</p>
+
+<script>
+/* A：指针光斑 —— 把坐标写进 --x/--y */
+document.querySelectorAll('.A .pa').forEach(function (el) {
+  function move(e) {
+    var r = el.getBoundingClientRect();
+    var p = e.touches ? e.touches[0] : e;
+    el.style.setProperty('--x', (p.clientX - r.left) + 'px');
+    el.style.setProperty('--y', (p.clientY - r.top) + 'px');
+  }
+  el.addEventListener('pointermove', move, { passive: true });
+  el.addEventListener('touchmove', move, { passive: true });
+});
+
+/* C：立体倾斜 —— 用同样的思路做一个轻量版，不引第三方库 */
+(function () {
+  var stage = document.getElementById('tiltStage');
+  if (!stage) return;
+  var cards = stage.querySelectorAll('.card');
+  stage.addEventListener('pointermove', function (e) {
+    cards.forEach(function (c) {
+      var r = c.getBoundingClientRect();
+      var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      var dx = (e.clientX - cx) / (r.width / 2);
+      var dy = (e.clientY - cy) / (r.height / 2);
+      dx = Math.max(-1, Math.min(1, dx));
+      dy = Math.max(-1, Math.min(1, dy));
+      c.style.transform = 'rotateY(' + (dx * 13).toFixed(1) + 'deg) rotateX(' + (-dy * 13).toFixed(1) + 'deg) scale(1.06)';
+    });
+  }, { passive: true });
+  stage.addEventListener('pointerleave', function () {
+    cards.forEach(function (c) { c.style.transform = ''; });
+  });
+})();
+</script>
+
+</body>
+</html>
