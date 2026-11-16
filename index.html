@@ -482,6 +482,13 @@
         </div>
         <script>
             (function () {
+                // 带超时的 fetch（HTTP 请求无超时，网络抖动时天气卡片会永远空着）
+                function fetchT(u, ms) {
+                    var ctrl = ('AbortController' in window) ? new AbortController() : null;
+                    var tid = setTimeout(function () { if (ctrl) { try { ctrl.abort(); } catch (e) {} } }, ms || 8000);
+                    return fetch(u, ctrl ? { signal: ctrl.signal, cache: 'no-store' } : { cache: 'no-store' })
+                        .then(function (r) { clearTimeout(tid); return r.json(); });
+                }
                 // 常见中国城市英文->中文映射
                 var CN_CITY = {
                     // ── 直辖市 ──
@@ -826,7 +833,7 @@ function fetchWeather(lat, lon, cityName) {
         "&daily=temperature_2m_max,temperature_2m_min&timezone=auto";
     var airUrl = "https://air-quality-api.open-meteo.com/v1/air-quality?latitude=" + lat +
         "&longitude=" + lon + "&current=us_aqi,pm2_5,pm10";
-    fetch(url).then(function (r) { return r.json(); }).then(function (d) {
+    fetchT(url, 8000).then(function (d) {
         var daily = d.daily;
         var cur = d.current || {};
         var code = cur.weather_code;
@@ -836,7 +843,7 @@ function fetchWeather(lat, lon, cityName) {
         var tmax = (daily && daily.temperature_2m_max) ? Math.round(daily.temperature_2m_max[0]) : null;
         var humidity = (typeof cur.relative_humidity_2m !== 'undefined') ? cur.relative_humidity_2m : null;
         var realfeel = (typeof cur.apparent_temperature !== 'undefined') ? cur.apparent_temperature : null;
-        fetch(airUrl).then(function (r) { return r.json(); }).then(function (aq) {
+        fetchT(airUrl, 6000).then(function (aq) {
             var aqi = (aq && aq.current && typeof aq.current.us_aqi !== 'undefined') ? aq.current.us_aqi : null;
             var pm25 = (aq && aq.current && typeof aq.current.pm2_5 !== 'undefined') ? aq.current.pm2_5 : null;
             var pm10 = (aq && aq.current && typeof aq.current.pm10 !== 'undefined') ? aq.current.pm10 : null;
@@ -848,7 +855,7 @@ function fetchWeather(lat, lon, cityName) {
 }
 function fallback() {
                 // ipwho.is 兜底：显示访客城市+天气
-                fetch('https://ipwho.is/').then(function (r) { return r.json(); }).then(function (j) {
+                fetchT('https://ipwho.is/', 6000).then(function (j) {
                     if (j && j.success && j.city) {
                         var city = cnCity(j.city);
                         fetchWeather(j.latitude, j.longitude, city);
