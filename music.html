@@ -554,6 +554,22 @@ body.rot #glass{
   width:100vh;
   height:100vw;
 }
+/* #app 有 transform，成为包含块，fixed 子元素自动以 #app 为参照，
+   不需要再单独旋转。这里只需保证尺寸正确（旋转后是 100vh × 100vw）。 */
+body.rot #bg,
+body.rot #rain,
+body.rot #veil,
+body.rot #glass,
+body.rot #vbg{
+  width:100vh;
+  height:100vw;
+  inset:0;
+}
+/* 视频层：旋转后铺满，画面中心对齐 */
+body.rot #vbg{
+  object-fit:cover;
+  object-position:center center;
+}
 
 /* ============ 全屏手势条：尽量压暗 ============ */
 /* 注意：绝不能给 html 加 padding。html 的 padding 会撑高视口，
