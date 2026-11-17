@@ -311,7 +311,7 @@
                 <div class="info-row"><span class="label">屏幕方向</span><span class="value" id="device-orient">—</span></div>
                 <div class="info-row"><span class="label">浏览器语言</span><span class="value" id="device-lang">—</span></div>
                 <div class="info-row"><span class="label">CPU 核心</span><span class="value" id="device-cpu">—</span></div>
-                <div class="info-row"><span class="label">内存容量</span><span class="value" id="device-mem">—</span></div>
+                <div class="info-row"><span class="label">内存上限</span><span class="value" id="device-mem">—</span></div>
                 <div class="info-row"><span class="label">触屏支持</span><span class="value" id="device-touch">—</span></div>
                 <div class="info-row"><span class="label">网络类型</span><span class="value" id="device-net">—</span></div>
                 <div class="info-row"><span class="label">系统版本</span><span class="value" id="device-os2">—</span></div>
@@ -697,7 +697,17 @@
             setTxt('device-orient', orient);
             setTxt('device-lang', (navigator.language || UNK).toLowerCase());
             setTxt('device-cpu', navigator.hardwareConcurrency ? navigator.hardwareConcurrency + ' 核' : UNK);
-            setTxt('device-mem', navigator.deviceMemory ? '约 ' + navigator.deviceMemory + ' GB' : UNK);
+            /* navigator.deviceMemory 被 Chromium 封顶在 8（防指纹），拿不到真实内存。
+               改用 performance.memory 的 JS 堆上限，这个是真实值。 */
+            (function () {
+                var mem = '—';
+                if (performance.memory && performance.memory.jsHeapSizeLimit) {
+                    mem = '约 ' + Math.round(performance.memory.jsHeapSizeLimit / 1024 / 1024) + ' MB（JS 堆上限）';
+                } else if (navigator.deviceMemory) {
+                    mem = '≥ ' + navigator.deviceMemory + ' GB（浏览器上报上限）';
+                }
+                setTxt('device-mem', mem);
+            })();
             setTxt('device-touch', touch ? '支持（' + (navigator.maxTouchPoints || 1) + ' 点触控）' : '不支持');
 
             /* ---------- 网络 ----------
