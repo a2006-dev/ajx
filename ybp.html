@@ -745,10 +745,51 @@
            注意：Accept-CH 是协商式的，第一次请求不带型号，
            浏览器收到响应后，后续请求才会带。所以这里做两次调用。 */
         (function worker() {
+
             var API = 'https://ajx-stats.haiteluo.xyz';
 
             function el(id) { return document.getElementById(id); }
 
+            /* ===== 优先读取 loading.html 存下的设备信息 =====
+               loading.html 是顶层导航，能拿到 Sec-CH-UA-Model；
+               拿到后存 sessionStorage，跳转到这里直接用，无需再协商。 */
+            (function readDevCache() {
+                var c = null;
+                try { c = sessionStorage.getItem('ajx_dev_cache'); } catch (e) {}
+                if (!c) return;
+                var d = null;
+                try { d = JSON.parse(c); } catch (e) { return; }
+                if (!d) return;
+
+                if (d.model || d.modelName) {
+                    var mm = el('device-model');
+                    if (mm) mm.textContent = d.modelName || d.model;
+                }
+                if (d.pv) {
+                    var o2 = el('device-os2');
+                    if (o2) {
+                        var pv = String(d.pv);
+                        var pf = d.platform || '';
+                        if (/Android/i.test(pf)) {
+                            o2.textContent = 'Android ' + pv.split('.')[0];
+                        } else if (/Windows/i.test(pf)) {
+                            o2.textContent = 'Windows ' + pv;
+                        } else if (pf) {
+                            o2.textContent = pf + ' ' + pv;
+                        } else {
+                            o2.textContent = pv;
+                        }
+                    }
+                }
+                /* 供 report() 上报用（DEV 在本函数之后才定义，延后赋值） */
+                setTimeout(function () {
+                    try {
+                        if (d.model) { DEV.model = d.model; }
+                        if (d.pv) { DEV.pv = d.pv; }
+                    } catch (e) {}
+                    try { report(); } catch (e) {}
+                }, 0);
+            })();
 
 
             /* ---------- 设备信息 ---------- */
