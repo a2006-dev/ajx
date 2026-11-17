@@ -541,9 +541,9 @@ body.rot #glass{
 
 /* ============ 横屏 ============ */
 @media (orientation:landscape){
-  #verse{top:clamp(20px,4.6vh,40px);font-size:clamp(10px,1.7vh,13px)}
+  #verse{top:clamp(6px,1.4vh,14px);font-size:clamp(10px,1.7vh,13px)}
   /* 诗句上移后，英文翻译必须跟着上移，否则会压到日期和时间 */
-  #verseEn{top:calc(clamp(20px,4.6vh,40px) + clamp(17px,3vh,24px));font-size:clamp(9px,1.5vh,11px)}
+  #verseEn{top:calc(clamp(6px,1.4vh,14px) + clamp(15px,2.6vh,21px));font-size:clamp(9px,1.5vh,11px)}
   #stage{
     padding:0 clamp(40px,8vw,110px);
     /* 横屏 vh 很小，用 vh 算出的值会退化到下限，导致日期压住诗句翻译。
