@@ -12,9 +12,7 @@
 <link rel="stylesheet" href="./fonts/lxgw-wenkai.css">
 <title>停云</title>
 <style>
-/* 字体：霞鹜文楷（LXGW WenKai），开源楷体，SIL OFL 授权。
-   完整字重放在 ./fonts/lxgw-wenkai.css，按 unicode-range 分片，
-   浏览器只下载页面实际用到的字片，不会一次拉全量。 */
+
 @font-face{
   font-family:'TingYun';
   src:local('LXGW WenKai'),local('LXGW WenKai Regular');
@@ -23,7 +21,6 @@
   font-display:swap;
 }
 
-/* 停云 —— 挂机页 */
 @property --c1 { syntax:'<color>'; initial-value:#080b11; inherits:true; }
 @property --c2 { syntax:'<color>'; initial-value:#121a26; inherits:true; }
 @property --c3 { syntax:'<color>'; initial-value:#070a0f; inherits:true; }
@@ -70,7 +67,6 @@ body{
              --haze 1600ms var(--ease);
 }
 
-/* ============ 背景 ============ */
 #bg{
   position:fixed;inset:0;z-index:0;
   background:linear-gradient(168deg,var(--c1) 0%,var(--c2) 58%,var(--c3) 100%);
@@ -90,9 +86,6 @@ body{
     linear-gradient(180deg,rgba(5,8,12,.34) 0%,rgba(5,8,12,.02) 40%,rgba(4,7,11,.46) 100%);
 }
 
-/* ============ 全屏雾面层（替代全屏 backdrop-filter） ============
-   全屏 blur 会让 GPU 每帧对整幅画面采样一次，全屏 + 高刷时是主要卡顿源。
-   这里改用「半透明垫色 + 静态细噪点」，观感接近哑光玻璃但没有实时采样开销。 */
 #glass{
   position:fixed;inset:0;z-index:3;
   pointer-events:none;
@@ -116,11 +109,8 @@ body.quiet #glass{
   background:rgba(10,15,23,.13);
 }
 
-
-/* ============ 雨景视频层 ============ */
 #vbg{
-  /* 铺满全屏。素材已转成竖幅（中间完整画面 + 上下模糊延展），
-     所以既能填满屏幕，主体又不会被放得很大 */
+
   position:fixed;inset:0;z-index:1;
   width:100%;height:100%;
   object-fit:cover;
@@ -130,10 +120,10 @@ body.quiet #glass{
   background:transparent;
 }
 #vbg.on{opacity:1}
-/* 视频播放时让出手绘雨，避免两层雨叠在一起 */
+
 body.vid #rain{opacity:0}
 #rain{transition:opacity .9s var(--ease)}
-/* ============ 诗句（最顶） ============ */
+
 #verse{
   position:fixed;top:clamp(38px,7.4vh,72px);left:0;right:0;z-index:6;
   text-align:center;
@@ -159,7 +149,6 @@ body.quiet #verseEn{
   transform:none;
 }
 
-/* ============ 中轴 ============ */
 #stage{
   position:fixed;inset:0;z-index:4;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -169,7 +158,6 @@ body.quiet #verseEn{
   pointer-events:none;
 }
 
-/* 时间块：唯一的毛玻璃 */
 #core{
   position:relative;
   padding:clamp(22px,4.2vh,36px) clamp(8px,2.4vw,20px);
@@ -206,7 +194,6 @@ body.quiet #verseEn{
   transition:opacity .9s var(--ease),transform .9s var(--ease);
 }
 
-/* ============ 歌词 ============ */
 #lyric{
   margin-top:clamp(26px,5.4vh,50px);
   max-width:min(720px,90vw);
@@ -233,8 +220,6 @@ body.quiet #verseEn{
 }
 #lyric.empty .l,#lyric.empty .c{opacity:0}
 
-/* ============ 静默 ============ */
-/* 静默时诗句、年月日、歌词、停留都留在原位，只压暗到很轻的一层 */
 body.quiet #verse{
   opacity:.34;
   transform:none;
@@ -257,8 +242,6 @@ body.quiet #core{
 }
 body.quiet #deck{opacity:.56}
 
-
-/* ============ 底部 ============ */
 #deck{
   position:fixed;left:0;right:0;bottom:0;z-index:20;
   padding:0 clamp(16px,4.6vw,48px) calc(clamp(12px,2.4vh,20px) + env(safe-area-inset-bottom,0px));
@@ -318,7 +301,6 @@ body.quiet #deck{opacity:.56}
 #more:hover{color:var(--dim)}
 #more.on{color:rgba(219,230,245,.8)}
 
-/* 展开面板 */
 #panel{
   max-height:0;opacity:0;overflow:hidden;
   transition:max-height .48s var(--ease),opacity .3s ease;
@@ -360,7 +342,6 @@ body.quiet #deck{opacity:.56}
 .tool:hover{color:var(--ink);border-color:rgba(200,222,248,.2)}
 .tool:active{background:rgba(255,255,255,.05)}
 
-/* 白噪音：一排字，不用按钮框 */
 #amb{
   margin-top:clamp(15px,2.8vh,21px);
   padding-top:clamp(12px,2.2vh,16px);
@@ -373,7 +354,7 @@ body.quiet #deck{opacity:.56}
   width:100%;
 }
 #ambVol{gap:10px}
-/* 触控热区：行内小字按钮在手机上太难点，撑到 44px 高 */
+
 #ambTop .amb,#ambTop #ambOff{
   min-height:44px;min-width:30px;
   display:inline-flex;align-items:center;justify-content:center;
@@ -402,7 +383,6 @@ body.quiet #deck{opacity:.56}
   background:currentColor;opacity:.6;
 }
 
-/* 音量滑条：一条线一个点 */
 #volRange{
   -webkit-appearance:none;appearance:none;
   flex:1 1 auto;min-width:0;width:100%;height:34px;
@@ -436,7 +416,6 @@ body.quiet #deck{opacity:.56}
   cursor:pointer;
 }
 
-/* 提示 */
 #tip{
   position:fixed;left:50%;bottom:clamp(96px,17vh,132px);
   transform:translate(-50%,8px);
@@ -453,7 +432,6 @@ body.quiet #deck{opacity:.56}
 }
 #tip.on{opacity:1;transform:translate(-50%,0)}
 
-/* ============ 曲目列表 ============ */
 #list{
   position:fixed;inset:0;z-index:31;
   background:rgba(5,8,12,.9);
@@ -512,8 +490,6 @@ body.quiet #deck{opacity:.56}
   position:relative;top:-2px;
 }
 
-
-/* ============ 手动横屏：整页旋转 90° ============ */
 body.rot #app{
   position:fixed;
   top:0;left:0;
@@ -523,9 +499,7 @@ body.rot #app{
   transform:rotate(90deg) translateY(-100vw);
   overflow:hidden;
 }
-/* 旋转后，真正可用的“高度”变成了 100vw（如 400px）。
-   但 CSS 里的 vh 仍指向原视口高（846px），所有基于 vh 的间距都会偏大 2 倍多，
-   导致日期往上溢出、压住诗句翻译。这里统一改用 vw 重新计算。 */
+
 body.rot #stage{
   justify-content:flex-start;
   padding:0 clamp(40px,8vw,110px);
@@ -547,9 +521,7 @@ body.rot #stay{font-size:clamp(9.5px,2.6vw,11.5px);margin-top:clamp(6px,1.6vw,10
 body.rot #lyric{margin-top:clamp(6px,1.4vw,12px);min-height:2.6em}
 body.rot #lyric .l{font-size:clamp(13px,3.4vw,17px)}
 body.rot #lyric .c{font-size:clamp(11px,2.8vw,13px)}
-/* 旋转横屏下，背景层的尺寸基准换成 100vh × 100vw（= 846 × 400）。
-   #app 有 transform，会成为包含块，fixed 子元素跟着一起转，
-   只需保证尺寸正确，画面方向和内容就能一致。 */
+
 body.rot #rain,
 body.rot #bg,
 body.rot #veil,
@@ -559,24 +531,16 @@ body.rot #vbg{
   height:100vw;
   inset:0;
 }
-/* 视频层：素材 2560×1440，横过来看时按宽度铺满，
-   上下多余部分裁掉，主体保持在中央，不要横向拉伸变形。 */
+
 body.rot #vbg{
   object-fit:cover;
   object-position:center center;
 }
 
-/* ============ 全屏手势条：尽量压暗 ============ */
-/* 注意：绝不能给 html 加 padding。html 的 padding 会撑高视口，
-   fixed 层（#bg/#rain/#vbg）跟随视口定位，整体下移就会让顶部空出一条黑带。
-   底部安全区由 #deck 自己用 padding 处理。 */
 #deck{
   padding-bottom:calc(clamp(12px,2.4vh,20px) + env(safe-area-inset-bottom,0px));
 }
 
-/* ============ 窄屏竖屏（宽度 < 480px） ============ */
-/* #stage 是 flex 居中，内容一多就往上顶，日期会压住诗句翻译。
-   这里改成从顶部排列并给足间距，彻底避免重叠。 */
 @media (orientation:portrait) and (max-width:480px){
   #stage{
     justify-content:flex-start;
@@ -586,15 +550,13 @@ body.rot #vbg{
   #verseEn{top:calc(clamp(34px,4.6vh,44px) + clamp(19px,2.6vh,24px))}
 }
 
-/* ============ 横屏 ============ */
 @media (orientation:landscape){
   #verse{top:clamp(6px,1.4vh,14px);font-size:clamp(10px,1.7vh,13px)}
-  /* 诗句上移后，英文翻译必须跟着上移，否则会压到日期和时间 */
+
   #verseEn{top:calc(clamp(6px,1.4vh,14px) + clamp(15px,2.6vh,21px));font-size:clamp(9px,1.5vh,11px)}
   #stage{
     padding:0 clamp(40px,8vw,110px);
-    /* 关键：#stage 是 flex 居中，padding-top 压不住内容。
-       横屏改成从顶部排列，用 padding-top 把内容推到诗句翻译下方。 */
+
     justify-content:flex-start;
     padding-top:clamp(62px,13vh,88px);
     padding-bottom:clamp(74px,15vh,104px);
@@ -612,8 +574,6 @@ body.rot #vbg{
   #deck.open #panel{max-height:min(240px,46vh)}
 }
 
-/* ============ PC / 宽屏适配 ============ */
-/* 桌面宽屏下 clamp 里的 vw 会把字撑得过大，这里改用固定区间 */
 @media (min-width:900px){
   #verse{
     top:clamp(30px,5vh,54px);
@@ -638,7 +598,6 @@ body.rot #vbg{
   #lyric .l{font-size:clamp(15px,2.4vh,19px)}
   #lyric .c{font-size:clamp(12px,1.9vh,14.5px);margin-top:9px}
 
-  /* 底部控制条：居中限宽，不要横贯整屏 */
   #deck{
     padding:0 40px calc(22px + env(safe-area-inset-bottom,0px));
     background:linear-gradient(180deg,transparent,rgba(4,7,11,.62) 46%);
@@ -661,12 +620,10 @@ body.rot #vbg{
   #rows{max-width:760px;margin:0 auto}
   #tip{bottom:clamp(96px,14vh,124px)}
 
-  /* 桌面鼠标：hover 才显示控件 */
   #deck{opacity:.92}
   body.quiet #deck{opacity:.5}
 }
 
-/* 超宽屏：进一步收紧纵向留白，避免中间空太多 */
 @media (min-width:1400px){
   #time{font-size:clamp(76px,12vh,132px)}
   #lyric{margin-top:clamp(30px,5vh,52px)}
@@ -674,7 +631,6 @@ body.rot #vbg{
   #rows{max-width:860px}
 }
 
-/* 桌面横屏但高度很小的窗口（笔记本半屏） */
 @media (min-width:900px) and (max-height:620px){
   #stage{padding-top:clamp(64px,11vh,96px);padding-bottom:clamp(96px,16vh,124px)}
   #time{font-size:clamp(48px,12vh,80px)}
@@ -692,7 +648,6 @@ body.rot #vbg{
   *{transition-duration:.01ms!important;animation-duration:.01ms!important}
 }
 
-/* ============ 性能：限制重绘范围 ============ */
 #rain,#bg,#veil,#glass{
   contain:paint;
   will-change:auto;
@@ -701,7 +656,6 @@ body.rot #vbg{
   contain:layout style;
 }
 
-/* ============ 顶栏常驻按钮 / 返回小站 ============ */
 .ico.top{
   width:34px;height:34px;flex:none;
   display:inline-flex;align-items:center;justify-content:center;
@@ -1071,7 +1025,7 @@ var lyricSavoir = [
 
 </script>
 <script>
-/* 停云 · 背景层：四个场景各自成景 */
+
 (function () {
   'use strict';
   var cv = null, ctx = null, W = 0, H = 0, dpr = 1;
@@ -1082,12 +1036,10 @@ var lyricSavoir = [
 
   function rnd(a, b) { return a + Math.random() * (b - a); }
 
-  /* 视觉区：宽屏时把构图收进中间一块，避免元素被横向拉开。
-     手机竖屏时 VX=0、VW=W，等于不做任何改动。 */
   var VX = 0, VW = 0, VH = 0, S = 1;
   function computeView() {
     var ar = W / H;
-    /* 超过 1.25 的宽高比就开始收窄，最多收到 1.25 的比例 */
+
     var maxW = H * 1.25;
     if (ar > 1.25) {
       VW = maxW;
@@ -1097,20 +1049,16 @@ var lyricSavoir = [
       VX = 0;
     }
     VH = H;
-    /* 尺寸基准：手机用宽，宽屏用视觉区宽 */
+
     S = Math.min(VW, H);
   }
 
   function resize() {
     if (!cv) return;
-    /* 读视口尺寸，不用 cv.clientWidth：
-       写 cv.width 会重置画布的 CSS 尺寸，读它会形成循环，导致越算越小 */
+
     var vw = window.innerWidth || document.documentElement.clientWidth || 360;
     var vh = window.innerHeight || document.documentElement.clientHeight || 640;
 
-    /* 手动横屏时 #app 整体 rotate(90deg)，容器变成 vh × vw。
-       画布缓冲区必须跟着对调，否则 400×846 的画被铺进 846×400 的盒子，
-       整幅雨景会横向拉伸变形。 */
     if (document.body.classList.contains('rot')) {
       W = vh;
       H = vw;
@@ -1119,7 +1067,6 @@ var lyricSavoir = [
       H = vh;
     }
 
-    /* 像素预算：全屏时若按 3x 绘制会变成 9 倍开销，这里封顶 1.6M 像素 */
     var raw = window.devicePixelRatio || 1;
     if (raw > 2) raw = 2;
     var budget = 1600000;
@@ -1134,15 +1081,13 @@ var lyricSavoir = [
     build();
   }
 
-  /* 短边为基准的密度系数：手机竖屏=1，PC 宽屏按面积放大，
-     这样雨丝不会因为屏幕变宽而稀掉，也不会因为拉伸变粗 */
   var DENS = 1;
 
   function build() {
     var area = W * H;
-    var ref = 420 * 860;                 /* 近似手机竖屏面积 */
+    var ref = 420 * 860;
     DENS = Math.max(.85, Math.min(3.2, area / ref));
-    DENS = Math.sqrt(DENS);              /* 线性密度 */
+    DENS = Math.sqrt(DENS);
 
     drops.length = 0;
     var nDrop = Math.round(180 * DENS);
@@ -1179,14 +1124,13 @@ var lyricSavoir = [
     };
   }
 
-  /* ========== 一：窗外街道，下着雨 ========== */
   var STREET = [
     [0.00, 0.34, 0.17, 0.46], [0.18, 0.24, 0.14, 0.54], [0.33, 0.36, 0.20, 0.42],
     [0.55, 0.28, 0.16, 0.50], [0.72, 0.20, 0.22, 0.58], [0.95, 0.32, 0.13, 0.46]
   ];
 
   function drawStreet(t, dt) {
-    /* 楼群：以视觉区为基准，宽屏时整体收进中间，不被拉扁 */
+
     for (var i = 0; i < STREET.length; i++) {
       var b = STREET[i];
       var bx = VX + b[0] * VW, by = b[1] * VH, bw = b[2] * VW, bh = b[3] * VH;
@@ -1196,7 +1140,6 @@ var lyricSavoir = [
       ctx.fillStyle = g;
       ctx.fillRect(bx, by, bw, bh);
 
-      /* 窗灯 */
       var cols = Math.floor(bw / 20);
       var rows = Math.floor(bh / 24);
       for (var c = 0; c < cols; c++) {
@@ -1212,21 +1155,19 @@ var lyricSavoir = [
         }
       }
     }
-    /* 街道地面 */
+
     var sg = ctx.createLinearGradient(0, H * .68, 0, H);
     sg.addColorStop(0, 'rgba(28,38,54,.28)');
     sg.addColorStop(1, 'rgba(13,19,29,.62)');
     ctx.fillStyle = sg;
     ctx.fillRect(0, H * .68, W, H * .32);
 
-    /* 街面积水反光 */
     var refl = ctx.createLinearGradient(0, H * .80, 0, H);
     refl.addColorStop(0, 'rgba(120,158,205,.055)');
     refl.addColorStop(1, 'rgba(90,125,175,.012)');
     ctx.fillStyle = refl;
     ctx.fillRect(0, H * .80, W, H * .20);
 
-    /* 两盏路灯 */
     for (var L = 0; L < 2; L++) {
       var lx2 = VX + VW * (.24 + L * .52), ly2 = VH * .295;
       var lg = ctx.createRadialGradient(lx2, ly2, 0, lx2, ly2, Math.min(W, H) * .18);
@@ -1246,7 +1187,6 @@ var lyricSavoir = [
       ctx.stroke();
     }
 
-    /* 雨丝 */
     for (var d = 0; d < drops.length; d++) {
       var p = drops[d];
       var vy = p.v * (H / 800);
@@ -1264,7 +1204,6 @@ var lyricSavoir = [
       ctx.stroke();
     }
 
-    /* 玻璃上的水痕 */
     for (var w2 = 0; w2 < 9; w2++) {
       var wx = ((w2 * 137.3) % 100) / 100 * W;
       var sp = .020 + (w2 % 3) * .009;
@@ -1278,7 +1217,6 @@ var lyricSavoir = [
     }
   }
 
-  /* ========== 二：林间 ========== */
   function drawForest(t) {
     var nTree = Math.max(16, Math.round(16 * DENS));
     for (var i = 0; i < nTree; i++) {
@@ -1308,7 +1246,6 @@ var lyricSavoir = [
       ctx.fill();
     }
 
-    /* 飘叶 */
     for (var m = 0; m < 26; m++) {
       var mx = (m * 71.3 % 100) / 100 * W + Math.sin(t * .4 + m) * 26;
       var my = ((t * (.012 + (m % 5) * .004) * 60 + m * 43) % (H * 1.2)) - H * .1;
@@ -1318,7 +1255,6 @@ var lyricSavoir = [
       ctx.fill();
     }
 
-    /* 萤火 */
     for (var f = 0; f < 14; f++) {
       var fx = (f * 83.7 % 100) / 100 * W + Math.sin(t * .5 + f) * 30;
       var fy = H * .45 + Math.sin(t * .38 + f * 2) * H * .22;
@@ -1339,7 +1275,6 @@ var lyricSavoir = [
     ctx.fillRect(0, H * .72, W, H * .28);
   }
 
-  /* ========== 三：篝火 ========== */
   function drawFire(t, dt) {
     var cx = VX + VW * .5, cy = VH * .795;
 
@@ -1349,7 +1284,6 @@ var lyricSavoir = [
     ctx.fillStyle = gg;
     ctx.fillRect(0, H * .72, W, H * .28);
 
-    /* 远处树剪影 */
     for (var i = 0; i < 9; i++) {
       var x = (i / 9 + .04) * W;
       ctx.fillStyle = 'rgba(12,7,5,.40)';
@@ -1362,7 +1296,6 @@ var lyricSavoir = [
       ctx.fill();
     }
 
-    /* 火光晕 */
     flick += (rnd(.93, 1.07) - flick) * .14;
     var halo = ctx.createRadialGradient(cx, cy - 20, 8, cx, cy - 20, H * .50);
     halo.addColorStop(0, 'rgba(242,152,66,' + (.16 * flick) + ')');
@@ -1372,14 +1305,12 @@ var lyricSavoir = [
     ctx.fillStyle = halo;
     ctx.fillRect(0, 0, W, H);
 
-    /* 柴 */
     ctx.strokeStyle = 'rgba(46,26,16,.88)';
     ctx.lineWidth = 7;
     ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(cx - 36, cy + 6); ctx.lineTo(cx + 28, cy + 21); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(cx + 36, cy + 6); ctx.lineTo(cx - 28, cy + 21); ctx.stroke();
 
-    /* 火焰三层 */
     var layers = [
       { h: 132, w: 42, c: 'rgba(255,184,88,.38)', ph: 0 },
       { h: 90, w: 28, c: 'rgba(255,212,138,.42)', ph: 2.1 },
@@ -1397,7 +1328,6 @@ var lyricSavoir = [
       ctx.fill();
     }
 
-    /* 火星上升 */
     for (var m = 0; m < motes.length; m++) {
       var p = motes[m];
       p.ph += dt * 1.7;
@@ -1415,7 +1345,6 @@ var lyricSavoir = [
     }
   }
 
-  /* ========== 四：夜海 ========== */
   function drawWaves(t) {
     var sg = ctx.createLinearGradient(0, H * .40, 0, H * .58);
     sg.addColorStop(0, 'rgba(20,40,68,0)');
@@ -1432,7 +1361,6 @@ var lyricSavoir = [
       ctx.fill();
     }
 
-    /* 月亮 */
     var mx = VX + VW * .76, my = VH * .19;
     var mg = ctx.createRadialGradient(mx, my, 0, mx, my, 78);
     mg.addColorStop(0, 'rgba(238,244,252,.20)');
@@ -1448,7 +1376,6 @@ var lyricSavoir = [
     ctx.arc(mx, my, 15, 0, 6.2832);
     ctx.fill();
 
-    /* 海浪 */
     for (var w = 0; w < waves.length; w++) {
       var L = waves[w];
       var baseY = L.y * H;
@@ -1476,7 +1403,6 @@ var lyricSavoir = [
       ctx.stroke();
     }
 
-    /* 月光在水面的倒影 */
     var rg = ctx.createLinearGradient(mx - 44, 0, mx + 44, 0);
     rg.addColorStop(0, 'rgba(210,232,252,0)');
     rg.addColorStop(.5, 'rgba(214,234,252,.048)');
@@ -1485,14 +1411,12 @@ var lyricSavoir = [
     ctx.fillRect(mx - 44, H * .56, 88, H * .44);
   }
 
-  /* ========== 主循环 ========== */
-  var FPS = 90;            /* 上限 90 帧；屏幕刷新率不足时自动跟随 */
+  var FPS = 90;
   var GAP = 1000 / FPS;
   var acc = 0;
   var paused = false;
   var lowPower = false;
 
-  /* 省电模式：页面不可见时完全停绘 */
   function pause() {
     if (paused) return;
     paused = true;
@@ -1511,7 +1435,6 @@ var lyricSavoir = [
   window.addEventListener('pagehide', pause);
   window.addEventListener('pageshow', resume);
 
-  /* 低电量或系统要求降级时，把帧率再砍一半 */
   if (window.matchMedia) {
     var mqR = window.matchMedia('(prefers-reduced-motion: reduce)');
     if (mqR && mqR.matches) lowPower = true;
@@ -1523,11 +1446,11 @@ var lyricSavoir = [
     if (!last) { last = now; acc = GAP; }
     var dt = (now - last) / 1000;
     last = now;
-    if (dt > .25) dt = .25;   /* 掉帧保护，避免一次跳太远 */
+    if (dt > .25) dt = .25;
 
     acc += dt * 1000;
     var step = lowPower ? GAP * 2 : GAP;
-    /* 留 2ms 容差，避免 90 与 60 的 vsync 取整互相踩踏导致掉到 45 */
+
     if (acc < step - 2) {
       t0 = requestAnimationFrame(frame);
       return;
@@ -1572,7 +1495,7 @@ var lyricSavoir = [
 })();
 </script>
 <script>
-/* 停云 主程序 */
+
 (function () {
   'use strict';
   function id(n) { return document.getElementById(n); }
@@ -1588,7 +1511,6 @@ var lyricSavoir = [
   var bRot = id('bRot');
   var ambOff = id('ambOff'), volRange = id('volRange'), volNum = id('volNum');
 
-  /* ============ 曲库 ============ */
   var SITE = [
     { t: 'When the Summer Ends', a: 'Savoir Adore', al: 'Our Nature', src: './music/savoir-adore-summer-ends.mp3', ly: lyricSavoir },
     { t: 'Duvet', a: 'bôa', al: 'Twilight', src: './music/boa-duvet.mp3', ly: lyricBoa },
@@ -1618,7 +1540,6 @@ var lyricSavoir = [
     tipT = setTimeout(function () { elTip.classList.remove('on'); }, 2000);
   }
 
-  /* ============ 时钟 ============ */
   var WK = ['日', '一', '二', '三', '四', '五', '六'];
   function pad2(n) { return n < 10 ? '0' + n : '' + n; }
   function clock() {
@@ -1640,7 +1561,6 @@ var lyricSavoir = [
     elStay.textContent = txt;
   }
 
-  /* ============ 静默 ============ */
   var quietT = null;
   function wake() {
     document.body.classList.remove('quiet');
@@ -1651,7 +1571,6 @@ var lyricSavoir = [
     }, 6000);
   }
 
-  /* ============ 歌词 ============ */
   function showLine(l, c) {
     if (!l && !c) {
       elL.style.opacity = '0';
@@ -1688,7 +1607,6 @@ var lyricSavoir = [
     showLine('', '');
   }
 
-  /* ============ 播放 ============ */
   function allTracks() { return SITE.concat(locals); }
 
   function paintPlay(playing) {
@@ -1741,7 +1659,6 @@ var lyricSavoir = [
     syncLyric(au.currentTime);
   });
 
-  /* ============ 曲目列表 ============ */
   function renderRows() {
     var arr = allTracks();
     elRows.innerHTML = '';
@@ -1775,11 +1692,6 @@ var lyricSavoir = [
     elList.classList.remove('on');
   }
 
-  /* ============ 顶部取色：让系统黑边与画面同色 ============ */
-  /* 做法：把当前画面顶部一条缩到 1x1 采样，取平均色，
-     写入 <meta name=theme-color>，并同步一条顶部渐变垫层。
-     全屏时系统在应用窗口四周留的黑边不在网页控制范围内，
-     但把它染成接近画面的颜色，接缝就不再突兀。 */
   var tcMeta = document.querySelector('meta[name="theme-color"]');
   var topVeil = null;
   var lastTop = '';
@@ -1795,26 +1707,25 @@ var lyricSavoir = [
     return topVeil;
   }
 
-  /* 从给定源取顶部平均色，源可以是 video 或 canvas */
   function sampleTop(src, sw, sh) {
     if (!sw || !sh) return null;
     try {
       var c = document.createElement('canvas');
       c.width = 1; c.height = 1;
       var g = c.getContext('2d', { willReadFrequently: true });
-      /* 只取顶部 6% 的高度带，横向取中间 80% 避开圆角压暗 */
+
       var bh = Math.max(1, Math.round(sh * 0.06));
       g.drawImage(src, Math.round(sw * 0.1), 0, Math.round(sw * 0.8), bh, 0, 0, 1, 1);
       var d = g.getImageData(0, 0, 1, 1).data;
       return [d[0], d[1], d[2]];
     } catch (e) {
-      return null;   /* 跨域或无帧就放弃，不打断主流程 */
+      return null;
     }
   }
 
   function applyTopColor(rgb) {
     if (!rgb) return;
-    /* 略压暗一点，和画面下方的深色衔接更自然 */
+
     var r = Math.round(rgb[0] * 0.72),
         g = Math.round(rgb[1] * 0.72),
         b = Math.round(rgb[2] * 0.72);
@@ -1835,7 +1746,6 @@ var lyricSavoir = [
     v.style.opacity = '.92';
   }
 
-  /* 视频在播时按节流频率取色，避免每帧都绘制 */
   var topTimer = null;
   function watchVideoTop(v) {
     if (!v || !v.videoWidth) return;
@@ -1846,31 +1756,26 @@ var lyricSavoir = [
     var tick = function () {
       if (v && !v.paused && v.videoWidth) watchVideoTop(v);
     };
-    topTimer = setInterval(tick, 3200);   /* 3.2 秒一次，够用且几乎不耗性能 */
+    topTimer = setInterval(tick, 3200);
     tick();
   }
   function stopTopWatch() {
     if (topTimer) { clearInterval(topTimer); topTimer = null; }
   }
 
-  /* 手绘场景：直接从主 canvas 顶部取色 */
   function watchCanvasTop() {
     var cv = document.getElementById('rain');
     if (!cv || !cv.width) return;
     applyTopColor(sampleTop(cv, cv.width, cv.height));
   }
 
-  /* ============ 白噪音 ============ */
   var SCENES = {
     rain:   { c1: '#080b11', c2: '#121a26', c3: '#070a0f', glow: 'rgba(140,175,220,.10)', haze: 'rgba(150,180,215,.055)' },
     fire:   { c1: '#100a08', c2: '#26160f', c3: '#0a0605', glow: 'rgba(226,138,74,.115)', haze: 'rgba(220,150,90,.05)' },
     forest: { c1: '#070e0b', c2: '#14231b', c3: '#050a08', glow: 'rgba(104,170,132,.095)', haze: 'rgba(120,180,145,.05)' },
     waves:  { c1: '#050a12', c2: '#0d1a2b', c3: '#040811', glow: 'rgba(92,150,214,.115)', haze: 'rgba(110,165,220,.055)' }
   };
-  /* 白噪音源：优先 Opus/OGG。
-     OGG 封装带 pre-skip 与原始样本数，播放器会精确裁掉编码器补的
-     前导/尾部静音，配合我们做好的首尾交叉淡化，loop 处无空隙。
-     不支持 Opus 的浏览器回退到 mp3。 */
+
   var canOpus = (function () {
     try {
       var a = document.createElement('audio');
@@ -1885,7 +1790,7 @@ var lyricSavoir = [
     waves:  './sfx/waves'  + ambExt
   };
   var ambEl = null, ambScene = 'rain', ambOn = false, ambFadeT = null;
-  var ambVol = .34;   /* 白噪音目标音量，由滑条写入 */
+  var ambVol = .34;
 
   function ambInit() {
     if (!ambEl) {
@@ -1925,7 +1830,7 @@ var lyricSavoir = [
     r.setProperty('--glow', st.glow);
     r.setProperty('--haze', st.haze);
     if (window.RAIN) window.RAIN.setScene(s);
-    /* 场景配色已变，等一帧让 canvas 重绘后重新取顶部色 */
+
     setTimeout(watchCanvasTop, 260);
     var btns = document.querySelectorAll('.amb');
     for (var i = 0; i < btns.length; i++) {
@@ -1938,7 +1843,7 @@ var lyricSavoir = [
     ambScene = s;
     applyScene(s);
     if (ambEl && ambOn) {
-      /* 声音交叉：先淡出，换源，再淡入 */
+
       ambFadeTo(0, 620);
       setTimeout(function () {
         ambEl.src = ambSrc[s];
@@ -1952,9 +1857,7 @@ var lyricSavoir = [
     }
   }
 
-
-  /* ============ 白噪音：开关与音量 ============ */
-  var ambManualOff = false;   /* 用户主动关过，不再自动重播 */
+  var ambManualOff = false;
   function ambStop() {
     if (!ambEl || !ambOn) return;
     ambFadeTo(0, 700);
@@ -1981,18 +1884,17 @@ var lyricSavoir = [
       vr.addEventListener('input', function () {
         ambVol = Math.max(0, Math.min(1, parseFloat(vr.value) / 100));
         if (vn) vn.textContent = Math.round(ambVol * 100);
-        /* 调音量时立即跟上，不做淡变，手感更直接 */
+
         if (ambEl && ambOn) {
           clearInterval(ambFadeT);
           ambEl.volume = ambVol;
         }
         wake();
       });
-      /* 触摸滑条不要触发静默隐藏 */
+
       vr.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
     }
 
-    /* 四个场景按钮：此时 DOM 一定已就绪 */
     var btns = document.querySelectorAll('.amb');
     for (var bi = 0; bi < btns.length; bi++) {
       btns[bi].addEventListener('click', function (e) {
@@ -2013,8 +1915,6 @@ var lyricSavoir = [
     }
   }
 
-
-  /* ============ 雨景视频背景 ============ */
   var VID = {
     garden:  './video/rain-garden.mp4',
     store:   './video/rain-store.mp4',
@@ -2033,7 +1933,6 @@ var lyricSavoir = [
     vbg = vbg || document.getElementById('vbg');
     if (!vbg) return;
 
-    /* 同一个就别重来 */
     if (k === vidCur) {
       if (k !== 'none' && vbg.paused) { var p2 = vbg.play(); if (p2 && p2.catch) p2.catch(function(){}); }
       return;
@@ -2048,11 +1947,10 @@ var lyricSavoir = [
     if (k === 'none' || !VID[k]) {
       vidStop();
       stopTopWatch();
-      setTimeout(watchCanvasTop, 320);   /* 手绘雨景重新成为画面，按它取色 */
+      setTimeout(watchCanvasTop, 320);
       return;
     }
 
-    /* 交叉淡化：先把旧画面淡出，换源，等首帧解码好再淡入，避免硬切 */
     clearTimeout(vidSwap);
     vbg.classList.remove('on');
 
@@ -2065,7 +1963,7 @@ var lyricSavoir = [
         done = true;
         vbg.classList.add('on');
         document.body.classList.add('vid');
-        startTopWatch(vbg);          /* 视频显示后开始跟随取色 */
+        startTopWatch(vbg);
       }
 
       function fail() {
@@ -2079,7 +1977,6 @@ var lyricSavoir = [
         }
       }
 
-      /* 首帧就绪即淡入，最多等 1.2 秒 */
       var guard = setTimeout(reveal, 1200);
       vbg.onloadeddata = function () {
         clearTimeout(guard);
@@ -2098,7 +1995,7 @@ var lyricSavoir = [
           fail();
         });
       }
-    }, 420);   /* 给淡出留时间 */
+    }, 420);
 
     wake();
   }
@@ -2107,7 +2004,7 @@ var lyricSavoir = [
     vbg = document.getElementById('vbg');
     if (vbg) {
       vbg.addEventListener('error', function () { vidStop(); vidCur = 'none'; });
-      /* 播完一轮不要停：loop 已处理，这里只防 iOS 偶发暂停 */
+
       vbg.addEventListener('pause', function () {
         if (vidCur !== 'none' && !document.hidden) {
           var pp = vbg.play();
@@ -2122,10 +2019,10 @@ var lyricSavoir = [
         setVid(this.getAttribute('data-v'));
       });
     }
-    /* 默认不播，保持手绘；用户点了才加载 */
+
     setVid('none');
   }
-  /* ============ 横屏：整页旋转 90° ============ */
+
   var rotated = false;
   function setRot(on) {
     rotated = !!on;
@@ -2140,7 +2037,6 @@ var lyricSavoir = [
     bRot.addEventListener('click', function () { setRot(!rotated); });
   }
 
-  /* ============ 全屏 ============ */
   function isFs() {
     return !!(document.fullscreenElement || document.webkitFullscreenElement ||
       document.mozFullScreenElement || document.msFullscreenElement);
@@ -2169,7 +2065,6 @@ var lyricSavoir = [
     });
   });
 
-  /* ============ 交互绑定 ============ */
   bPlay.addEventListener('click', function () { toggle(); wake(); });
   bPrev.addEventListener('click', function () {
     if (!allTracks().length) return;
@@ -2234,8 +2129,6 @@ var lyricSavoir = [
   elSeek.addEventListener('pointerup', function () { seekDrag = false; });
   elSeek.addEventListener('pointercancel', function () { seekDrag = false; });
 
-
-  /* 点空白：收列表 / 收面板 */
   document.addEventListener('pointerdown', function (e) {
     var t = e.target;
     var inDeck = t.closest && t.closest('#deck');
@@ -2250,18 +2143,16 @@ var lyricSavoir = [
     wake();
   }, true);
 
-  /* 首次触摸解锁白噪音（若点的就是场景按钮，交给按钮自己处理） */
   var unlocked = false;
   document.addEventListener('pointerdown', function (e) {
     if (unlocked) return;
     var t = e.target;
     if (t && t.closest && t.closest('.amb')) { unlocked = true; return; }
     unlocked = true;
-    if (ambManualOff) return;   /* 用户关过，尊重这个选择 */
+    if (ambManualOff) return;
     ambStart();
   }, true);
 
-  /* 尺寸变化 */
   var rzT = null;
   window.addEventListener('resize', function () {
     clearTimeout(rzT);
@@ -2282,7 +2173,6 @@ var lyricSavoir = [
     }
   });
 
-  /* ============ 启动 ============ */
   function boot() {
     clock();
     setInterval(clock, 1000);
@@ -2290,7 +2180,7 @@ var lyricSavoir = [
     if (window.RAIN) window.RAIN.init(id('rain'));
 
     applyScene('rain');
-    /* 预置音频源，等用户第一次触摸再播 */
+
     ambInit();
     bindAmb();
     bindVid();
@@ -2301,13 +2191,13 @@ var lyricSavoir = [
 
     paintPlay(false);
     wake();
-    /* 首屏也取一次顶部色，让系统那条黑边一开始就与画面接近 */
+
     setTimeout(watchCanvasTop, 900);
     setTimeout(watchCanvasTop, 2400);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
-  /* resize 去抖：全屏动画期间尺寸会连续变化，避免重复重算与重建场景 */
+
   var rzT = null;
   window.addEventListener('resize', function () {
     if (rzT) clearTimeout(rzT);
