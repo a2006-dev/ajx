@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Worker 测试</title>
+<style>
+body{background:#0f1115;color:#dfe6f0;font:15px/1.7 -apple-system,"PingFang SC",sans-serif;padding:20px;margin:0}
+h1{font-size:18px;margin:0 0 16px}
+.card{background:#171b22;border:1px solid #262d38;border-radius:12px;padding:14px 16px;margin-bottom:12px}
+.row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #212833;font-size:14px}
+.row:last-child{border:0}
+.k{color:#8b98a9}
+.v{color:#fff;font-weight:600;text-align:right;max-width:62%;word-break:break-all}
+.ok{color:#4ade80}
+.er{color:#f87171}
+.wa{color:#fbbf24}
+pre{background:#0b0e13;padding:10px;border-radius:8px;overflow:auto;font-size:12px;color:#9fb3c8;white-space:pre-wrap;word-break:break-all}
+</style>
+</head>
+<body>
+<h1>Worker 连通性测试</h1>
+
+<div class="card">
+  <div class="row"><span class="k">页面版本</span><span class="v" id="ver">—</span></div>
+  <div class="row"><span class="k">whoami 请求</span><span class="v" id="s1">等待</span></div>
+  <div class="row"><span class="k">型号</span><span class="v" id="m1">—</span></div>
+  <div class="row"><span class="k">中文名</span><span class="v" id="m2">—</span></div>
+  <div class="row"><span class="k">系统版本</span><span class="v" id="m3">—</span></div>
+  <div class="row"><span class="k">城市</span><span class="v" id="m4">—</span></div>
+  <div class="row"><span class="k">运营商</span><span class="v" id="m5">—</span></div>
+  <div class="row"><span class="k">hit 上报</span><span class="v" id="s2">等待</span></div>
+  <div class="row"><span class="k">recent 总数</span><span class="v" id="s3">等待</span></div>
+</div>
+
+<div class="card">
+  <div style="font-size:13px;color:#8b98a9;margin-bottom:8px">原始返回</div>
+  <pre id="raw">—</pre>
+</div>
+
+<script>
+(function () {
+  var API = 'https://ajx-stats.haiteluo.xyz';
+  var VERSION = 'TEST-2024-V1';
+
+  function $(id) { return document.getElementById(id); }
+  function say(id, txt, cls) {
+    var e = $(id); if (!e) return;
+    e.textContent = txt;
+    e.className = 'v' + (cls ? ' ' + cls : '');
+  }
+
+  $('ver').textContent = VERSION;
+  $('ver').className = 'v ok';
+
+  /* 1. whoami */
+  fetch(API + '/whoami', { cache: 'no-store' })
+    .then(function (r) {
+      say('s1', 'HTTP ' + r.status, r.ok ? 'ok' : 'er');
+      return r.json();
+    })
+    .then(function (d) {
+      $('raw').textContent = JSON.stringify(d, null, 2);
+      say('m1', d.model || '（空）', d.model ? 'ok' : 'er');
+      say('m2', d.modelName || '（空）', d.modelName ? 'ok' : 'wa');
+      say('m3', d.platformVersion ? (d.platform || '') + ' ' + d.platformVersion : '（空）', d.platformVersion ? 'ok' : 'er');
+      say('m4', d.city || '（空）', d.city ? 'ok' : 'wa');
+      say('m5', d.carrier || d.asn || '（空）', 'ok');
+    })
+    .catch(function (e) {
+      say('s1', '失败: ' + e.message, 'er');
+    });
+
+  /* 2. hit */
+  fetch(API + '/hit', {
+    method: 'POST',
+    cache: 'no-store',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: '', pv: '' })
+  })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      say('s2', d.ok ? '成功' : ('失败 ' + (d.error || '')), d.ok ? 'ok' : 'er');
+    })
+    .catch(function (e) { say('s2', '失败: ' + e.message, 'er'); });
+
+  /* 3. recent */
+  setTimeout(function () {
+    fetch(API + '/recent', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        say('s3', (d.total || 0) + ' 条', d.total > 0 ? 'ok' : 'wa');
+      })
+      .catch(function (e) { say('s3', '失败: ' + e.message, 'er'); });
+  }, 1500);
+})();
+</script>
+</body>
+</html>
