@@ -689,6 +689,22 @@ body.quiet #home{opacity:.4}
 }
 
 </style>
+
+<div id="VP-DEBUG" style="position:fixed;left:0;top:0;z-index:99999;background:#000;color:#0f0;font:12px monospace;padding:4px 8px;pointer-events:none"></div>
+<script>
+(function(){
+  function upd(){
+    var el=document.getElementById('VP-DEBUG');
+    if(!el) return;
+    el.textContent = window.innerWidth + 'x' + window.innerHeight +
+      ' | land=' + (window.innerWidth > window.innerHeight) +
+      ' | min900=' + (window.innerWidth >= 900);
+  }
+  upd();
+  window.addEventListener('resize', upd);
+  window.addEventListener('orientationchange', function(){ setTimeout(upd, 300); });
+})();
+</script>
 </head>
 <body>
 <div id="app">
