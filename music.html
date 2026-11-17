@@ -546,7 +546,9 @@ body.rot #glass{
   #verseEn{top:calc(clamp(20px,4.6vh,40px) + clamp(17px,3vh,24px));font-size:clamp(9px,1.5vh,11px)}
   #stage{
     padding:0 clamp(40px,8vw,110px);
-    padding-top:clamp(46px,10vh,76px);
+    /* 横屏 vh 很小，用 vh 算出的值会退化到下限，导致日期压住诗句翻译。
+       这里直接给足固定间距：诗句 top(20~40) + 翻译行高 + 呼吸空间。 */
+    padding-top:96px;
     padding-bottom:clamp(74px,15vh,104px);
   }
   #core{padding:clamp(15px,3vh,24px) clamp(26px,5vw,48px);max-width:min(600px,64vw)}
