@@ -831,15 +831,18 @@
                     if (pv) {
                         DEV.pv = pv;
                         var o2 = el('device-os2');
-                        if (o2) {
-                            if (/Android/i.test(pf)) {
-                                o2.textContent = 'Android ' + String(pv).split('.')[0];
-                            } else if (pf) {
-                                o2.textContent = pf + ' ' + String(pv).split('.')[0];
-                            } else {
-                                o2.textContent = String(pv).split('.')[0];
-                            }
+                        var osName = '';
+                        if (/Android/i.test(pf)) {
+                            osName = 'Android ' + String(pv).split('.')[0];
+                        } else if (pf) {
+                            osName = pf + ' ' + String(pv).split('.')[0];
+                        } else {
+                            osName = String(pv).split('.')[0];
                         }
+                        if (o2) o2.textContent = String(pv);
+                        /* 操作系统那一行显示主版本，系统版本显示完整号 */
+                        var o1 = el('device-os');
+                        if (o1) o1.textContent = osName;
                     }
                     try { sessionStorage.setItem('ajx_model_ok', '1'); } catch (e) {}
                     try { report(); } catch (e) {}
