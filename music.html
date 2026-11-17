@@ -547,20 +547,20 @@ body.rot #stay{font-size:clamp(9.5px,2.6vw,11.5px);margin-top:clamp(6px,1.6vw,10
 body.rot #lyric{margin-top:clamp(6px,1.4vw,12px);min-height:2.6em}
 body.rot #lyric .l{font-size:clamp(13px,3.4vw,17px)}
 body.rot #lyric .c{font-size:clamp(11px,2.8vw,13px)}
-/* 旋转横屏下，背景层全部是 #app 的 fixed 子元素。
-   #app 有 transform，会成为包含块，这些层以 #app 的 846×400 为参照并一起旋转。
-   因此不要再写 width/height —— inset:0 已经撑满，多写一层反而会和 vh/vw 换算打架。 */
+/* 旋转横屏下，背景层的尺寸基准换成 100vh × 100vw（= 846 × 400）。
+   #app 有 transform，会成为包含块，fixed 子元素跟着一起转，
+   只需保证尺寸正确，画面方向和内容就能一致。 */
 body.rot #rain,
 body.rot #bg,
 body.rot #veil,
 body.rot #glass,
 body.rot #vbg{
+  width:100vh;
+  height:100vw;
   inset:0;
-  width:auto;
-  height:auto;
 }
-/* 视频层：素材是 2560×1440（16:9 横幅），容器 846×400（约 2.11:1）。
-   cover 按宽度铺满，高度 476，上下各裁 38px，主体完整，不会变形。 */
+/* 视频层：素材 2560×1440，横过来看时按宽度铺满，
+   上下多余部分裁掉，主体保持在中央，不要横向拉伸变形。 */
 body.rot #vbg{
   object-fit:cover;
   object-position:center center;
@@ -1105,8 +1105,19 @@ var lyricSavoir = [
     if (!cv) return;
     /* 读视口尺寸，不用 cv.clientWidth：
        写 cv.width 会重置画布的 CSS 尺寸，读它会形成循环，导致越算越小 */
-    W = window.innerWidth || document.documentElement.clientWidth || 360;
-    H = window.innerHeight || document.documentElement.clientHeight || 640;
+    var vw = window.innerWidth || document.documentElement.clientWidth || 360;
+    var vh = window.innerHeight || document.documentElement.clientHeight || 640;
+
+    /* 手动横屏时 #app 整体 rotate(90deg)，容器变成 vh × vw。
+       画布缓冲区必须跟着对调，否则 400×846 的画被铺进 846×400 的盒子，
+       整幅雨景会横向拉伸变形。 */
+    if (document.body.classList.contains('rot')) {
+      W = vh;
+      H = vw;
+    } else {
+      W = vw;
+      H = vh;
+    }
 
     /* 像素预算：全屏时若按 3x 绘制会变成 9 倍开销，这里封顶 1.6M 像素 */
     var raw = window.devicePixelRatio || 1;
