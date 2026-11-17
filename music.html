@@ -539,6 +539,18 @@ body.rot #glass{
   padding-bottom:calc(clamp(12px,2.4vh,20px) + env(safe-area-inset-bottom,0px));
 }
 
+/* ============ 窄屏竖屏（宽度 < 480px） ============ */
+/* #stage 是 flex 居中，内容一多就往上顶，日期会压住诗句翻译。
+   这里改成从顶部排列并给足间距，彻底避免重叠。 */
+@media (orientation:portrait) and (max-width:480px){
+  #stage{
+    justify-content:flex-start;
+    padding-top:clamp(112px,13.5vh,132px);
+  }
+  #verse{top:clamp(34px,4.6vh,44px)}
+  #verseEn{top:calc(clamp(34px,4.6vh,44px) + clamp(19px,2.6vh,24px))}
+}
+
 /* ============ 横屏 ============ */
 @media (orientation:landscape){
   #verse{top:clamp(6px,1.4vh,14px);font-size:clamp(10px,1.7vh,13px)}
@@ -690,21 +702,6 @@ body.quiet #home{opacity:.4}
 
 </style>
 
-<div id="VP-DEBUG" style="position:fixed;left:0;top:0;z-index:99999;background:#000;color:#0f0;font:12px monospace;padding:4px 8px;pointer-events:none"></div>
-<script>
-(function(){
-  function upd(){
-    var el=document.getElementById('VP-DEBUG');
-    if(!el) return;
-    el.textContent = window.innerWidth + 'x' + window.innerHeight +
-      ' | land=' + (window.innerWidth > window.innerHeight) +
-      ' | min900=' + (window.innerWidth >= 900);
-  }
-  upd();
-  window.addEventListener('resize', upd);
-  window.addEventListener('orientationchange', function(){ setTimeout(upd, 300); });
-})();
-</script>
 </head>
 <body>
 <div id="app">
