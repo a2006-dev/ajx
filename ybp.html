@@ -791,6 +791,61 @@
                 }, 0);
             })();
 
+            /* ===== 直接从浏览器 API 拿型号（实测有效，无需协商） =====
+               navigator.userAgentData.getHighEntropyValues(['model','platformVersion'])
+               在 Edge/Chrome 上能直接返回真机型号，不依赖请求头。 */
+            (function readHintAPI() {
+                if (!navigator.userAgentData ||
+                    !navigator.userAgentData.getHighEntropyValues) return;
+
+                navigator.userAgentData.getHighEntropyValues(
+                    ['model', 'platformVersion', 'platform', 'architecture']
+                ).then(function (h) {
+                    var m = (h && h.model) || '';
+                    var pv = (h && h.platformVersion) || '';
+                    var pf = (h && h.platform) || '';
+                    if (!m && !pv) return;
+
+                    /* 缓存给上报用 */
+                    try {
+                        sessionStorage.setItem('ajx_dev_cache', JSON.stringify({
+                            model: m, modelName: '', pv: pv, platform: pf, t: Date.now()
+                        }));
+                    } catch (e) {}
+
+                    if (m) {
+                        DEV.model = m;
+                        var mm = el('device-model');
+                        if (mm) mm.textContent = m;
+                        /* 用代号查 D1 换中文名 */
+                        fetch(API + '/whoami?m=' + encodeURIComponent(m))
+                            .then(function (r) { return r.json(); })
+                            .then(function (dd) {
+                                if (dd && dd.modelName) {
+                                    var e2 = el('device-model');
+                                    if (e2) e2.textContent = dd.modelName;
+                                }
+                            })
+                            .catch(function () {});
+                    }
+                    if (pv) {
+                        DEV.pv = pv;
+                        var o2 = el('device-os2');
+                        if (o2) {
+                            if (/Android/i.test(pf)) {
+                                o2.textContent = 'Android ' + String(pv).split('.')[0];
+                            } else if (pf) {
+                                o2.textContent = pf + ' ' + String(pv).split('.')[0];
+                            } else {
+                                o2.textContent = String(pv).split('.')[0];
+                            }
+                        }
+                    }
+                    try { sessionStorage.setItem('ajx_model_ok', '1'); } catch (e) {}
+                    try { report(); } catch (e) {}
+                }).catch(function () {});
+            })();
+
 
             /* ---------- 设备信息 ---------- */
             function pullDevice(retry) {
@@ -950,18 +1005,9 @@
                         if (box) box.innerHTML = '<div class="visit-empty">暂时无法读取（Worker 未就绪）</div>';
                     });
             }
+            /* 型号已由 readHintAPI 用 getHighEntropyValues() 直接取到，
+               不再需要 Accept-CH 协商，也不再需要自动 reload。 */
 
-            /* 首屏先问设备（触发 Accept-CH 下发），拿到型号后由 pullDevice 触发上报 */
-            /* Accept-CH 协商：第一次 fetch 拿不到型号，浏览器收到响应后才记住，
-               所以本会话首次且没拿到型号时自动 reload 一次。 */
-            try {
-                if (!sessionStorage.getItem('ajx_reload') && !sessionStorage.getItem('ajx_model_ok')) {
-                    sessionStorage.setItem('ajx_reload', '1');
-                    setTimeout(function () {
-                        if (!sessionStorage.getItem('ajx_model_ok')) location.reload();
-                    }, 1400);
-                }
-            } catch (e) {}
 
             pullDevice(true);
             /* 兜底：2.5 秒内 still 没上报，说明协商失败，直接报一条（型号留空） */
