@@ -966,7 +966,7 @@
                 else if (r.region) parts.push(r.region);
                 else if (r.country) parts.push(r.country);
                 if (r.carrier) parts.push(r.carrier);
-                if (r.model) parts.push(r.model);
+                if (r.model) parts.push(MODEL_NAMES[r.model] || r.model);
                 if (r.ip) parts.push(r.ip);
                 where.textContent = parts.join(' · ') || '未知位置';
 
@@ -987,6 +987,31 @@
             }
 
             /* ---------- 读访客列表 ---------- */
+            /* 型号代号 → 中文名缓存。列表里出现新代号时向 Worker 查一次。 */
+            var MODEL_NAMES = {};
+
+            function fillModelNames(models, cb) {
+                var todo = [];
+                for (var i = 0; i < models.length; i++) {
+                    var m = models[i];
+                    if (m && !MODEL_NAMES[m] && todo.indexOf(m) < 0) todo.push(m);
+                }
+                if (!todo.length) { if (cb) cb(); return; }
+                var left = todo.length;
+                todo.forEach(function (m) {
+                    fetch(API + '/whoami?m=' + encodeURIComponent(m), { cache: 'force-cache' })
+                        .then(function (r) { return r.json(); })
+                        .then(function (d) {
+                            if (d && d.modelName) MODEL_NAMES[m] = d.modelName;
+                            else MODEL_NAMES[m] = m;
+                        })
+                        .catch(function () { MODEL_NAMES[m] = m; })
+                        .then(function () {
+                            if (--left === 0 && cb) cb();
+                        });
+                });
+            }
+
             function pullRecent() {
                 fetch(API + '/recent', { cache: 'no-store' })
                     .then(function (r) { return r.json(); })
@@ -1008,9 +1033,14 @@
                             box.innerHTML = '<div class="visit-empty">还没有访问记录</div>';
                             return;
                         }
-                        box.innerHTML = '';
-                        d.recent.forEach(function (r) {
-                            box.appendChild(buildRow(r));
+
+                        /* 先把列表里出现的型号批量换成中文名，再渲染 */
+                        var models = d.recent.map(function (r) { return r.model; });
+                        fillModelNames(models, function () {
+                            box.innerHTML = '';
+                            d.recent.forEach(function (r) {
+                                box.appendChild(buildRow(r));
+                            });
                         });
                     })
                     .catch(function () {
