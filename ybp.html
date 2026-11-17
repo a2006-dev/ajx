@@ -976,9 +976,12 @@
                 var now = new Date();
                 var sameDay = dt.toDateString() === now.toDateString();
                 var pad = function (x) { return ('0' + x).slice(-2); };
-                when.textContent = sameDay
+                var timeTxt = sameDay
                     ? pad(dt.getHours()) + ':' + pad(dt.getMinutes())
                     : (dt.getMonth() + 1) + '/' + dt.getDate() + ' ' + pad(dt.getHours()) + ':' + pad(dt.getMinutes());
+                /* 同一人多次访问，右侧补一个次数 */
+                if (r.count && r.count > 1) timeTxt += ' ×' + r.count;
+                when.textContent = timeTxt;
 
                 row.appendChild(dot);
                 row.appendChild(where);
@@ -1034,11 +1037,28 @@
                             return;
                         }
 
+                        /* 按 IP 合并：同一个人只留一条（最近一次），并记录总次数。
+                          列表本身按时间倒序，所以第一次遇到的就是最新那条。 */
+                        var merged = [];
+                        var index = {};
+                        d.recent.forEach(function (r) {
+                            var key = r.ip || ('nokey_' + r.t);
+                            if (index[key] === undefined) {
+                                index[key] = merged.length;
+                                var item = {};
+                                for (var k in r) { if (Object.prototype.hasOwnProperty.call(r, k)) item[k] = r[k]; }
+                                item.count = 1;
+                                merged.push(item);
+                            } else {
+                                merged[index[key]].count++;
+                            }
+                        });
+
                         /* 先把列表里出现的型号批量换成中文名，再渲染 */
-                        var models = d.recent.map(function (r) { return r.model; });
+                        var models = merged.map(function (r) { return r.model; });
                         fillModelNames(models, function () {
                             box.innerHTML = '';
-                            d.recent.forEach(function (r) {
+                            merged.forEach(function (r) {
                                 box.appendChild(buildRow(r));
                             });
                         });
